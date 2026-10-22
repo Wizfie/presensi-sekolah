@@ -1,0 +1,78 @@
+================================================================================
+            RINGKASAN SISTEM PRESENSI SEKOLAH DIGITAL (PWA)
+================================================================================
+
+1. DESKRIPSI SINGKAT
+--------------------------------------------------------------------------------
+Aplikasi presensi sekolah berbasis web (PWA) yang mencatat kehadiran siswa dan 
+guru secara otomatis, cepat, dan akurat untuk menggantikan buku absen kertas.
+
+
+2. FITUR UTAMA PER ROLE
+--------------------------------------------------------------------------------
+
+A. SISWA (MURID):
+   1. Kartu Pelajar Digital : Tampilan kartu pelajar di HP dengan QR Code unik.
+   2. Presensi Mandiri GPS  : Absen mandiri (GPS + Foto selfie) dengan sistem 
+                              SEMI-OTOMATIS (otomatis mendeteksi mapel sesuai jam 
+                              sekarang, dan siswa tetap bebas memilih/menyesuaikan 
+                              mapel kelasnya).
+   3. Pengajuan Izin / Sakit: Formulir online untuk melampirkan foto surat dokter 
+                              atau surat izin orang tua dari rumah.
+   4. Riwayat Kehadiran     : Rekap status Hadir, Terlambat, Izin, Sakit, Alpa 
+                              lengkap dengan kolom Mata Pelajaran.
+
+B. GURU (PENDIDIK):
+   1. Scanner QR Ber-Highlight: Memindai kartu siswa dengan Banner Heroik & Live Overlay 
+                              Highlight Mapel yang sangat jelas di atas kamera, sehingga 
+                              siswa & guru tahu persis presensi tertuju ke mapel mana.
+   2. Quick Switch Mapel    : Mengganti sesi kelas & mata pelajaran langsung dari 
+                              halaman scanner tanpa harus berpindah tab.
+   3. Tombol Batal Scanner  : Tombol pembatalan jelas agar kamera tidak macet (freeze).
+   4. Jurnal Kelas Harian   : Melihat daftar hadir kelas, ubah status manual per mapel.
+   5. Verifikasi Izin       : Menyetujui atau menolak bukti surat sakit/izin murid.
+   6. Cetak Jurnal          : Export data kehadiran kelas ke format cetak & Excel (.xlsx) 
+                              lengkap dengan informasi mata pelajaran.
+
+C. ADMINISTRATOR (TATA USAHA):
+   1. Dashboard Real-time   : Grafik dan persentase kehadiran sekolah hari ini.
+   2. Master Data           : Tambah, edit, dan hapus data Siswa, Guru, dan Kelas.
+   3. Cetak Kartu Pelajar   : Cetak kartu ber-QR Code (satuan / massal 1 kelas) 
+                              siap laminasi.
+   4. Pengaturan Lokasi GPS : Atur titik koordinat sekolah & radius toleransi absen 
+                              (contoh: radius 100 meter).
+   5. Manajemen Akun Admin  : Tambah staf TU, reset kata sandi, proteksi akun utama.
+   6. Data Simulasi Demo    : Tombol reset dan muat data contoh (90 siswa, 4 guru).
+
+D. TEKNOLOGI PWA (PROGRESSIVE WEB APP):
+   1. Install ke Layar HP   : Dapat dipasang langsung di Android & iPhone tanpa 
+                              memakan memori besar.
+
+
+3. CARA KERJA SISTEM (3 LANGKAH CEPAT)
+--------------------------------------------------------------------------------
+1. Siswa datang ke sekolah -> Presensi mandiri semi-otomatis (GPS + Selfie) ATAU 
+   tunjukkan kartu ke guru di kelas.
+2. Guru scan kartu siswa via kamera aplikasi -> Highlight nama mapel tampil mencolok 
+   dan konfirmasi kartu berbunyi bip.
+3. Laporan otomatis terarsip -> Sekolah & Wali Kelas siap unduh laporan harian/bulanan.
+
+
+4. IMPLEMENTASI PRESENSI PER MATA PELAJARAN:
+--------------------------------------------------------------------------------
+1. Presensi Mandiri Siswa (Semi-Otomatis):
+   - Sistem membaca waktu jam saat ini dan mencocokkannya ke jadwal pelajaran kelas siswa.
+   - Pilihan mapel langsung terisi otomatis sesuai jam berjalan.
+   - Siswa tetap diberikan kontrol penuh (dropdown pilihan mapel kelas) jika ingin 
+     menyesuaikan mata pelajaran tertentu secara manual.
+2. Highlight Jelas pada Scanner Guru:
+   - Banner besar mencolok di atas kamera menampilkan Mata Pelajaran & Kelas Aktif.
+   - Live overlay di dalam kamera menunjukkan mapel tujuan pemindaian.
+   - Kotak konfirmasi hasil scan menegaskan nama mata pelajaran yang berhasil tercatat.
+3. Jurnal & Rekap Terpisah:
+   - Presensi disimpan per mata pelajaran secara independen (Hadir di Mapel A, 
+     Alpa di Mapel B jika membolos).
+
+================================================================================
+Dokumen Teknis & Alur Flowchart (Format PNG): docs/flowchart_presensi_sekolah.png
+================================================================================
