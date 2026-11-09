@@ -2643,9 +2643,18 @@ function triggerPrint() {
     return
   }
 
+  const style = document.createElement('style')
+  style.id = 'cards-portrait-print'
+  style.innerHTML = `@page { size: A4 portrait !important; margin: 8mm 6mm !important; }`
+  document.head.appendChild(style)
+
   // Berikan waktu jeda singkat agar DOM class print-hide-card terpasang sempurna
   setTimeout(() => {
     window.print()
+    setTimeout(() => {
+      const el = document.getElementById('cards-portrait-print')
+      if (el) el.remove()
+    }, 1000)
   }, 100)
 }
 
@@ -2825,73 +2834,3 @@ function handleClearDataCleanSlate() {
   }
 }
 </script>
-
-<style>
-@media print {
-  /* Hilangkan background browser */
-  html, body {
-    background: #ffffff !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* Sembunyikan elemen dashboard & antarmuka admin */
-  body * {
-    visibility: hidden;
-  }
-
-  .no-print,
-  nav,
-  header,
-  aside,
-  footer,
-  button {
-    display: none !important;
-    visibility: hidden !important;
-  }
-
-  /* Tampilkan hanya wadah kartu ID siswa yang dicetak */
-  #printable-cards-area,
-  #printable-cards-area * {
-    visibility: visible;
-  }
-
-  #printable-cards-area {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 8mm 6mm !important;
-    box-sizing: border-box !important;
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 8mm 6mm !important;
-    background: transparent !important;
-  }
-
-  .id-card-print-item {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    border: 1.5px solid #cbd5e1 !important;
-    border-radius: 12px !important;
-    box-shadow: none !important;
-    background-color: #ffffff !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    padding: 12px 14px !important;
-    box-sizing: border-box !important;
-  }
-
-  /* Sembunyikan kartu yang tidak dipilih dalam mode cetak terpilih */
-  .print-hide-card {
-    display: none !important;
-    visibility: hidden !important;
-  }
-
-  @page {
-    size: A4 portrait;
-    margin: 10mm 8mm;
-  }
-}
-</style>

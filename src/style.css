@@ -59,15 +59,117 @@ body {
   background: #94a3b8;
 }
 
-/* Print utilities for ID Cards */
+/* Print utilities (Universal untuk Cetak Kartu Siswa & Lembar Rekap Absensi) */
 @media print {
-  body {
-    background: white !important;
+  html, body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  .no-print {
+
+  /* Sembunyikan elemen dashboard & antarmuka interaktif */
+  body * {
+    visibility: hidden;
+  }
+
+  .no-print,
+  nav,
+  header,
+  aside,
+  footer,
+  button,
+  input,
+  select,
+  .mobile-bottom-nav {
     display: none !important;
+    visibility: hidden !important;
   }
-  .print-only {
+
+  /* Support Cetak Kartu Siswa (AdminDashboard) */
+  #printable-cards-area,
+  #printable-cards-area * {
+    visibility: visible;
+  }
+
+  #printable-cards-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 8mm 6mm !important;
+    box-sizing: border-box !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8mm 6mm !important;
+    background: transparent !important;
+  }
+
+  .id-card-print-item {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    background-color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    padding: 12px 14px !important;
+    box-sizing: border-box !important;
+  }
+
+  .print-hide-card {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Support Cetak Lembar Rekap Bulanan (GuruDashboard) */
+  #printable-monthly-sheet,
+  #printable-monthly-sheet * {
+    visibility: visible;
+  }
+
+  #printable-monthly-sheet {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 4mm 5mm !important;
+    box-sizing: border-box !important;
     display: block !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  #printable-monthly-sheet .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  #printable-monthly-sheet table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 7.5pt !important;
+    line-height: 1.15 !important;
+  }
+
+  #printable-monthly-sheet th,
+  #printable-monthly-sheet td {
+    border: 1px solid #000000 !important;
+    padding: 2px 1px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-only {
+    display: grid !important;
+    visibility: visible !important;
   }
 }

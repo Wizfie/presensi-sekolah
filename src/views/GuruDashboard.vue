@@ -654,7 +654,7 @@
         <!-- ============================================================== -->
         <!-- LEMBAR DAFTAR HADIR SISWA (TAMPILAN MATRIKS PERSIS GAMBAR) -->
         <!-- ============================================================== -->
-        <div class="print-container bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+        <div id="printable-monthly-sheet" class="print-container bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
           <!-- Kop Header Lembar Absensi (Persis Gambar) -->
           <div class="flex items-center justify-center gap-3 sm:gap-4 pb-2 border-b border-slate-900">
             <img src="/logo.png" alt="Logo PKBM" class="w-12 h-12 sm:w-14 sm:h-14 object-contain shrink-0" />
@@ -1204,34 +1204,81 @@ const currentPrintDate = computed(() => {
 })
 
 function printMonthlySheet() {
+  const style = document.createElement('style')
+  style.id = 'rekap-landscape-print'
+  style.innerHTML = `@page { size: A4 landscape !important; margin: 5mm 6mm !important; }`
+  document.head.appendChild(style)
+
   window.print()
+
+  setTimeout(() => {
+    const el = document.getElementById('rekap-landscape-print')
+    if (el) el.remove()
+  }, 1000)
 }
 
-// Export Matriks Bulanan ke Excel (.xlsx) dengan Format Cantik Persis Gambar
+// Export Matriks Bulanan ke Excel (.xlsx) dengan Format Cantik Persis Gambar & View Buku Rekap
 function exportMonthlyToExcel() {
   const schoolName = (attendanceStore.schoolSettings?.nama_sekolah || 'PKBM CAHAYA MULIA').toUpperCase()
   const tp = rekapAcademicYear.value
   const mName = monthNames[rekapMonth.value - 1].toUpperCase()
   const daysCount = daysInSelectedMonth.value
+  const totalCols = daysCount + 8 // NOMOR, NAMA, L/P, [days], H, S, I, A, %
 
-  // Header Rows
-  const aoa = [
-    ['DAFTAR HADIR SISWA'],
-    [schoolName],
-    [`TAHUN PELAJARAN ${tp}`],
-    [],
-    [`Kelas: ${rekapClass.value}`, '', '', `Bulan: ${mName} ${rekapYear.value}`]
-  ]
+  // Styling Primitives
+  const borderThin = {
+    top: { style: 'thin', color: { rgb: '334155' } },
+    bottom: { style: 'thin', color: { rgb: '334155' } },
+    left: { style: 'thin', color: { rgb: '334155' } },
+    right: { style: 'thin', color: { rgb: '334155' } }
+  }
 
-  // Table Column Headers (Baris 5 & 6)
-  const headerRow1 = ['NOMOR', 'NAMA SISWA', 'L/P']
-  for (let d = 1; d <= daysCount; d++) headerRow1.push(String(d))
-  headerRow1.push('H', 'S', 'I', 'A', '%')
-  aoa.push(headerRow1)
+  const borderDoubleBottom = {
+    top: { style: 'thin', color: { rgb: '334155' } },
+    bottom: { style: 'double', color: { rgb: '0F172A' } },
+    left: { style: 'thin', color: { rgb: '334155' } },
+    right: { style: 'thin', color: { rgb: '334155' } }
+  }
 
-  // Data Rows
-  monthlyMatrixData.value.forEach((row, idx) => {
-    const r = [idx + 1, row.student.nama_lengkap.toUpperCase(), row.student.jenis_kelamin || 'L']
+  // 1. Susun Array of Arrays (aoa)
+  const aoa = []
+
+  // Baris 0 - 2: Judul Kop
+  aoa.push(['DAFTAR HADIR SISWA'])
+  aoa.push([schoolName])
+  aoa.push([`TAHUN PELAJARAN ${tp}`])
+  aoa.push([]) // Baris 3: Kosong
+
+  // Baris 4: Info Kelas & Bulan
+  const metaRow = new Array(totalCols).fill('')
+  metaRow[0] = `Kelas: ${rekapClass.value}`
+  metaRow[totalCols - 5] = `Bulan: ${mName} ${rekapYear.value}`
+  aoa.push(metaRow)
+
+  // Baris 5: Header Tingkat 1
+  const h1 = ['NOMOR', 'NAMA SISWA', 'L/P']
+  for (let d = 1; d <= daysCount; d++) {
+    h1.push(d === 1 ? 'Tanggal' : '')
+  }
+  h1.push('Rekapitulasi', '', '', '', '%')
+  aoa.push(h1)
+
+  // Baris 6: Header Tingkat 2 (Tanggal 1..daysCount & H, S, I, A)
+  const h2 = ['', '', '']
+  for (let d = 1; d <= daysCount; d++) {
+    h2.push(String(d))
+  }
+  h2.push('H', 'S', 'I', 'A', '')
+  aoa.push(h2)
+
+  // Baris 7+: Data Siswa
+  const studentRows = monthlyMatrixData.value
+  studentRows.forEach((row, idx) => {
+    const r = [
+      idx + 1,
+      row.student.nama_lengkap.toUpperCase(),
+      row.student.jenis_kelamin || 'L'
+    ]
     for (let d = 1; d <= daysCount; d++) {
       r.push(row.days[d]?.symbol || '')
     }
@@ -1239,29 +1286,268 @@ function exportMonthlyToExcel() {
     aoa.push(r)
   })
 
-  // Footer Spacing & Signatures
-  aoa.push([])
-  aoa.push(['', 'Mengetahui,', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'Pamulang, ' + currentPrintDate.value])
-  aoa.push(['', 'Ketua PKBM Cahaya Mulia', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'Tutor / Wali Kelas'])
-  aoa.push([])
-  aoa.push([])
-  aoa.push(['', '( ............................................ )', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', (currentTeacher.value?.nama_lengkap || '( ............................................ )')])
+  // Baris Rekapitulasi Total Kelas (Summary Row)
+  const summaryRow = ['TOTAL KEHADIRAN KELAS', '', '']
+  for (let d = 1; d <= daysCount; d++) {
+    const totalDayPresent = studentRows.filter(s => s.days[d]?.symbol === 'H').length
+    summaryRow.push(totalDayPresent > 0 ? totalDayPresent : '')
+  }
+  const sumH = studentRows.reduce((acc, r) => acc + (r.totalH || 0), 0)
+  const sumS = studentRows.reduce((acc, r) => acc + (r.totalS || 0), 0)
+  const sumI = studentRows.reduce((acc, r) => acc + (r.totalI || 0), 0)
+  const sumA = studentRows.reduce((acc, r) => acc + (r.totalA || 0), 0)
+  const avgPct = studentRows.length > 0
+    ? Math.round(studentRows.reduce((acc, r) => acc + (r.persentase || 0), 0) / studentRows.length)
+    : 0
+  summaryRow.push(sumH, sumS, sumI, sumA, `${avgPct}%`)
+  aoa.push(summaryRow)
 
+  // Footer Spacing & Tanda Tangan
+  aoa.push([])
+  aoa.push([])
+
+  const sigRow1 = new Array(totalCols).fill('')
+  sigRow1[1] = 'Mengetahui,'
+  sigRow1[totalCols - 6] = `Pamulang, ${currentPrintDate.value}`
+  aoa.push(sigRow1)
+
+  const sigRow2 = new Array(totalCols).fill('')
+  sigRow2[1] = 'Ketua PKBM Cahaya Mulia'
+  sigRow2[totalCols - 6] = 'Tutor / Wali Kelas'
+  aoa.push(sigRow2)
+
+  aoa.push([])
+  aoa.push([])
+
+  const sigRow5 = new Array(totalCols).fill('')
+  sigRow5[1] = '( ............................................ )'
+  sigRow5[totalCols - 6] = `( ${currentTeacher.value?.nama_lengkap || '............................................'} )`
+  aoa.push(sigRow5)
+
+  // 2. Buat Worksheet
   const ws = XLSX.utils.aoa_to_sheet(aoa)
 
-  // Merge Cells for Title
+  // 3. Merges Configuration
   ws['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: daysCount + 7 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: daysCount + 7 } },
-    { s: { r: 2, c: 0 }, e: { r: 2, c: daysCount + 7 } }
+    // Judul Kop
+    { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: totalCols - 1 } },
+    // Info Kelas & Bulan
+    { s: { r: 4, c: 0 }, e: { r: 4, c: 2 } },
+    { s: { r: 4, c: totalCols - 5 }, e: { r: 4, c: totalCols - 1 } },
+    // Header Table Col 0, 1, 2 Rowspan 2
+    { s: { r: 5, c: 0 }, e: { r: 6, c: 0 } }, // NOMOR
+    { s: { r: 5, c: 1 }, e: { r: 6, c: 1 } }, // NAMA SISWA
+    { s: { r: 5, c: 2 }, e: { r: 6, c: 2 } }, // L/P
+    // Tanggal Colspan
+    { s: { r: 5, c: 3 }, e: { r: 5, c: 2 + daysCount } },
+    // Rekapitulasi Colspan
+    { s: { r: 5, c: 3 + daysCount }, e: { r: 5, c: 6 + daysCount } },
+    // % Rowspan 2
+    { s: { r: 5, c: 7 + daysCount }, e: { r: 6, c: 7 + daysCount } },
+    // Summary Row Colspan NOMOR + NAMA + L/P
+    { s: { r: 7 + studentRows.length, c: 0 }, e: { r: 7 + studentRows.length, c: 2 } }
   ]
 
-  // Set Column Widths
-  const colWidths = [{ wch: 6 }, { wch: 28 }, { wch: 5 }]
-  for (let i = 0; i < daysCount; i++) colWidths.push({ wch: 3.5 })
+  // 4. Column Widths
+  const colWidths = [
+    { wch: 6 },  // NOMOR
+    { wch: 26 }, // NAMA SISWA
+    { wch: 5 }   // L/P
+  ]
+  for (let i = 0; i < daysCount; i++) {
+    colWidths.push({ wch: 3.5 })
+  }
   colWidths.push({ wch: 4.5 }, { wch: 4.5 }, { wch: 4.5 }, { wch: 4.5 }, { wch: 6 })
   ws['!cols'] = colWidths
 
+  // Helper aman pasang style sel
+  function setStyle(r, c, style) {
+    const ref = XLSX.utils.encode_cell({ r, c })
+    if (!ws[ref]) ws[ref] = { t: 's', v: '' }
+    ws[ref].s = { ...(ws[ref].s || {}), ...style }
+  }
+
+  // 5. Terapkan Style Judul Kop (Baris 0, 1, 2)
+  setStyle(0, 0, {
+    font: { name: 'Calibri', sz: 12, bold: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  })
+  setStyle(1, 0, {
+    font: { name: 'Calibri', sz: 15, bold: true, color: { rgb: '1E3A8A' } },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  })
+  setStyle(2, 0, {
+    font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: '334155' } },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  })
+
+  // Style Info Baris 4 (Kelas & Bulan)
+  setStyle(4, 0, {
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'left', vertical: 'center' }
+  })
+  setStyle(4, totalCols - 5, {
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'right', vertical: 'center' }
+  })
+
+  // 6. Terapkan Border & Fill pada Header Tabel (Baris 5 & 6)
+  for (let c = 0; c < totalCols; c++) {
+    // Header Baris 5
+    setStyle(5, c, {
+      font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: '0F172A' } },
+      fill: { fgColor: { rgb: 'E2E8F0' } },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: borderThin
+    })
+    // Header Baris 6
+    setStyle(6, c, {
+      font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: '0F172A' } },
+      fill: { fgColor: { rgb: 'F1F5F9' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: borderThin
+    })
+  }
+
+  // Khusus Header Rekap H, S, I, A di Baris 6
+  setStyle(6, 3 + daysCount, {
+    font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: '047857' } },
+    fill: { fgColor: { rgb: 'D1FAE5' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    border: borderThin
+  })
+  setStyle(6, 4 + daysCount, {
+    font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: 'B45309' } },
+    fill: { fgColor: { rgb: 'FEF3C7' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    border: borderThin
+  })
+  setStyle(6, 5 + daysCount, {
+    font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: '1D4ED8' } },
+    fill: { fgColor: { rgb: 'DBEAFE' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    border: borderThin
+  })
+  setStyle(6, 6 + daysCount, {
+    font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: 'BE123C' } },
+    fill: { fgColor: { rgb: 'FFE4E6' } },
+    alignment: { horizontal: 'center', vertical: 'center' },
+    border: borderThin
+  })
+
+  // 7. Terapkan Border & Formatting pada Data Siswa (Baris 7 s.d. 6 + N)
+  const dataStartRow = 7
+  studentRows.forEach((row, sIdx) => {
+    const r = dataStartRow + sIdx
+
+    // Nomor
+    setStyle(r, 0, {
+      font: { name: 'Calibri', sz: 9, bold: true },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: borderThin
+    })
+    // Nama Siswa
+    setStyle(r, 1, {
+      font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: '0F172A' } },
+      alignment: { horizontal: 'left', vertical: 'center' },
+      border: borderThin
+    })
+    // L/P
+    const isFemale = row.student.jenis_kelamin === 'P'
+    setStyle(r, 2, {
+      font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: isFemale ? 'DB2777' : '1D4ED8' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: borderThin
+    })
+
+    // Tanggal 1 s.d. daysCount
+    for (let d = 1; d <= daysCount; d++) {
+      const c = 2 + d
+      const sym = row.days[d]?.symbol
+      const isWk = isWeekend(d)
+
+      const cellStyle = {
+        font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: '0F172A' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+        border: borderThin
+      }
+
+      if (isWk) {
+        cellStyle.fill = { fgColor: { rgb: 'F1F5F9' } }
+      }
+
+      if (sym === 'H') {
+        cellStyle.font = { name: 'Calibri', sz: 9, bold: true, color: { rgb: '047857' } }
+      } else if (sym === 'S') {
+        cellStyle.font = { name: 'Calibri', sz: 9, bold: true, color: { rgb: 'B45309' } }
+        cellStyle.fill = { fgColor: { rgb: 'FEF3C7' } }
+      } else if (sym === 'I') {
+        cellStyle.font = { name: 'Calibri', sz: 9, bold: true, color: { rgb: '1D4ED8' } }
+        cellStyle.fill = { fgColor: { rgb: 'DBEAFE' } }
+      } else if (sym === 'A') {
+        cellStyle.font = { name: 'Calibri', sz: 9, bold: true, color: { rgb: 'BE123C' } }
+        cellStyle.fill = { fgColor: { rgb: 'FFE4E6' } }
+      }
+
+      setStyle(r, c, cellStyle)
+    }
+
+    // Rekap H, S, I, A, %
+    setStyle(r, 3 + daysCount, {
+      font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: '065F46' } },
+      fill: { fgColor: { rgb: 'ECFDF5' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: borderThin
+    })
+    setStyle(r, 4 + daysCount, {
+      font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: '92400E' } },
+      fill: { fgColor: { rgb: 'FFFBEB' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: borderThin
+    })
+    setStyle(r, 5 + daysCount, {
+      font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: '1E40AF' } },
+      fill: { fgColor: { rgb: 'EFF6FF' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: borderThin
+    })
+    setStyle(r, 6 + daysCount, {
+      font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: '9F1239' } },
+      fill: { fgColor: { rgb: 'FFF1F2' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: borderThin
+    })
+    setStyle(r, 7 + daysCount, {
+      font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: '0F172A' } },
+      fill: { fgColor: { rgb: 'F8FAFC' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: borderThin
+    })
+  })
+
+  // 8. Terapkan Style Baris Summary Total
+  const summaryRowIdx = dataStartRow + studentRows.length
+  for (let c = 0; c < totalCols; c++) {
+    setStyle(summaryRowIdx, c, {
+      font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: '0F172A' } },
+      fill: { fgColor: { rgb: 'E2E8F0' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: borderDoubleBottom
+    })
+  }
+
+  // 9. Terapkan Style Tanda Tangan
+  const sigStart = summaryRowIdx + 2
+  setStyle(sigStart, 1, { font: { name: 'Calibri', sz: 10 } })
+  setStyle(sigStart, totalCols - 6, { font: { name: 'Calibri', sz: 10 } })
+  setStyle(sigStart + 1, 1, { font: { name: 'Calibri', sz: 10, bold: true } })
+  setStyle(sigStart + 1, totalCols - 6, { font: { name: 'Calibri', sz: 10, bold: true } })
+  setStyle(sigStart + 4, 1, { font: { name: 'Calibri', sz: 10, bold: true } })
+  setStyle(sigStart + 4, totalCols - 6, { font: { name: 'Calibri', sz: 10, bold: true, underline: true } })
+
+  // 10. Simpan File Excel
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, `Daftar Hadir Kls ${rekapClass.value}`)
 
@@ -1294,32 +1580,6 @@ function applyQuickEdit(status) {
 </script>
 
 <style scoped>
-@media print {
-  /* Hide non-printable elements */
-  .no-print,
-  nav,
-  aside,
-  header {
-    display: none !important;
-  }
-
-  /* Full landscape page layout */
-  body,
-  main,
-  .print-container {
-    background: white !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    border: none !important;
-    box-shadow: none !important;
-  }
-
-  .print-only {
-    display: grid !important;
-  }
-}
-
 .print-only {
   display: none;
 }

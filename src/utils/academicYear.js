@@ -94,3 +94,4 @@ export function getCalendarYearOptions(existingYears = [], pastYears = 3, future
 
   return Array.from(yearSet).sort((a, b) => a - b)
 }
+
