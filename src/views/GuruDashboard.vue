@@ -773,20 +773,20 @@
             </table>
           </div>
 
-          <!-- Tanda Tangan Cetak Lembar Absen (Hanya tampil saat Print) -->
-          <div class="print-only pt-8 grid grid-cols-2 text-center text-xs text-slate-900">
+          <!-- Tanda Tangan Cetak Lembar Absen (Tampil di Layar Buku Rekap & Saat Print) -->
+          <div class="pt-8 pb-4 grid grid-cols-2 text-center text-xs text-slate-900 border-t border-slate-200 mt-4">
             <div>
-              <p>Mengetahui,</p>
-              <p class="font-bold">Ketua PKBM Cahaya Mulia</p>
+              <p class="text-slate-600">Mengetahui,</p>
+              <p class="font-bold text-slate-900 mt-0.5">Ketua PKBM Cahaya Mulia</p>
               <div class="h-16"></div>
-              <p class="font-bold underline">( ............................................ )</p>
+              <p class="font-bold underline text-slate-900">( ............................................ )</p>
             </div>
             <div>
-              <p>Pamulang, {{ currentPrintDate }}</p>
-              <p class="font-bold">Tutor / Wali Kelas</p>
+              <p class="text-slate-600">Pamulang, {{ currentPrintDate }}</p>
+              <p class="font-bold text-slate-900 mt-0.5">Tutor / Wali Kelas</p>
               <div class="h-16"></div>
-              <p class="font-bold underline">{{ currentTeacher?.nama_lengkap || '( ............................................ )' }}</p>
-              <p class="text-[10px]">NIP. {{ currentTeacher?.nomor_induk || '-' }}</p>
+              <p class="font-bold underline text-slate-900">( {{ currentTeacher?.nama_lengkap || authStore.user?.nama_lengkap || '............................................' }} )</p>
+              <p class="text-[10px] text-slate-500 font-mono mt-0.5">NIP: {{ currentTeacher?.nomor_induk || authStore.user?.nomor_induk || '-' }}</p>
             </div>
           </div>
         </div>
@@ -1306,23 +1306,38 @@ function exportMonthlyToExcel() {
   aoa.push([])
   aoa.push([])
 
+  // Ambil index baris awal tanda tangan secara tepat
+  const sigStart = aoa.length
+  const leftStartCol = 1
+  const leftEndCol = Math.min(8, 2 + daysCount)
+  const rightStartCol = Math.max(leftEndCol + 2, totalCols - 10)
+  const rightEndCol = totalCols - 1
+
+  const teacherName = currentTeacher.value?.nama_lengkap || authStore.user?.nama_lengkap || '............................................'
+  const teacherNip = currentTeacher.value?.nomor_induk || authStore.user?.nomor_induk || '-'
+
   const sigRow1 = new Array(totalCols).fill('')
-  sigRow1[1] = 'Mengetahui,'
-  sigRow1[totalCols - 6] = `Pamulang, ${currentPrintDate.value}`
+  sigRow1[leftStartCol] = 'Mengetahui,'
+  sigRow1[rightStartCol] = `Pamulang, ${currentPrintDate.value}`
   aoa.push(sigRow1)
 
   const sigRow2 = new Array(totalCols).fill('')
-  sigRow2[1] = 'Ketua PKBM Cahaya Mulia'
-  sigRow2[totalCols - 6] = 'Tutor / Wali Kelas'
+  sigRow2[leftStartCol] = 'Ketua PKBM Cahaya Mulia'
+  sigRow2[rightStartCol] = 'Tutor / Wali Kelas'
   aoa.push(sigRow2)
 
   aoa.push([])
   aoa.push([])
+  aoa.push([])
 
-  const sigRow5 = new Array(totalCols).fill('')
-  sigRow5[1] = '( ............................................ )'
-  sigRow5[totalCols - 6] = `( ${currentTeacher.value?.nama_lengkap || '............................................'} )`
-  aoa.push(sigRow5)
+  const sigRow6 = new Array(totalCols).fill('')
+  sigRow6[leftStartCol] = '( ............................................ )'
+  sigRow6[rightStartCol] = `( ${teacherName} )`
+  aoa.push(sigRow6)
+
+  const sigRow7 = new Array(totalCols).fill('')
+  sigRow7[rightStartCol] = `NIP. ${teacherNip}`
+  aoa.push(sigRow7)
 
   // 2. Buat Worksheet
   const ws = XLSX.utils.aoa_to_sheet(aoa)
@@ -1347,7 +1362,16 @@ function exportMonthlyToExcel() {
     // % Rowspan 2
     { s: { r: 5, c: 7 + daysCount }, e: { r: 6, c: 7 + daysCount } },
     // Summary Row Colspan NOMOR + NAMA + L/P
-    { s: { r: 7 + studentRows.length, c: 0 }, e: { r: 7 + studentRows.length, c: 2 } }
+    { s: { r: 7 + studentRows.length, c: 0 }, e: { r: 7 + studentRows.length, c: 2 } },
+    // Tanda Tangan Mengetahui (Kiri)
+    { s: { r: sigStart, c: leftStartCol }, e: { r: sigStart, c: leftEndCol } },
+    { s: { r: sigStart + 1, c: leftStartCol }, e: { r: sigStart + 1, c: leftEndCol } },
+    { s: { r: sigStart + 5, c: leftStartCol }, e: { r: sigStart + 5, c: leftEndCol } },
+    // Tanda Tangan Pembuat / Tutor (Kanan)
+    { s: { r: sigStart, c: rightStartCol }, e: { r: sigStart, c: rightEndCol } },
+    { s: { r: sigStart + 1, c: rightStartCol }, e: { r: sigStart + 1, c: rightEndCol } },
+    { s: { r: sigStart + 5, c: rightStartCol }, e: { r: sigStart + 5, c: rightEndCol } },
+    { s: { r: sigStart + 6, c: rightStartCol }, e: { r: sigStart + 6, c: rightEndCol } }
   ]
 
   // 4. Column Widths
@@ -1538,14 +1562,38 @@ function exportMonthlyToExcel() {
     })
   }
 
-  // 9. Terapkan Style Tanda Tangan
-  const sigStart = summaryRowIdx + 2
-  setStyle(sigStart, 1, { font: { name: 'Calibri', sz: 10 } })
-  setStyle(sigStart, totalCols - 6, { font: { name: 'Calibri', sz: 10 } })
-  setStyle(sigStart + 1, 1, { font: { name: 'Calibri', sz: 10, bold: true } })
-  setStyle(sigStart + 1, totalCols - 6, { font: { name: 'Calibri', sz: 10, bold: true } })
-  setStyle(sigStart + 4, 1, { font: { name: 'Calibri', sz: 10, bold: true } })
-  setStyle(sigStart + 4, totalCols - 6, { font: { name: 'Calibri', sz: 10, bold: true, underline: true } })
+  // 9. Terapkan Style Tanda Tangan (Mengetahui & Pembuat / Tutor)
+  // Kiri: Mengetahui
+  setStyle(sigStart, leftStartCol, {
+    font: { name: 'Calibri', sz: 10, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  })
+  setStyle(sigStart + 1, leftStartCol, {
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  })
+  setStyle(sigStart + 5, leftStartCol, {
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  })
+
+  // Kanan: Pembuat / Tutor Wali Kelas
+  setStyle(sigStart, rightStartCol, {
+    font: { name: 'Calibri', sz: 10, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  })
+  setStyle(sigStart + 1, rightStartCol, {
+    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  })
+  setStyle(sigStart + 5, rightStartCol, {
+    font: { name: 'Calibri', sz: 10, bold: true, underline: true, color: { rgb: '0F172A' } },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  })
+  setStyle(sigStart + 6, rightStartCol, {
+    font: { name: 'Calibri', sz: 9, color: { rgb: '475569' } },
+    alignment: { horizontal: 'center', vertical: 'center' }
+  })
 
   // 10. Simpan File Excel
   const wb = XLSX.utils.book_new()
