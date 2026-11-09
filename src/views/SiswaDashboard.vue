@@ -246,7 +246,7 @@
               </div>
             </div>
             <span class="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full border border-white/30">
-              TP 2026/2027
+              TP {{ attendanceStore.activeAcademicYear }}
             </span>
           </div>
 

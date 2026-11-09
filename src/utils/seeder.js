@@ -2,6 +2,8 @@
 // Kebutuhan: Presensi IN/OUT per hari per kelas
 // Format Buku Absensi Siswa: NOMOR | NAMA SISWA | L/P | Tanggal 1 s.d. 31
 
+import { getCurrentAcademicYear } from './academicYear'
+
 export const defaultClasses = ['12', '11', '10']
 
 export const defaultSchoolSettings = {
@@ -13,7 +15,7 @@ export const defaultSchoolSettings = {
   jam_masuk: '07:30',
   jam_terlambat: '08:00',
   jam_pulang: '14:00',
-  tahun_pelajaran: '2026/2027'
+  tahun_pelajaran: getCurrentAcademicYear()
 }
 
 // 1. Data Siswa Kelas 12 (Persis sesuai foto lembar absensi manual PKBM Cahaya Mulia)

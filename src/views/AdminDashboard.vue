@@ -724,7 +724,7 @@
                 <img src="/logo.png" alt="Logo PKBM" class="w-7 h-7 object-contain shrink-0" />
                 <div>
                   <h4 class="text-[11px] font-bold text-slate-900 leading-none">{{ attendanceStore.schoolSettings.nama_sekolah }}</h4>
-                  <p class="text-[9px] text-slate-500 mt-0.5">KARTU PRESENSI RESMI</p>
+                  <p class="text-[9px] text-slate-500 mt-0.5">KARTU PRESENSI RESMI &bull; TP {{ attendanceStore.activeAcademicYear }}</p>
                 </div>
               </div>
             </div>
@@ -818,6 +818,36 @@
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Sekolah</label>
                   <input v-model="settingsForm.nama_sekolah" type="text" required class="w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+
+                <!-- Tahun Pelajaran Aktif (Dinamis & Berkelanjutan) -->
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-semibold text-slate-700">Tahun Pelajaran (TP) Aktif</label>
+                    <span class="text-[11px] text-blue-600 font-medium">Otomatis &amp; Dinamis</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <select
+                      v-model="settingsForm.tahun_pelajaran"
+                      class="flex-1 h-10 px-3 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-semibold text-slate-800 cursor-pointer"
+                    >
+                      <option v-for="tp in dynamicAcademicYearOptions" :key="tp" :value="tp">
+                        Tahun Pelajaran {{ tp }} {{ tp === currentAutoAcademicYear ? '(Tahun Berjalan Saat Ini)' : '' }}
+                      </option>
+                    </select>
+                    <button
+                      type="button"
+                      @click="settingsForm.tahun_pelajaran = currentAutoAcademicYear"
+                      class="h-10 px-3 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold inline-flex items-center gap-1 shrink-0 transition cursor-pointer"
+                      title="Set ke Tahun Pelajaran Berjalan Saat Ini"
+                    >
+                      <span class="material-icons text-xs text-blue-600">auto_mode</span>
+                      <span>Tahun Sekarang</span>
+                    </button>
+                  </div>
+                  <p class="text-[11px] text-slate-400 mt-1">
+                    Tahun pelajaran aktif ini akan otomatis menjadi acuan seluruh kartu siswa, rekapitulasi, dan berkas cetak tanpa perlu ubah manual.
+                  </p>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1793,7 +1823,7 @@
               </div>
               <div>
                 <h3 class="font-bold text-slate-900 text-sm sm:text-base leading-snug">Tambah Kelas Baru</h3>
-                <p class="text-[11px] text-slate-500">PKBM Cahaya Mulia &bull; TA 2026/2027</p>
+                <p class="text-[11px] text-slate-500">PKBM Cahaya Mulia &bull; TA {{ attendanceStore.activeAcademicYear }}</p>
               </div>
             </div>
             <button
@@ -1920,6 +1950,7 @@ import Badge from '../components/ui/Badge.vue'
 import CustomDropdown from '../components/ui/CustomDropdown.vue'
 import { compressImageFile } from '../utils/imageCompressor'
 import { getInitials } from '../utils/avatar'
+import { getCurrentAcademicYear, getAcademicYearOptions } from '../utils/academicYear'
 
 const authStore = useAuthStore()
 const attendanceStore = useAttendanceStore()
@@ -2523,7 +2554,31 @@ function resetAdminPasswordConfirm(admin) {
   }
 }
 
-const settingsForm = ref({ ...attendanceStore.schoolSettings })
+const currentAutoAcademicYear = computed(() => getCurrentAcademicYear())
+const dynamicAcademicYearOptions = computed(() => {
+  const opts = getAcademicYearOptions(3, 3)
+  const currentVal = settingsForm.value.tahun_pelajaran || attendanceStore.activeAcademicYear
+  if (currentVal && !opts.includes(currentVal)) {
+    opts.push(currentVal)
+    opts.sort()
+  }
+  return opts
+})
+
+const settingsForm = ref({
+  tahun_pelajaran: attendanceStore.activeAcademicYear,
+  ...attendanceStore.schoolSettings
+})
+
+watch(() => attendanceStore.schoolSettings, (newSettings) => {
+  if (newSettings) {
+    settingsForm.value = {
+      tahun_pelajaran: attendanceStore.activeAcademicYear,
+      ...newSettings
+    }
+  }
+}, { deep: true })
+
 const isFetchingCoords = ref(false)
 
 function countStatus(st) {

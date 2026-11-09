@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch, computed } from 'vue'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { getCurrentAcademicYear } from '../utils/academicYear'
 import {
   defaultClasses,
   defaultSchoolSettings,
@@ -107,6 +108,13 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
   // 2. STATE PERSISTENT DENGAN LOCALSTORAGE
   const schoolSettings = ref(loadStorage('presensi_school_settings', defaultSchoolSettings))
+  if (!schoolSettings.value.tahun_pelajaran) {
+    schoolSettings.value.tahun_pelajaran = getCurrentAcademicYear()
+  }
+  const activeAcademicYear = computed(() => {
+    return schoolSettings.value?.tahun_pelajaran || getCurrentAcademicYear()
+  })
+
   const rawStudents = ref(loadStorage('presensi_students', defaultStudents))
   const rawTeachers = ref(loadStorage('presensi_teachers', defaultTeachers))
   const rawAdmins = ref(loadStorage('presensi_admins', defaultAdmins))
@@ -949,6 +957,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
   return {
     schoolSettings,
+    activeAcademicYear,
     students,
     teachers,
     admins,

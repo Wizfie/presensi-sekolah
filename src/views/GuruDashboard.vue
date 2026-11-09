@@ -618,15 +618,14 @@
               </select>
             </div>
 
-            <!-- Filter Tahun -->
+            <!-- Filter Tahun (Dinamis) -->
             <div class="flex items-center gap-1.5">
               <label class="text-xs font-bold text-slate-700">Tahun:</label>
               <select
                 v-model="rekapYear"
-                class="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               >
-                <option :value="2026">2026</option>
-                <option :value="2027">2027</option>
+                <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
               </select>
             </div>
           </div>
@@ -667,7 +666,7 @@
                 {{ attendanceStore.schoolSettings?.nama_sekolah || 'PKBM CAHAYA MULIA' }}
               </h3>
               <p class="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                TAHUN PELAJARAN {{ attendanceStore.schoolSettings?.tahun_pelajaran || '2026/2027' }}
+                TAHUN PELAJARAN {{ rekapAcademicYear }}
               </p>
             </div>
           </div>
@@ -857,6 +856,7 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Html5Qrcode } from 'html5-qrcode'
 import XLSX from 'xlsx-js-style'
+import { getCalendarYearOptions, getAcademicYearForMonthYear } from '../utils/academicYear'
 import { useAuthStore } from '../stores/auth'
 import { useAttendanceStore } from '../stores/attendance'
 import Navbar from '../components/Navbar.vue'
@@ -1141,7 +1141,29 @@ watch(rekapMonth, (val) => {
   if (val) localStorage.setItem('presensi_guru_rekap_month', String(val))
 })
 
-const rekapYear = ref(now.getFullYear())
+const savedRekapYear = localStorage.getItem('presensi_guru_rekap_year')
+const rekapYear = ref(savedRekapYear ? parseInt(savedRekapYear, 10) : now.getFullYear())
+
+watch(rekapYear, (val) => {
+  if (val) localStorage.setItem('presensi_guru_rekap_year', String(val))
+})
+
+const availableYears = computed(() => {
+  const existingYears = []
+  if (attendanceStore.todayAttendances) {
+    attendanceStore.todayAttendances.forEach(att => {
+      if (att.tanggal) {
+        const y = parseInt(att.tanggal.split('-')[0], 10)
+        if (y) existingYears.push(y)
+      }
+    })
+  }
+  return getCalendarYearOptions(existingYears, 3, 2, now)
+})
+
+const rekapAcademicYear = computed(() => {
+  return getAcademicYearForMonthYear(rekapMonth.value, rekapYear.value)
+})
 
 watch(availableClasses, (newClasses) => {
   if (newClasses && newClasses.length > 0) {
@@ -1188,7 +1210,7 @@ function printMonthlySheet() {
 // Export Matriks Bulanan ke Excel (.xlsx) dengan Format Cantik Persis Gambar
 function exportMonthlyToExcel() {
   const schoolName = (attendanceStore.schoolSettings?.nama_sekolah || 'PKBM CAHAYA MULIA').toUpperCase()
-  const tp = attendanceStore.schoolSettings?.tahun_pelajaran || '2026/2027'
+  const tp = rekapAcademicYear.value
   const mName = monthNames[rekapMonth.value - 1].toUpperCase()
   const daysCount = daysInSelectedMonth.value
 
