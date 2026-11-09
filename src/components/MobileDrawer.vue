@@ -270,7 +270,7 @@ function handleResetToSeed() {
     'Data akan dikembalikan ke kondisi bawaan PKBM Cahaya Mulia:\n' +
     '• 3 Kelas (12, 11, 10)\n' +
     '• 13 Siswa Kelas 12 (Buku Presensi Fisik)\n' +
-    '• Guru Pengajar & Administrator\n' +
+    '• Guru Piket, Tutor & Administrator\n' +
     '• Presensi & riwayat kehadiran harian\n\n' +
     'Lanjutkan?'
   )
