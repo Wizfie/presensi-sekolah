@@ -7,14 +7,15 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 2. TABEL PROFIL PENGGUNA (PROFILES)
--- Menghubungkan data identitas sekolah dengan auth.users Supabase
+-- Menghubungkan data identitas sekolah/PKBM dengan auth.users Supabase
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT UNIQUE,
     nama_lengkap TEXT NOT NULL,
-    nomor_induk TEXT UNIQUE NOT NULL, -- NISN untuk siswa, NIP untuk guru/admin
+    nomor_induk TEXT UNIQUE NOT NULL, -- NISN untuk siswa, NIP untuk tutor/admin
+    jenis_kelamin VARCHAR(1) CHECK (jenis_kelamin IN ('L', 'P')) DEFAULT 'L',
     role TEXT CHECK (role IN ('admin', 'guru', 'siswa')) NOT NULL DEFAULT 'siswa',
-    kelas TEXT,                       -- Misal: 'XII-RPL-1' (hanya untuk siswa)
+    kelas TEXT,                       -- Misal: '12', '11', '10' (hanya untuk siswa)
     qr_token TEXT UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(16), 'hex'), -- Token tetap untuk cetak kartu QR
     foto_profil_url TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -29,21 +30,27 @@ CREATE INDEX IF NOT EXISTS idx_profiles_kelas ON public.profiles(kelas);
 -- 3. TABEL PENGATURAN SEKOLAH (PENGATURAN_SEKOLAH)
 CREATE TABLE IF NOT EXISTS public.pengaturan_sekolah (
     id SERIAL PRIMARY KEY,
-    nama_sekolah TEXT NOT NULL DEFAULT 'SMK TI Budi Luhur',
-    alamat TEXT DEFAULT 'Jl. Raya Pendidikan No. 1',
-    latitude DOUBLE PRECISION NOT NULL DEFAULT -6.200000,   -- Koordinat Latitude Sekolah
-    longitude DOUBLE PRECISION NOT NULL DEFAULT 106.816666, -- Koordinat Longitude Sekolah
-    radius_meter INT NOT NULL DEFAULT 60,                   -- Batas radius toleransi kehadiran (meter)
-    jam_masuk TIME NOT NULL DEFAULT '07:00:00',             -- Jam awal presensi masuk
-    jam_terlambat TIME NOT NULL DEFAULT '07:15:00',         -- Batas toleransi sebelum status 'terlambat'
-    jam_pulang TIME NOT NULL DEFAULT '15:00:00',            -- Jam mulai diperbolehkan presensi pulang
+    nama_sekolah TEXT NOT NULL DEFAULT 'PKBM Cahaya Mulia',
+    alamat TEXT DEFAULT 'Jl. Surya Kencana No. 1, Pamulang, Tangerang Selatan',
+    tahun_pelajaran TEXT NOT NULL DEFAULT '2026/2027',
+    latitude DOUBLE PRECISION NOT NULL DEFAULT -6.345853,   -- Koordinat Latitude PKBM
+    longitude DOUBLE PRECISION NOT NULL DEFAULT 106.738159, -- Koordinat Longitude PKBM
+    radius_meter INT NOT NULL DEFAULT 100,                  -- Batas radius toleransi kehadiran (meter)
+    jam_masuk TIME NOT NULL DEFAULT '07:30:00',             -- Jam awal presensi masuk
+    jam_terlambat TIME NOT NULL DEFAULT '08:00:00',         -- Batas toleransi sebelum status 'terlambat'
+    jam_pulang TIME NOT NULL DEFAULT '14:00:00',            -- Jam mulai diperbolehkan presensi pulang
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Masukkan pengaturan default jika tabel masih kosong
-INSERT INTO public.pengaturan_sekolah (id, nama_sekolah, latitude, longitude, radius_meter)
-VALUES (1, 'SMK Presensi Indonesia', -6.200000, 106.816666, 60)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.pengaturan_sekolah (id, nama_sekolah, tahun_pelajaran, latitude, longitude, radius_meter)
+VALUES (1, 'PKBM Cahaya Mulia', '2026/2027', -6.345853, 106.738159, 100)
+ON CONFLICT (id) DO UPDATE SET 
+    nama_sekolah = EXCLUDED.nama_sekolah,
+    tahun_pelajaran = EXCLUDED.tahun_pelajaran,
+    latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude,
+    radius_meter = EXCLUDED.radius_meter;
 
 -- 4. TABEL PRESENSI HARIAN (PRESENSI)
 CREATE TABLE IF NOT EXISTS public.presensi (

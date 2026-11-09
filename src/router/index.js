@@ -41,6 +41,10 @@ router.beforeEach((to, from, next) => {
   
   if (to.meta.requiresAuth && !authStore.user) {
     next({ name: 'login' })
+  } else if (to.name === 'login' && authStore.user) {
+    if (authStore.user.role === 'admin') next({ name: 'admin-dashboard' })
+    else if (authStore.user.role === 'guru') next({ name: 'guru-dashboard' })
+    else next({ name: 'siswa-dashboard' })
   } else {
     next()
   }

@@ -8,11 +8,11 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'pwa-icon.svg'],
+      includeAssets: ['favicon.ico', 'favicon.png', 'logo.png', 'pwa-192.png', 'pwa-512.png'],
       manifest: {
-        name: 'Presensi Sekolah Modern',
+        name: 'Presensi PKBM Cahaya Mulia',
         short_name: 'PresensiKu',
-        description: 'Sistem Presensi Sekolah Modern Berbasis Geofencing GPS & Kartu QR Code',
+        description: 'Sistem Presensi Harian Siswa PKBM Cahaya Mulia (TP 2026/2027)',
         theme_color: '#2563eb',
         background_color: '#f8fafc',
         display: 'standalone',
@@ -21,15 +21,21 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/pwa-icon.svg',
-            sizes: '192x192 512x512',
-            type: 'image/svg+xml',
+            src: '/pwa-192.png',
+            sizes: '192x192',
+            type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/pwa-icon.svg',
-            sizes: '192x192 512x512',
-            type: 'image/svg+xml',
+            src: '/pwa-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/logo.png',
+            sizes: '512x512',
+            type: 'image/png',
             purpose: 'maskable'
           }
         ]

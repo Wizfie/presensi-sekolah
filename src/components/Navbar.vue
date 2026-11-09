@@ -14,20 +14,20 @@
           <span class="material-icons text-xl">menu</span>
         </button>
 
-        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
-          </svg>
-        </div>
+        <img
+          src="/logo.png"
+          alt="Logo PKBM Cahaya Mulia"
+          class="w-9 h-9 sm:w-10 sm:h-10 object-contain drop-shadow-xs shrink-0"
+        />
         <div>
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-slate-900 tracking-tight text-base sm:text-lg">PresensiKu</span>
-            <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-slate-900 tracking-tight text-sm sm:text-base">PKBM Cahaya Mulia</span>
+            <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200">
               {{ authStore.user?.role || 'Siswa' }}
             </span>
           </div>
-          <p class="text-xs text-slate-500 hidden sm:block leading-tight">
-            {{ attendanceStore.schoolSettings.nama_sekolah }}
+          <p class="text-[11px] text-slate-500 hidden sm:block leading-tight">
+            Sistem Presensi Harian
           </p>
         </div>
       </div>

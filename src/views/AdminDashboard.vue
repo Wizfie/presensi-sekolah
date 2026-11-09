@@ -131,6 +131,7 @@
                 <tr>
                   <th class="py-3 px-4">Nama Siswa</th>
                   <th class="py-3 px-4">NISN</th>
+                  <th class="py-3 px-2 text-center w-14" title="Jenis Kelamin (Laki-laki / Perempuan)">L/P</th>
                   <th class="py-3 px-4">Kelas</th>
                   <th class="py-3 px-4">Token QR</th>
                   <th class="py-3 px-4 text-center">Aksi</th>
@@ -146,6 +147,14 @@
                     <span>{{ std.nama_lengkap }}</span>
                   </td>
                   <td class="py-3 px-4 font-mono font-medium">{{ std.nomor_induk }}</td>
+                  <td class="py-3 px-2 text-center" :title="std.jenis_kelamin === 'P' ? 'Perempuan' : 'Laki-laki'">
+                    <span
+                      class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[11px] font-bold"
+                      :class="std.jenis_kelamin === 'P' ? 'bg-pink-50 text-pink-700 border border-pink-200' : 'bg-blue-50 text-blue-700 border border-blue-200'"
+                    >
+                      {{ std.jenis_kelamin === 'P' ? '♀ P' : '♂ L' }}
+                    </span>
+                  </td>
                   <td class="py-3 px-4 font-medium">{{ std.kelas }}</td>
                   <td class="py-3 px-4 font-mono text-[11px] text-blue-600 truncate max-w-[130px]">
                     {{ std.qr_token }}
@@ -168,7 +177,7 @@
                   </td>
                 </tr>
                 <tr v-if="filteredStudents.length === 0">
-                  <td colspan="5" class="py-8 text-center text-slate-400 text-xs">
+                  <td colspan="6" class="py-8 text-center text-slate-400 text-xs">
                     Tidak ada data siswa yang cocok dengan pencarian.
                   </td>
                 </tr>
@@ -182,7 +191,7 @@
               v-for="std in filteredStudents"
               :key="std.id"
               :title="std.nama_lengkap"
-              :subtitle="`NISN: ${std.nomor_induk} • Kelas: ${std.kelas}`"
+              :subtitle="`NISN: ${std.nomor_induk} • Kelas: ${std.kelas} • ${std.jenis_kelamin === 'P' ? '♀ Perempuan' : '♂ Laki-laki'}`"
               :badge="std.qr_token ? 'QR Siap' : 'Belum QR'"
               :badgeVariant="std.qr_token ? 'success' : 'default'"
               :avatarUrl="std.foto_profil_url"
@@ -712,9 +721,7 @@
             <!-- Card Header -->
             <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-3 pr-16 sm:pr-0">
               <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold text-[10px]">
-                  ID
-                </div>
+                <img src="/logo.png" alt="Logo PKBM" class="w-7 h-7 object-contain shrink-0" />
                 <div>
                   <h4 class="text-[11px] font-bold text-slate-900 leading-none">{{ attendanceStore.schoolSettings.nama_sekolah }}</h4>
                   <p class="text-[9px] text-slate-500 mt-0.5">KARTU PRESENSI RESMI</p>
@@ -1023,20 +1030,30 @@
               />
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">NISN (Nomor Induk)</label>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">NISN</label>
                 <input
                   v-model="studentForm.nomor_induk"
                   type="text"
                   required
-                  placeholder="20240106"
+                  placeholder="20241201"
                   class="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono"
                 />
               </div>
               <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Kelamin</label>
+                <select
+                  v-model="studentForm.jenis_kelamin"
+                  class="w-full h-9 px-2 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-semibold"
+                >
+                  <option value="L">♂ Laki-laki</option>
+                  <option value="P">♀ Perempuan</option>
+                </select>
+              </div>
+              <div>
                 <div class="flex items-center justify-between mb-1">
-                  <label class="block text-xs font-semibold text-slate-700">Kelas / Rombel</label>
+                  <label class="block text-xs font-semibold text-slate-700">Kelas</label>
                   <button
                     type="button"
                     @click="openAddClassModal('student')"
@@ -1044,13 +1061,13 @@
                     title="Buat kelas baru jika belum ada di daftar"
                   >
                     <span class="material-icons text-[12px]">add</span>
-                    <span>Kelas Baru</span>
+                    <span>Baru</span>
                   </button>
                 </div>
                 <CustomDropdown
                   v-model="studentForm.kelas"
                   :options="studentClassOptions"
-                  placeholder="-- Pilih Rombel / Kelas --"
+                  placeholder="-- Pilih Kelas --"
                   title="Pilih Kelas Siswa"
                   icon="school"
                   :fullWidth="true"
@@ -1235,7 +1252,7 @@
                 v-model="teacherForm.mata_pelajaran"
                 type="text"
                 required
-                placeholder="Contoh: Pemrograman Web, Basis Data, Jaringan"
+                placeholder="Contoh: Matematika, Bahasa Indonesia, PKn, Sosiologi"
                 class="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               <div v-if="teacherForm.mata_pelajaran?.trim()" class="flex flex-wrap gap-1 mt-1.5">
@@ -1430,10 +1447,18 @@
             </div>
             <div class="min-w-0 flex-1">
               <h4 class="text-sm font-bold text-slate-900 truncate">{{ selectedStudentItem.nama_lengkap }}</h4>
-              <p class="text-xs text-slate-500 mt-0.5">Siswa Aktif • {{ selectedStudentItem.kelas }}</p>
-              <span class="inline-block mt-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-semibold rounded-md border border-blue-200">
-                NISN: {{ selectedStudentItem.nomor_induk }}
-              </span>
+              <p class="text-xs text-slate-500 mt-0.5">Siswa Aktif • Kelas {{ selectedStudentItem.kelas }}</p>
+              <div class="flex items-center gap-1.5 mt-1">
+                <span class="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-semibold rounded-md border border-blue-200">
+                  NISN: {{ selectedStudentItem.nomor_induk }}
+                </span>
+                <span
+                  class="px-2 py-0.5 text-[10px] font-bold rounded-md"
+                  :class="selectedStudentItem.jenis_kelamin === 'P' ? 'bg-pink-50 text-pink-700 border border-pink-200' : 'bg-blue-50 text-blue-700 border border-blue-200'"
+                >
+                  {{ selectedStudentItem.jenis_kelamin === 'P' ? '♀ Perempuan' : '♂ Laki-laki' }}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -1755,17 +1780,17 @@
         </div>
       </div>
 
-      <!-- MODAL TAMBAH KELAS / ROMBEL BARU (MODERN & PROPER) -->
+      <!-- MODAL TAMBAH KELAS / ROMBEL BARU (FORMAT PKBM CAHAYA MULIA) -->
       <div v-if="isClassModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 sm:p-6 animate-in fade-in zoom-in-95 duration-150">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 sm:p-6 animate-in fade-in zoom-in-95 duration-150">
           <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-                <span class="material-icons text-base">school</span>
+              <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
+                <span class="material-icons text-lg">school</span>
               </div>
               <div>
                 <h3 class="font-bold text-slate-900 text-sm sm:text-base leading-snug">Tambah Kelas Baru</h3>
-                <p class="text-[11px] text-slate-500">Daftarkan rombel ke sistem</p>
+                <p class="text-[11px] text-slate-500">PKBM Cahaya Mulia &bull; TA 2026/2027</p>
               </div>
             </div>
             <button
@@ -1778,16 +1803,48 @@
           </div>
 
           <form @submit.prevent="submitCreateClass" class="space-y-4 mt-4">
+            <!-- Pilihan Cepat Preset Tingkat / Jenjang PKBM -->
             <div>
+              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                Pilihan Cepat (Tingkat / Paket Kesetaraan)
+              </label>
+              <div class="space-y-2">
+                <div v-for="group in presetClassOptions" :key="group.label" class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-[11px] font-semibold text-slate-500 w-24 shrink-0">{{ group.label }}:</span>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      v-for="item in group.items"
+                      :key="item"
+                      type="button"
+                      @click="selectPresetClass(item)"
+                      class="px-2.5 py-1 rounded-lg text-xs font-bold border transition cursor-pointer"
+                      :class="newClassNameInput === item
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                        : attendanceStore.allClasses.includes(item)
+                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                          : 'bg-white hover:bg-blue-50 text-slate-700 border-slate-200 hover:border-blue-300'"
+                      :disabled="attendanceStore.allClasses.includes(item)"
+                      :title="attendanceStore.allClasses.includes(item) ? `Kelas ${item} sudah terdaftar` : `Pilih Kelas ${item}`"
+                    >
+                      {{ item }}
+                      <span v-if="attendanceStore.allClasses.includes(item)" class="text-[9px] font-normal ml-0.5">✓</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Input Nama / Nomor Kelas Manual -->
+            <div class="pt-2 border-t border-slate-100">
               <label class="block text-xs font-semibold text-slate-700 mb-1">
-                Nama Kelas / Rombel
+                Nama / Nomor Tingkat Kelas
               </label>
               <input
                 ref="newClassNameInputRef"
                 v-model="newClassNameInput"
                 type="text"
                 required
-                placeholder="Contoh: 12-TKJ-2 atau 10-DKV-1"
+                placeholder="Contoh: 12, 11, atau 10 (atau 12-A)"
                 class="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm font-semibold uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder:normal-case placeholder:font-normal placeholder:text-slate-400"
                 @input="classError = ''"
               />
@@ -1795,9 +1852,35 @@
                 <span class="material-icons text-xs">error_outline</span>
                 <span>{{ classError }}</span>
               </p>
-              <p v-else class="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
-                Format standar: <strong>Tingkat-Jurusan-Rombel</strong> (misal: <em>10-RPL-1</em>, <em>11-TKJ-2</em>, <em>12-RPL-1</em>).
+              <p v-else class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                Format standar PKBM: Cukup masukkan nomor kelas (contoh: <strong>12</strong>, <strong>11</strong>, <strong>10</strong>) atau nama rombel (contoh: <strong>12-A</strong>).
               </p>
+            </div>
+
+            <!-- Daftar Kelas yang Saat Ini Terdaftar -->
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div class="flex items-center justify-between text-[11px] mb-1.5">
+                <span class="font-bold text-slate-600">Kelas Terdaftar Saat Ini:</span>
+                <span class="font-mono text-slate-400 font-bold">{{ attendanceStore.allClasses.length }} kelas</span>
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span
+                  v-for="c in attendanceStore.allClasses"
+                  :key="c"
+                  class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-white text-slate-700 border border-slate-200 shadow-2xs"
+                >
+                  <span>Kelas {{ c }}</span>
+                  <button
+                    v-if="!hasStudentsInClass(c)"
+                    type="button"
+                    @click="handleRemoveClass(c)"
+                    class="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer text-xs"
+                    title="Hapus kelas ini dari daftar (belum ada siswa)"
+                  >
+                    &times;
+                  </button>
+                </span>
+              </div>
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
@@ -1817,6 +1900,7 @@
 
 <script setup>
 import { ref, computed, nextTick, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import QRCode from 'qrcode'
 import L from 'leaflet'
 import { useAttendanceStore } from '../stores/attendance'
@@ -1917,13 +2001,29 @@ function restoreTeacherConfirm(teacher) {
   alert(`Data guru "${teacher.nama_lengkap}" berhasil dipulihkan!`)
 }
 
-const activeTab = ref(
-  localStorage.getItem('presensi_tab_admin') === 'rekap'
-    ? 'siswa'
-    : (localStorage.getItem('presensi_tab_admin') || 'siswa')
-)
+const route = useRoute()
+const router = useRouter()
+
+const validAdminTabs = ['siswa', 'guru', 'admin', 'kartu', 'settings']
+const initialAdminTab = (route.query.tab && validAdminTabs.includes(route.query.tab))
+  ? route.query.tab
+  : (localStorage.getItem('presensi_tab_admin') && validAdminTabs.includes(localStorage.getItem('presensi_tab_admin')))
+    ? localStorage.getItem('presensi_tab_admin')
+    : 'siswa'
+
+const activeTab = ref(initialAdminTab)
+
 watch(activeTab, (tab) => {
   localStorage.setItem('presensi_tab_admin', tab)
+  if (route.query.tab !== tab) {
+    router.replace({ query: { ...route.query, tab } }).catch(() => {})
+  }
+})
+
+watch(() => route.query.tab, (newTab) => {
+  if (newTab && validAdminTabs.includes(newTab) && newTab !== activeTab.value) {
+    activeTab.value = newTab
+  }
 })
 
 // Header & Tab Metainfo (Kontekstual per tab)
@@ -1990,7 +2090,12 @@ const navItems = computed(() => [
 
 // Search & Filter Siswa
 const searchQuery = ref('')
-const selectedClassFilter = ref('')
+const savedAdminClassFilter = localStorage.getItem('presensi_admin_class_filter')
+const selectedClassFilter = ref(savedAdminClassFilter || '')
+
+watch(selectedClassFilter, (val) => {
+  localStorage.setItem('presensi_admin_class_filter', val || '')
+})
 
 const classFilterOptions = computed(() => [
   { value: '', label: `Semua Kelas (${attendanceStore.allClasses.length})`, icon: 'apps' },
@@ -2035,12 +2140,41 @@ const editingStudentId = ref(null)
 const showAdminStudentPass = ref(false)
 const showAdminTeacherPass = ref(false)
 
-// Modal Tambah Kelas Baru (Menggantikan window.prompt)
+// Modal Tambah Kelas Baru (Format PKBM Cahaya Mulia)
 const isClassModalOpen = ref(false)
 const newClassNameInput = ref('')
 const classError = ref('')
 const classModalContext = ref('filter') // 'filter', 'student', 'teacher'
 const newClassNameInputRef = ref(null)
+
+const presetClassOptions = [
+  { label: 'Paket C (SMA)', items: ['10', '11', '12'] },
+  { label: 'Paket B (SMP)', items: ['7', '8', '9'] },
+  { label: 'Rombel A/B', items: ['10-A', '11-A', '12-A', '12-B'] }
+]
+
+function selectPresetClass(name) {
+  if (attendanceStore.allClasses.includes(name)) {
+    classError.value = `Kelas ${name} sudah terdaftar.`
+    return
+  }
+  newClassNameInput.value = name
+  classError.value = ''
+}
+
+function hasStudentsInClass(className) {
+  return attendanceStore.students.some(s => s.kelas === className)
+}
+
+function handleRemoveClass(className) {
+  if (hasStudentsInClass(className)) {
+    alert(`Kelas ${className} tidak dapat dihapus karena masih memiliki siswa terdaftar.`)
+    return
+  }
+  if (confirm(`Hapus Kelas ${className} dari daftar kelas?`)) {
+    attendanceStore.deleteClass(className)
+  }
+}
 
 function openAddClassModal(context = 'filter') {
   classModalContext.value = context
@@ -2087,7 +2221,8 @@ function submitCreateClass() {
 const studentForm = ref({
   nama_lengkap: '',
   nomor_induk: '',
-  kelas: '12-RPL-1',
+  jenis_kelamin: 'L',
+  kelas: '12',
   password: 'password123',
   foto_profil_url: ''
 })
@@ -2099,7 +2234,8 @@ function openCreateStudentModal() {
   studentForm.value = {
     nama_lengkap: '',
     nomor_induk: '',
-    kelas: attendanceStore.allClasses[0] || '12-RPL-1',
+    jenis_kelamin: 'L',
+    kelas: attendanceStore.allClasses[0] || '12',
     password: 'password123',
     foto_profil_url: ''
   }
@@ -2112,6 +2248,7 @@ function openEditStudentModal(student) {
   showAdminStudentPass.value = false
   studentForm.value = {
     ...student,
+    jenis_kelamin: student.jenis_kelamin || 'L',
     password: student.password || 'password123'
   }
   isStudentModalOpen.value = true
@@ -2198,7 +2335,7 @@ const teacherForm = ref({
   nomor_induk: '',
   email: '',
   mata_pelajaran: '',
-  kelas_diajar: ['12-RPL-1'],
+  kelas_diajar: ['12'],
   foto_profil_url: ''
 })
 
@@ -2215,7 +2352,7 @@ function openAddTeacherModal() {
     email: '',
     password: 'password123',
     mata_pelajaran: '',
-    kelas_diajar: attendanceStore.allClasses.length ? [attendanceStore.allClasses[0]] : ['12-RPL-1'],
+    kelas_diajar: attendanceStore.allClasses.length ? [attendanceStore.allClasses[0]] : ['12'],
     foto_profil_url: ''
   }
   isTeacherModalOpen.value = true
@@ -2228,7 +2365,7 @@ function openEditTeacherModal(teacher) {
   teacherForm.value = {
     ...teacher,
     password: teacher.password || 'password123',
-    kelas_diajar: [...(teacher.kelas_diajar || ['12-RPL-1'])]
+    kelas_diajar: [...(teacher.kelas_diajar || ['12'])]
   }
   isTeacherModalOpen.value = true
 }
@@ -2603,16 +2740,16 @@ async function handleAdminChangePassword() {
 function handleResetAllData() {
   const confirmed = window.confirm(
     'Reset ke Seeding Awal?\n\n' +
-    'Data akan dikembalikan ke kondisi bawaan lengkap:\n' +
-    '• 3 Kelas (10-RPL-1, 11-TKJ-1, 12-RPL-1)\n' +
-    '• 90 Siswa (30 siswa per kelas)\n' +
-    '• 4 Guru dengan multi-mapel & jadwal kelas\n' +
-    '• Presensi & riwayat izin bawaan\n\n' +
+    'Data akan dikembalikan ke kondisi bawaan PKBM Cahaya Mulia:\n' +
+    '• 3 Kelas (12, 11, 10)\n' +
+    '• 13 Siswa Kelas 12 (Buku Presensi Fisik)\n' +
+    '• Guru Pengajar & Administrator\n' +
+    '• Presensi & riwayat kehadiran harian\n\n' +
     'Lanjutkan?'
   )
   if (confirmed) {
     attendanceStore.resetAllDataToDefault()
-    alert('Data berhasil di-reset ke kondisi seeding awal (90 siswa & 4 guru)!')
+    alert('Data berhasil di-reset ke kondisi seeding awal PKBM Cahaya Mulia!')
     window.location.reload()
   }
 }

@@ -1,101 +1,122 @@
-// Seeder Data Standar Presensi Sekolah
-// 3 Kelas Utama (10-RPL-1, 11-TKJ-1, 12-RPL-1) dengan 30 Siswa per Kelas (Total 90 Siswa)
-// 4 Guru Multi Mata Pelajaran & Jadwal Kelas Terstruktur
+// Seeder Data Standar Presensi PKBM Cahaya Mulia
+// Kebutuhan: Presensi IN/OUT per hari per kelas
+// Format Buku Absensi Siswa: NOMOR | NAMA SISWA | L/P | Tanggal 1 s.d. 31
 
-export const defaultClasses = ['10-RPL-1', '11-TKJ-1', '12-RPL-1']
+export const defaultClasses = ['12', '11', '10']
 
 export const defaultSchoolSettings = {
-  nama_sekolah: 'SMK Teknologi Unggulan',
+  nama_sekolah: 'PKBM Cahaya Mulia',
   alamat: 'Jl. Surya Kencana No. 1, Pamulang, Tangerang Selatan',
   latitude: -6.345853,
   longitude: 106.738159,
-  radius_meter: 80,
-  jam_masuk: '07:00',
-  jam_terlambat: '07:15',
-  jam_pulang: '15:00'
+  radius_meter: 100, // Toleransi GPS 100 meter
+  jam_masuk: '07:30',
+  jam_terlambat: '08:00',
+  jam_pulang: '14:00',
+  tahun_pelajaran: '2026/2027'
 }
 
-// Koleksi nama-nama siswa Indonesia yang realistis per kelas
-const studentNamesRPL12 = [
-  'Ahmad Fauzi', 'Bunga Citra Lestari', 'Dimas Aditya', 'Eka Putri Rahayu', 'Fajar Nugraha',
-  'Gilang Pratama', 'Hani Fitriani', 'Indra Lesmana', 'Jessica Natalia', 'Kevin Sanjaya',
-  'Luthfi Hakim', 'Maya Anggraini', 'Naufal Zaki', 'Olivia Putri', 'Panji Gemilang',
-  'Qoriatul Aini', 'Rian Hidayat', 'Salsabila Rahma', 'Teguh Prasetyo', 'Utami Dewi',
-  'Vina Panduwinata', 'Wahyu Hidayat', 'Xena Callista', 'Yoga Pratama', 'Zahra Amelia',
-  'Andika Pratama', 'Bella Safitri', 'Candra Wijaya', 'Dinda Kirana', 'Erlangga Putra'
+// 1. Data Siswa Kelas 12 (Persis sesuai foto lembar absensi manual PKBM Cahaya Mulia)
+const rawStudentsKelas12 = [
+  { nama: 'ADE IZA MUKTI', jk: 'L' },
+  { nama: 'AHMAD SLAMET RIYADI', jk: 'L' },
+  { nama: 'CINTA RAYA KHAIRUNNISA', jk: 'P' },
+  { nama: 'GADIS ZAMJIROH', jk: 'P' },
+  { nama: 'LINA DWIYANTI', jk: 'P' },
+  { nama: 'MAHFUD', jk: 'L' },
+  { nama: 'MUHAMAD REYHAN .S', jk: 'L' },
+  { nama: 'NAJIL HAWARI', jk: 'L' },
+  { nama: 'NOVITA SARI', jk: 'P' },
+  { nama: 'RIDWAN SAYIDNA AL .B', jk: 'L' },
+  { nama: 'TOHIRUN', jk: 'L' },
+  { nama: 'WIDIYAWILA SAVITA', jk: 'P' },
+  { nama: 'YULIYANA', jk: 'P' }
 ]
 
-const studentNamesTKJ11 = [
-  'Aditya Ramadhan', 'Bima Sakti', 'Cantika Dewi', 'Doni Kurniawan', 'Elsa Mayori',
-  'Fadillah Akbar', 'Gita Gutawa', 'Hafizh Syahrin', 'Intan Permata', 'Joko Susilo',
-  'Kartika Sari', 'Lukman Sardi', 'Melati Indah', 'Nanda Pratama', 'Oki Setiana',
-  'Putra Mandiri', 'Ratu Felisha', 'Satria Baja', 'Tiara Andini', 'Umar Wirahadi',
-  'Vicky Prasetyo', 'Wulan Guritno', 'Yusuf Mansur', 'Zaki Iskandar', 'Alif Ba Ta',
-  'Bagas Kaffa', 'Citra Kirana', 'Dicky Chandra', 'Enzy Storia', 'Ferry Irawan'
+// 2. Data Siswa Kelas 11 (Pelengkap)
+const rawStudentsKelas11 = [
+  { nama: 'ADITYA RAMADHAN', jk: 'L' },
+  { nama: 'BIMA SAKTI', jk: 'L' },
+  { nama: 'CANTIKA DEWI', jk: 'P' },
+  { nama: 'DONI KURNIAWAN', jk: 'L' },
+  { nama: 'ELSA MAYORI', jk: 'P' },
+  { nama: 'FADILLAH AKBAR', jk: 'L' },
+  { nama: 'GITA GUTAWA', jk: 'P' },
+  { nama: 'HAFIZH SYAHRIN', jk: 'L' },
+  { nama: 'INTAN PERMATA', jk: 'P' },
+  { nama: 'JOKO SUSILO', jk: 'L' }
 ]
 
-const studentNamesRPL10 = [
-  'Arif Rahman', 'Bayu Skak', 'Cindy Gulla', 'Danang Pradana', 'Eva Celia',
-  'Farhan Rasyid', 'Grace Natalie', 'Haikal Kamil', 'Isyana Sarasvati', 'Jefri Nichol',
-  'Keisha Alvaro', 'Luna Maya', 'Maudy Ayunda', 'Nabila Syakieb', 'Onadio Leonardo',
-  'Prilly Latuconsina', 'Raffi Ahmad', 'Sherina Munaf', 'Tulus Rusydi', 'Ussy Sulistiawaty',
-  'Vidi Aldiano', 'Widy Soediro', 'Yura Yunita', 'Zaskia Adya', 'Aliando Syarief',
-  'Bryan Domani', 'Chelsea Islan', 'Deva Mahenra', 'Febby Rastanty', 'Gading Marten'
+// 3. Data Siswa Kelas 10 (Pelengkap)
+const rawStudentsKelas10 = [
+  { nama: 'ARIF RAHMAN', jk: 'L' },
+  { nama: 'BAYU SKAK', jk: 'L' },
+  { nama: 'CINDY GULLA', jk: 'P' },
+  { nama: 'DANANG PRADANA', jk: 'L' },
+  { nama: 'EVA CELIA', jk: 'P' },
+  { nama: 'FARHAN RASYID', jk: 'L' },
+  { nama: 'GRACE NATALIE', jk: 'P' },
+  { nama: 'HAIKAL KAMIL', jk: 'L' },
+  { nama: 'ISYANA SARASVATI', jk: 'P' },
+  { nama: 'JEFRI NICHOL', jk: 'L' }
 ]
 
 export function generateStudents() {
   const students = []
 
-  // 1. Kelas 12-RPL-1 (Angkatan 2024, NISN: 20240101 s.d. 20240130)
-  studentNamesRPL12.forEach((name, idx) => {
+  // Kelas 12
+  rawStudentsKelas12.forEach((s, idx) => {
     const num = String(idx + 1).padStart(2, '0')
-    const nisn = `202401${num}`
-    const username = name.toLowerCase().split(' ')[0]
+    const nisn = `202412${num}`
+    const username = s.nama.toLowerCase().replace(/[^a-z]/g, '').slice(0, 8)
     students.push({
-      id: `std-12rpl1-${num}`,
-      email: `${username}.${nisn.slice(-4)}@sekolah.sch.id`,
-      nama_lengkap: name,
+      id: `std-12-${num}`,
+      email: `${username}.${nisn.slice(-4)}@pkbm.sch.id`,
+      nama_lengkap: s.nama,
+      jenis_kelamin: s.jk,
       nomor_induk: nisn,
-      kelas: '12-RPL-1',
+      kelas: '12',
       password: 'password123',
       foto_update_count: 0,
-      qr_token: `tok_std_12rpl1_${nisn}_sec`,
+      qr_token: `tok_std_12_${nisn}`,
       foto_profil_url: ''
     })
   })
 
-  // 2. Kelas 11-TKJ-1 (Angkatan 2025, NISN: 20250201 s.d. 20250230)
-  studentNamesTKJ11.forEach((name, idx) => {
+  // Kelas 11
+  rawStudentsKelas11.forEach((s, idx) => {
     const num = String(idx + 1).padStart(2, '0')
-    const nisn = `202502${num}`
-    const username = name.toLowerCase().split(' ')[0]
+    const nisn = `202511${num}`
+    const username = s.nama.toLowerCase().replace(/[^a-z]/g, '').slice(0, 8)
     students.push({
-      id: `std-11tkj1-${num}`,
-      email: `${username}.${nisn.slice(-4)}@sekolah.sch.id`,
-      nama_lengkap: name,
+      id: `std-11-${num}`,
+      email: `${username}.${nisn.slice(-4)}@pkbm.sch.id`,
+      nama_lengkap: s.nama,
+      jenis_kelamin: s.jk,
       nomor_induk: nisn,
-      kelas: '11-TKJ-1',
+      kelas: '11',
       password: 'password123',
       foto_update_count: 0,
-      qr_token: `tok_std_11tkj1_${nisn}_sec`,
+      qr_token: `tok_std_11_${nisn}`,
       foto_profil_url: ''
     })
   })
 
-  // 3. Kelas 10-RPL-1 (Angkatan 2026, NISN: 20260301 s.d. 20260330)
-  studentNamesRPL10.forEach((name, idx) => {
+  // Kelas 10
+  rawStudentsKelas10.forEach((s, idx) => {
     const num = String(idx + 1).padStart(2, '0')
-    const nisn = `202603${num}`
-    const username = name.toLowerCase().split(' ')[0]
+    const nisn = `202610${num}`
+    const username = s.nama.toLowerCase().replace(/[^a-z]/g, '').slice(0, 8)
     students.push({
-      id: `std-10rpl1-${num}`,
-      email: `${username}.${nisn.slice(-4)}@sekolah.sch.id`,
-      nama_lengkap: name,
+      id: `std-10-${num}`,
+      email: `${username}.${nisn.slice(-4)}@pkbm.sch.id`,
+      nama_lengkap: s.nama,
+      jenis_kelamin: s.jk,
       nomor_induk: nisn,
-      kelas: '10-RPL-1',
+      kelas: '10',
       password: 'password123',
       foto_update_count: 0,
-      qr_token: `tok_std_10rpl1_${nisn}_sec`,
+      qr_token: `tok_std_10_${nisn}`,
       foto_profil_url: ''
     })
   })
@@ -103,200 +124,115 @@ export function generateStudents() {
   return students
 }
 
+// Data Tutor / Guru PKBM Cahaya Mulia
 export const defaultTeachers = [
   {
     id: '22222222-2222-2222-2222-222222222222',
-    email: 'guru@sekolah.sch.id',
-    nama_lengkap: 'Budi Santoso, S.Kom',
+    email: 'tutor@pkbm.sch.id',
+    nama_lengkap: 'Budi Santoso, S.Pd',
     nomor_induk: '198507122010011005',
     password: 'password123',
-    foto_update_count: 0,
-    mata_pelajaran: 'Pemrograman Web, Basis Data',
-    kelas_diajar: ['12-RPL-1', '10-RPL-1'],
-    jam_masuk_default: '07:00',
-    jam_terlambat_default: '07:15',
-    jam_pulang_default: '15:00',
-    jadwal_kelas: {
-      '12-RPL-1': { jam_masuk: '07:00', jam_terlambat: '07:15', jam_pulang: '11:30', mata_pelajaran: 'Pemrograman Web' },
-      '10-RPL-1': { jam_masuk: '10:00', jam_terlambat: '10:15', jam_pulang: '14:30', mata_pelajaran: 'Basis Data' }
-    },
+    role: 'guru',
+    kelas_diajar: ['12', '11', '10'],
+    jam_masuk_default: '07:30',
+    jam_pulang_default: '14:00',
     foto_profil_url: ''
   },
   {
-    id: 'usr-guru-2',
-    email: 'siti.guru@sekolah.sch.id',
+    id: 'usr-tutor-2',
+    email: 'siti.tutor@pkbm.sch.id',
     nama_lengkap: 'Siti Nurhaliza, M.Pd',
     nomor_induk: '199003152015022003',
     password: 'password123',
-    foto_update_count: 0,
-    mata_pelajaran: 'Matematika Terapan, Statistika',
-    kelas_diajar: ['10-RPL-1', '11-TKJ-1', '12-RPL-1'],
-    jam_masuk_default: '07:00',
-    jam_terlambat_default: '07:15',
-    jam_pulang_default: '15:00',
-    jadwal_kelas: {
-      '10-RPL-1': { jam_masuk: '07:00', jam_terlambat: '07:15', jam_pulang: '09:30', mata_pelajaran: 'Matematika Terapan' },
-      '11-TKJ-1': { jam_masuk: '09:45', jam_terlambat: '10:00', jam_pulang: '12:00', mata_pelajaran: 'Matematika Terapan' },
-      '12-RPL-1': { jam_masuk: '13:00', jam_terlambat: '13:15', jam_pulang: '15:15', mata_pelajaran: 'Statistika' }
-    },
-    foto_profil_url: ''
-  },
-  {
-    id: 'usr-guru-3',
-    email: 'hendra.guru@sekolah.sch.id',
-    nama_lengkap: 'Hendra Wijaya, M.T',
-    nomor_induk: '198204102009011004',
-    password: 'password123',
-    foto_update_count: 0,
-    mata_pelajaran: 'Jaringan Komputer, Keamanan Siber',
-    kelas_diajar: ['11-TKJ-1'],
+    role: 'guru',
+    kelas_diajar: ['12', '11'],
     jam_masuk_default: '07:30',
-    jam_terlambat_default: '07:45',
-    jam_pulang_default: '15:00',
-    jadwal_kelas: {
-      '11-TKJ-1': { jam_masuk: '07:30', jam_terlambat: '07:45', jam_pulang: '15:00', mata_pelajaran: 'Jaringan Komputer' }
-    },
-    foto_profil_url: ''
-  },
-  {
-    id: 'usr-guru-4',
-    email: 'ratna.guru@sekolah.sch.id',
-    nama_lengkap: 'Ratna Kusuma, S.Pd',
-    nomor_induk: '199208222018022005',
-    password: 'password123',
-    foto_update_count: 0,
-    mata_pelajaran: 'Bahasa Inggris, Komunikasi Bisnis',
-    kelas_diajar: ['10-RPL-1', '11-TKJ-1', '12-RPL-1'],
-    jam_masuk_default: '07:15',
-    jam_terlambat_default: '07:30',
-    jam_pulang_default: '14:45',
-    jadwal_kelas: {
-      '10-RPL-1': { jam_masuk: '07:15', jam_terlambat: '07:30', jam_pulang: '09:30', mata_pelajaran: 'Bahasa Inggris' },
-      '11-TKJ-1': { jam_masuk: '10:00', jam_terlambat: '10:15', jam_pulang: '12:00', mata_pelajaran: 'Bahasa Inggris' },
-      '12-RPL-1': { jam_masuk: '12:45', jam_terlambat: '13:00', jam_pulang: '14:45', mata_pelajaran: 'Komunikasi Bisnis' }
-    },
+    jam_pulang_default: '14:00',
     foto_profil_url: ''
   }
 ]
 
+// Data Administrator PKBM Cahaya Mulia
+export const defaultAdmins = [
+  {
+    id: '11111111-1111-1111-1111-111111111111',
+    email: 'admin@pkbm.sch.id',
+    nama_lengkap: 'Administrator PKBM',
+    nomor_induk: 'ADM-001',
+    role: 'admin',
+    jabatan: 'Pengelola PKBM Cahaya Mulia',
+    password: 'password123',
+    is_root: true,
+    foto_profil_url: ''
+  }
+]
+
+// Generate presensi harian (IN/OUT) yang realistis untuk bulan berjalan
 export function generateTodayAttendances(studentsList) {
-  const todayStr = new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() // 0-indexed
+  const currentDay = now.getDate()
   const list = []
 
-  // Presensi realistik untuk kelas 12-RPL-1
-  const rpl12Students = studentsList.filter(s => s.kelas === '12-RPL-1')
-  rpl12Students.forEach((std, i) => {
-    // 20 siswa hadir tepat waktu
-    if (i < 20) {
-      const min = String(40 + (i % 18)).padStart(2, '0')
-      const sec = String(10 + (i % 45)).padStart(2, '0')
-      list.push({
-        id: `att-12rpl1-${std.id}`,
-        user_id: std.id,
-        nama_lengkap: std.nama_lengkap,
-        nomor_induk: std.nomor_induk,
-        kelas: std.kelas,
-        tanggal: todayStr,
-        jam_masuk: `06:${min}:${sec}`,
-        jam_pulang: null,
-        status: 'hadir',
-        metode_presensi: i % 2 === 0 ? 'mandiri_gps' : 'qr_guru',
-        jarak_masuk_meter: i % 2 === 0 ? parseFloat((15 + (i * 2.1)).toFixed(1)) : 0,
-        foto_masuk_url: null
-      })
-    }
-    // 4 siswa terlambat
-    else if (i < 24) {
-      const min = String(16 + (i - 20) * 3).padStart(2, '0')
-      const sec = String(20 + i).padStart(2, '0')
-      list.push({
-        id: `att-12rpl1-${std.id}`,
-        user_id: std.id,
-        nama_lengkap: std.nama_lengkap,
-        nomor_induk: std.nomor_induk,
-        kelas: std.kelas,
-        tanggal: todayStr,
-        jam_masuk: `07:${min}:${sec}`,
-        jam_pulang: null,
-        status: 'terlambat',
-        metode_presensi: 'qr_guru',
-        jarak_masuk_meter: 0,
-        foto_masuk_url: null
-      })
-    }
-    // 2 siswa izin/sakit
-    else if (i === 24) {
-      list.push({
-        id: `att-12rpl1-${std.id}`,
-        user_id: std.id,
-        nama_lengkap: std.nama_lengkap,
-        nomor_induk: std.nomor_induk,
-        kelas: std.kelas,
-        tanggal: todayStr,
-        jam_masuk: null,
-        jam_pulang: null,
-        status: 'sakit',
-        metode_presensi: 'manual_guru',
-        jarak_masuk_meter: null,
-        foto_masuk_url: null
-      })
-    } else if (i === 25) {
-      list.push({
-        id: `att-12rpl1-${std.id}`,
-        user_id: std.id,
-        nama_lengkap: std.nama_lengkap,
-        nomor_induk: std.nomor_induk,
-        kelas: std.kelas,
-        tanggal: todayStr,
-        jam_masuk: null,
-        jam_pulang: null,
-        status: 'izin',
-        metode_presensi: 'manual_guru',
-        jarak_masuk_meter: null,
-        foto_masuk_url: null
-      })
-    }
-    // sisa 4 siswa belum hadir (alpa)
-  })
+  // Buat riwayat presensi hari aktif bulan ini (hari kerja Senin-Jumat)
+  const maxDay = Math.min(currentDay, 28)
 
-  // Presensi realistik untuk kelas 11-TKJ-1 (sebagian hadir)
-  const tkj11Students = studentsList.filter(s => s.kelas === '11-TKJ-1')
-  tkj11Students.slice(0, 18).forEach((std, i) => {
-    const min = String(45 + (i % 14)).padStart(2, '0')
-    list.push({
-      id: `att-11tkj1-${std.id}`,
-      user_id: std.id,
-      nama_lengkap: std.nama_lengkap,
-      nomor_induk: std.nomor_induk,
-      kelas: std.kelas,
-      tanggal: todayStr,
-      jam_masuk: `06:${min}:30`,
-      jam_pulang: null,
-      status: 'hadir',
-      metode_presensi: 'mandiri_gps',
-      jarak_masuk_meter: parseFloat((20 + i).toFixed(1)),
-      foto_masuk_url: null
-    })
-  })
+  studentsList.forEach((std, stdIdx) => {
+    for (let day = 1; day <= maxDay; day++) {
+      const d = new Date(currentYear, currentMonth, day)
+      const dayOfWeek = d.getDay()
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue // Lewati Sabtu & Minggu
 
-  // Presensi realistik untuk kelas 10-RPL-1 (sebagian hadir)
-  const rpl10Students = studentsList.filter(s => s.kelas === '10-RPL-1')
-  rpl10Students.slice(0, 22).forEach((std, i) => {
-    const min = String(42 + (i % 16)).padStart(2, '0')
-    list.push({
-      id: `att-10rpl1-${std.id}`,
-      user_id: std.id,
-      nama_lengkap: std.nama_lengkap,
-      nomor_induk: std.nomor_induk,
-      kelas: std.kelas,
-      tanggal: todayStr,
-      jam_masuk: `06:${min}:15`,
-      jam_pulang: null,
-      status: 'hadir',
-      metode_presensi: 'qr_guru',
-      jarak_masuk_meter: 0,
-      foto_masuk_url: null
-    })
+      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      const isToday = (day === currentDay)
+
+      // Pola kehadiran realistis
+      const seed = (stdIdx * 17 + day * 13) % 100
+      let status = 'hadir'
+      let jamMasuk = '07:25:00'
+      let jamPulang = isToday ? null : '14:05:00'
+      let metode = (stdIdx % 3 === 0) ? 'mandiri_gps' : (stdIdx % 3 === 1 ? 'qr_guru' : 'manual_guru')
+
+      if (seed < 85) {
+        status = 'hadir'
+        const m = String(15 + (seed % 15)).padStart(2, '0')
+        jamMasuk = `07:${m}:00`
+      } else if (seed < 90) {
+        status = 'sakit'
+        jamMasuk = null
+        jamPulang = null
+        metode = 'manual_guru'
+      } else if (seed < 95) {
+        status = 'izin'
+        jamMasuk = null
+        jamPulang = null
+        metode = 'manual_guru'
+      } else {
+        status = 'alpa'
+        jamMasuk = null
+        jamPulang = null
+        metode = 'manual_guru'
+      }
+
+      list.push({
+        id: `att-${std.id}-${dateStr}`,
+        user_id: std.id,
+        nama_lengkap: std.nama_lengkap,
+        jenis_kelamin: std.jenis_kelamin,
+        nomor_induk: std.nomor_induk,
+        kelas: std.kelas,
+        tanggal: dateStr,
+        jam_masuk: jamMasuk,
+        jam_pulang: jamPulang,
+        status: status,
+        metode_presensi: metode,
+        jarak_masuk_meter: metode === 'mandiri_gps' ? parseFloat((15 + (seed % 30)).toFixed(1)) : 0,
+        foto_masuk_url: null,
+        dicatat_oleh: metode === 'manual_guru' ? 'Tutor PKBM' : null,
+        keterangan: status === 'sakit' ? 'Sakit' : (status === 'izin' ? 'Izin Keperluan Keluarga' : null)
+      })
+    }
   })
 
   return list
@@ -307,65 +243,15 @@ export function generateLeaveRequests() {
   return [
     {
       id: 'leave-101',
-      user_id: 'std-12rpl1-25',
-      nama_lengkap: 'Zahra Amelia',
-      kelas: '12-RPL-1',
+      user_id: 'std-12-04',
+      nama_lengkap: 'GADIS ZAMJIROH',
+      kelas: '12',
       tanggal_mulai: todayStr,
       tanggal_selesai: todayStr,
       jenis: 'sakit',
-      keterangan: 'Demam tinggi dan radang tenggorokan, istirahat di rumah sesuai surat dokter Puskesmas.',
+      keterangan: 'Sakit demam, istirahat di rumah.',
       bukti_surat_url: '',
       status: 'approved'
-    },
-    {
-      id: 'leave-102',
-      user_id: 'std-12rpl1-26',
-      nama_lengkap: 'Andika Pratama',
-      kelas: '12-RPL-1',
-      tanggal_mulai: todayStr,
-      tanggal_selesai: todayStr,
-      jenis: 'izin',
-      keterangan: 'Menghadiri acara pernikahan kakak kandung di luar kota.',
-      bukti_surat_url: '',
-      status: 'approved'
-    },
-    {
-      id: 'leave-103',
-      user_id: 'std-11tkj1-05',
-      nama_lengkap: 'Elsa Mayori',
-      kelas: '11-TKJ-1',
-      tanggal_mulai: todayStr,
-      tanggal_selesai: todayStr,
-      jenis: 'sakit',
-      keterangan: 'Sakit flu dan batuk bergejala, surat dokter terlampir.',
-      bukti_surat_url: '',
-      status: 'pending'
     }
   ]
 }
-
-// Data Administrator & Staf Tata Usaha Sekolah Bawaan (Seeder)
-export const defaultAdmins = [
-  {
-    id: 'usr-admin-root',
-    email: 'admin@sekolah.sch.id',
-    nama_lengkap: 'Administrator Utama (Root)',
-    nomor_induk: 'ADM-001',
-    role: 'admin',
-    jabatan: 'Koordinator IT & Sistem',
-    password: 'password123',
-    is_root: true, // Akun root tidak dapat dihapus
-    foto_profil_url: ''
-  },
-  {
-    id: 'usr-admin-tu',
-    email: 'tu.kepegawaian@sekolah.sch.id',
-    nama_lengkap: 'Dewi Sartika, S.AP',
-    nomor_induk: 'ADM-002',
-    role: 'admin',
-    jabatan: 'Staf Tata Usaha & Kepegawaian',
-    password: 'password123',
-    is_root: false,
-    foto_profil_url: ''
-  }
-]

@@ -4,15 +4,15 @@
     class="hidden md:flex flex-col w-60 lg:w-64 shrink-0 bg-white border-r border-slate-200/80 min-h-screen sticky top-0 h-screen overflow-y-auto z-20"
   >
     <!-- Brand -->
-    <div class="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
-      <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shrink-0">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
-        </svg>
-      </div>
+    <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
+      <img
+        src="/logo.png"
+        alt="Logo PKBM Cahaya Mulia"
+        class="w-10 h-10 object-contain drop-shadow-xs shrink-0"
+      />
       <div class="min-w-0">
-        <p class="font-bold text-slate-900 text-sm leading-tight">PresensiKu</p>
-        <p class="text-[11px] text-slate-400 truncate leading-tight mt-0.5">{{ attendanceStore.schoolSettings.nama_sekolah }}</p>
+        <p class="font-black text-slate-900 text-sm leading-tight">PKBM Cahaya Mulia</p>
+        <p class="text-[11px] font-semibold text-slate-400 truncate leading-tight mt-0.5">Sistem Presensi Harian</p>
       </div>
     </div>
 
@@ -207,16 +207,16 @@ async function handleLogout() {
 function handleResetToSeed() {
   const confirmed = window.confirm(
     'Reset ke Seeding Awal?\n\n' +
-    'Data akan dikembalikan ke kondisi bawaan lengkap:\n' +
-    '• 3 Kelas (10-RPL-1, 11-TKJ-1, 12-RPL-1)\n' +
-    '• 90 Siswa (30 siswa per kelas)\n' +
-    '• 4 Guru dengan multi-mapel & jadwal kelas\n' +
-    '• Presensi & riwayat izin bawaan\n\n' +
+    'Data akan dikembalikan ke kondisi bawaan PKBM Cahaya Mulia:\n' +
+    '• 3 Kelas (12, 11, 10)\n' +
+    '• 13 Siswa Kelas 12 (Buku Presensi Fisik)\n' +
+    '• Guru Pengajar & Administrator\n' +
+    '• Presensi & riwayat kehadiran harian\n\n' +
     'Lanjutkan?'
   )
   if (confirmed) {
     attendanceStore.resetAllDataToDefault()
-    alert('Data berhasil di-reset ke kondisi seeding awal (90 siswa & 4 guru)!')
+    alert('Data berhasil di-reset ke kondisi seeding awal PKBM Cahaya Mulia!')
     window.location.reload()
   }
 }

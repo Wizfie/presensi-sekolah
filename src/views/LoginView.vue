@@ -2,14 +2,16 @@
   <div class="min-h-screen flex flex-col justify-center items-center px-4 py-12 bg-slate-50">
     <div class="w-full max-w-md">
       <!-- Header / Logo -->
-      <div class="text-center mb-8">
-        <div class="inline-flex w-14 h-14 rounded-2xl bg-blue-600 text-white items-center justify-center shadow-lg shadow-blue-500/25 mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
-          </svg>
-        </div>
-        <h1 class="text-2xl font-bold tracking-tight text-slate-900">Presensi Sekolah</h1>
-        <p class="text-sm text-slate-500 mt-1">Sistem Kehadiran Geofencing GPS & Kartu QR Code</p>
+      <div class="text-center mb-6">
+        <img
+          src="/logo.png"
+          alt="Logo PKBM Cahaya Mulia"
+          class="w-24 h-24 object-contain drop-shadow-md mx-auto mb-3 transition hover:scale-105"
+        />
+        <h1 class="text-2xl font-black tracking-tight text-slate-900">PKBM Cahaya Mulia</h1>
+        <p class="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wider">
+          Sistem Presensi Siswa 
+        </p>
       </div>
 
       <!-- Main Login Card -->
@@ -84,7 +86,7 @@
               </div>
               <div>
                 <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Siswa</p>
-                <p class="text-[11px] text-slate-500">Ahmad Fauzi (12-RPL-1)</p>
+                <p class="text-[11px] text-slate-500">ADE IZA MUKTI (Kelas 12)</p>
               </div>
             </div>
             <span class="text-xs text-blue-600 font-medium">Buka &rarr;</span>
@@ -96,11 +98,11 @@
           >
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
-                G
+                T
               </div>
               <div>
-                <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Guru</p>
-                <p class="text-[11px] text-slate-500">Budi Santoso, S.Kom (Scan QR & Manual)</p>
+                <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Tutor / Guru</p>
+                <p class="text-[11px] text-slate-500">Budi Santoso, S.Pd (Presensi Kelas & Scan)</p>
               </div>
             </div>
             <span class="text-xs text-blue-600 font-medium">Buka &rarr;</span>
@@ -115,8 +117,8 @@
                 A
               </div>
               <div>
-                <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Admin Sekolah</p>
-                <p class="text-[11px] text-slate-500">Kelola Titik GPS, Rekap, Cetak Kartu</p>
+                <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Pengelola / Admin</p>
+                <p class="text-[11px] text-slate-500">Master Siswa, Titik GPS, Rekap</p>
               </div>
             </div>
             <span class="text-xs text-blue-600 font-medium">Buka &rarr;</span>
@@ -126,7 +128,7 @@
 
       <!-- Footer Info -->
       <div class="text-center mt-6 text-xs text-slate-400">
-        <p>Proyek PKM Semester 6 &bull; Vue 3 + Supabase + Cloudflare</p>
+        <p>PKM Mahasiswa Universitas Pamulang</p>
       </div>
     </div>
 

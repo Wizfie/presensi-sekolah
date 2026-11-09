@@ -86,10 +86,24 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return fallback
   }
 
-  // 1. DATA AWAL (DEFAULT SEEDING LENGKAP: 3 KELAS @ 30 SISWA = 90 SISWA, 4 GURU MULTI-MAPEL)
+  // 1. DATA AWAL (DEFAULT SEEDING: KELAS 12, 11, 10 PKBM CAHAYA MULIA)
   const defaultStudents = generateStudents()
   const defaultTodayAttendances = generateTodayAttendances(defaultStudents)
   const defaultLeaveRequests = generateLeaveRequests()
+
+  // Auto-migrasi ke data PKBM Cahaya Mulia jika data tersimpan masih versi lama (SMK/Budi Luhur)
+  try {
+    const storedSettings = localStorage.getItem('presensi_school_settings')
+    if (storedSettings && (storedSettings.includes('SMK') || storedSettings.includes('Budi Luhur') || storedSettings.includes('Teknologi Unggulan'))) {
+      localStorage.setItem('presensi_school_settings', JSON.stringify(defaultSchoolSettings))
+      localStorage.setItem('presensi_students', JSON.stringify(defaultStudents))
+      localStorage.setItem('presensi_teachers', JSON.stringify(defaultTeachers))
+      localStorage.setItem('presensi_admins', JSON.stringify(defaultAdmins))
+      localStorage.setItem('presensi_today_attendances', JSON.stringify(defaultTodayAttendances))
+      localStorage.setItem('presensi_classes', JSON.stringify(defaultClasses))
+      localStorage.setItem('presensi_leave_requests', JSON.stringify(defaultLeaveRequests))
+    }
+  } catch (e) {}
 
   // 2. STATE PERSISTENT DENGAN LOCALSTORAGE
   const schoolSettings = ref(loadStorage('presensi_school_settings', defaultSchoolSettings))
@@ -176,23 +190,12 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return Math.round(R * c * 10) / 10
   }
 
-  // Presensi Mandiri (GPS + Foto) - Dukungan Per Mata Pelajaran
-  async function submitAttendanceGps(user, coords, photoBase64, subject = null) {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase.rpc('submit_presensi_gps', {
-          p_lat: coords.latitude,
-          p_long: coords.longitude,
-          p_foto_url: photoBase64
-        })
-        if (error) throw error
-        return data
-      } catch (err) {
-        return { success: false, message: err.message }
-      }
+  // Presensi Mandiri Siswa (GPS Ringan - Tanpa Kamera Selfie & Tanpa Mapel)
+  async function submitAttendanceGps(user, coords) {
+    if (!coords || typeof coords.latitude !== 'number' || typeof coords.longitude !== 'number') {
+      return { success: false, message: 'Gagal mendeteksi koordinat GPS. Pastikan izin lokasi aktif.' }
     }
 
-    // Mock Calculation
     const distance = calculateDistance(
       schoolSettings.value.latitude,
       schoolSettings.value.longitude,
@@ -203,104 +206,95 @@ export const useAttendanceStore = defineStore('attendance', () => {
     if (distance > schoolSettings.value.radius_meter) {
       return {
         success: false,
-        message: `Gagal: Anda berada di luar radius sekolah (${distance} meter). Batas toleransi adalah ${schoolSettings.value.radius_meter} meter.`
+        distance,
+        message: `Gagal: Anda berada di luar radius PKBM (${distance} meter). Batas toleransi adalah ${schoolSettings.value.radius_meter} meter.`
       }
     }
 
     const now = new Date()
     const timeStr = now.toTimeString().split(' ')[0]
     const todayStr = new Date().toISOString().split('T')[0]
-    const chosenSubject = subject || 'Umum'
-    const [h, m] = schoolSettings.value.jam_terlambat.split(':').map(Number)
+    const [h, m] = (schoolSettings.value.jam_terlambat || '08:00').split(':').map(Number)
     const lateThreshold = new Date()
     lateThreshold.setHours(h, m, 0)
 
     const isLate = now > lateThreshold
     const status = isLate ? 'terlambat' : 'hadir'
 
-    // Cari presensi siswa hari ini pada mata pelajaran yang sama
+    // Cari presensi siswa hari ini
     const existingIndex = todayAttendances.value.findIndex(a => 
       a.user_id === user.id &&
-      (a.tanggal === todayStr || (!a.tanggal && todayStr === new Date().toISOString().split('T')[0])) &&
-      (!a.mata_pelajaran || a.mata_pelajaran === chosenSubject)
+      (a.tanggal === todayStr || (!a.tanggal && todayStr === new Date().toISOString().split('T')[0]))
     )
 
     if (existingIndex === -1) {
+      // Presensi Masuk (IN)
       const newRecord = {
         id: 'att-' + Date.now(),
         user_id: user.id,
         nama_lengkap: user.nama_lengkap,
+        jenis_kelamin: user.jenis_kelamin || 'L',
         nomor_induk: user.nomor_induk,
         kelas: user.kelas,
         tanggal: todayStr,
         jam_masuk: timeStr,
         jam_pulang: null,
         status: status,
-        mata_pelajaran: chosenSubject,
         metode_presensi: 'mandiri_gps',
         jarak_masuk_meter: distance,
-        foto_masuk_url: photoBase64
+        foto_masuk_url: null,
+        keterangan: null
       }
       todayAttendances.value.unshift(newRecord)
       return {
         success: true,
         type: 'masuk',
         status: status,
-        mata_pelajaran: chosenSubject,
+        jam: timeStr,
         jarak: distance,
-        message: `Presensi Masuk (${chosenSubject}) berhasil dicatat (${status.toUpperCase()})!`
+        message: `Presensi Masuk berhasil dicatat (${status.toUpperCase()}) pada pukul ${timeStr} WIB!`
       }
     } else {
+      // Presensi Pulang (OUT)
+      if (todayAttendances.value[existingIndex].jam_pulang) {
+        return {
+          success: false,
+          message: `Anda sudah menyelesaikan presensi masuk (${todayAttendances.value[existingIndex].jam_masuk}) dan pulang (${todayAttendances.value[existingIndex].jam_pulang}) hari ini.`
+        }
+      }
+
       todayAttendances.value[existingIndex].jam_pulang = timeStr
       todayAttendances.value[existingIndex].jarak_pulang_meter = distance
-      todayAttendances.value[existingIndex].foto_pulang_url = photoBase64
-      if (!todayAttendances.value[existingIndex].mata_pelajaran) {
-        todayAttendances.value[existingIndex].mata_pelajaran = chosenSubject
-      }
       return {
         success: true,
         type: 'pulang',
         status: todayAttendances.value[existingIndex].status,
-        mata_pelajaran: chosenSubject,
+        jam: timeStr,
         jarak: distance,
-        message: `Presensi Pulang (${chosenSubject}) berhasil dicatat! Selamat beristirahat.`
+        message: `Presensi Pulang berhasil dicatat pada pukul ${timeStr} WIB! Hati-hati di jalan.`
       }
     }
   }
 
-  // Scan Kartu QR oleh Guru (Dukungan Per Mata Pelajaran)
-  async function scanStudentQr(qrToken, teacherUser, activeSubject = null) {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase.rpc('scan_qr_presensi_siswa', {
-          p_qr_token: qrToken
-        })
-        if (error) throw error
-        return data
-      } catch (err) {
-        return { success: false, message: err.message }
-      }
-    }
-
+  // Scan Kartu QR oleh Guru/Piket (IGNORE LOCATION - Tanpa Cek GPS)
+  async function scanStudentQr(qrToken, teacherUser) {
     const student = students.value.find(s => s.qr_token === qrToken || s.nomor_induk === qrToken)
     if (!student) {
-      return { success: false, message: 'NISN atau QR Code kartu tidak terdaftar dalam sistem.' }
+      return { success: false, message: 'QR Code atau NISN tidak terdaftar dalam sistem PKBM Cahaya Mulia.' }
     }
 
     const now = new Date()
     const timeStr = now.toTimeString().split(' ')[0]
     const todayStr = new Date().toISOString().split('T')[0]
-    const chosenSubject = activeSubject || (teacherUser?.mata_pelajaran ? String(teacherUser.mata_pelajaran).split(/[,;/]/)[0].trim() : 'Umum')
 
-    // Cari presensi siswa hari ini pada mata pelajaran yang sama
     const existingIndex = todayAttendances.value.findIndex(a => 
       a.user_id === student.id && 
-      (a.tanggal === todayStr || (!a.tanggal && todayStr === new Date().toISOString().split('T')[0])) &&
-      (!a.mata_pelajaran || a.mata_pelajaran === chosenSubject)
+      (a.tanggal === todayStr || (!a.tanggal && todayStr === new Date().toISOString().split('T')[0]))
     )
 
     if (existingIndex === -1) {
-      const [h, m] = schoolSettings.value.jam_terlambat.split(':').map(Number)
+      // Presensi Masuk (IN)
+      const [h, m] = (schoolSettings.value.jam_terlambat || '08:00').split(':').map(Number)
       const lateThreshold = new Date()
       lateThreshold.setHours(h, m, 0)
       const status = now > lateThreshold ? 'terlambat' : 'hadir'
@@ -309,90 +303,240 @@ export const useAttendanceStore = defineStore('attendance', () => {
         id: 'att-' + Date.now(),
         user_id: student.id,
         nama_lengkap: student.nama_lengkap,
+        jenis_kelamin: student.jenis_kelamin || 'L',
         nomor_induk: student.nomor_induk,
         kelas: student.kelas,
         tanggal: todayStr,
         jam_masuk: timeStr,
         jam_pulang: null,
         status: status,
-        mata_pelajaran: chosenSubject,
         metode_presensi: 'qr_guru',
-        dicatat_oleh: teacherUser.nama_lengkap,
+        dicatat_oleh: teacherUser?.nama_lengkap || 'Tutor PKBM',
         jarak_masuk_meter: 0,
-        foto_masuk_url: student.foto_profil_url
+        foto_masuk_url: null,
+        keterangan: null
       }
       todayAttendances.value.unshift(record)
       return {
         success: true,
         type: 'masuk',
         nama: student.nama_lengkap,
+        jenis_kelamin: student.jenis_kelamin || 'L',
         nomor_induk: student.nomor_induk,
         kelas: student.kelas,
         status: status,
-        mata_pelajaran: chosenSubject,
-        message: `Presensi Masuk (${chosenSubject}) - ${student.nama_lengkap} berhasil!`
+        jam: timeStr,
+        message: `Presensi MASUK - ${student.nama_lengkap} (Kelas ${student.kelas}) berhasil dicatat!`
       }
     } else {
-      todayAttendances.value[existingIndex].jam_pulang = timeStr
-      todayAttendances.value[existingIndex].dicatat_oleh = teacherUser.nama_lengkap
-      if (!todayAttendances.value[existingIndex].mata_pelajaran) {
-        todayAttendances.value[existingIndex].mata_pelajaran = chosenSubject
+      // Presensi Pulang (OUT)
+      if (todayAttendances.value[existingIndex].jam_pulang) {
+        return {
+          success: true,
+          type: 'selesai',
+          nama: student.nama_lengkap,
+          jenis_kelamin: student.jenis_kelamin || 'L',
+          nomor_induk: student.nomor_induk,
+          kelas: student.kelas,
+          status: todayAttendances.value[existingIndex].status,
+          jam: todayAttendances.value[existingIndex].jam_pulang,
+          message: `${student.nama_lengkap} sudah menyelesaikan presensi Masuk (${todayAttendances.value[existingIndex].jam_masuk}) dan Pulang (${todayAttendances.value[existingIndex].jam_pulang}).`
+        }
       }
+
+      todayAttendances.value[existingIndex].jam_pulang = timeStr
+      todayAttendances.value[existingIndex].dicatat_oleh = teacherUser?.nama_lengkap || 'Tutor PKBM'
       return {
         success: true,
         type: 'pulang',
         nama: student.nama_lengkap,
+        jenis_kelamin: student.jenis_kelamin || 'L',
         nomor_induk: student.nomor_induk,
         kelas: student.kelas,
         status: todayAttendances.value[existingIndex].status,
-        mata_pelajaran: chosenSubject,
-        message: `Presensi Pulang (${chosenSubject}) - ${student.nama_lengkap} berhasil dicatat!`
+        jam: timeStr,
+        message: `Presensi PULANG - ${student.nama_lengkap} (Kelas ${student.kelas}) berhasil dicatat!`
       }
     }
   }
 
-  // Update Manual Status Siswa oleh Guru (Dukungan Per Mata Pelajaran)
-  function setManualAttendance(student, newStatus, teacherUser, customJamMasuk = null, targetDate = null, subject = null) {
+  // Update Manual Presensi Siswa oleh Guru/Tutor (IGNORE LOCATION - Tanpa Cek GPS)
+  function setManualAttendance(student, newStatus, teacherUser, customJamMasuk = null, customJamPulang = null, targetDate = null, keterangan = null) {
     const chosenDate = targetDate || new Date().toISOString().split('T')[0]
-    const chosenSubject = subject || (teacherUser?.mata_pelajaran ? String(teacherUser.mata_pelajaran).split(/[,;/]/)[0].trim() : 'Umum')
+    const effectiveTime = customJamMasuk || new Date().toTimeString().split(' ')[0].substring(0, 5)
 
     const existingIndex = todayAttendances.value.findIndex(a => 
       a.user_id === student.id && 
-      (a.tanggal === chosenDate || (!a.tanggal && chosenDate === new Date().toISOString().split('T')[0])) &&
-      (!a.mata_pelajaran || a.mata_pelajaran === chosenSubject)
+      (a.tanggal === chosenDate || (!a.tanggal && chosenDate === new Date().toISOString().split('T')[0]))
     )
-    const effectiveTime = customJamMasuk || teacherUser?.jam_masuk_default || new Date().toTimeString().split(' ')[0].substring(0, 5)
 
     if (existingIndex > -1) {
       todayAttendances.value[existingIndex].status = newStatus
       todayAttendances.value[existingIndex].metode_presensi = 'manual_guru'
-      todayAttendances.value[existingIndex].dicatat_oleh = teacherUser?.nama_lengkap || 'Guru'
+      todayAttendances.value[existingIndex].dicatat_oleh = teacherUser?.nama_lengkap || 'Tutor'
       todayAttendances.value[existingIndex].tanggal = chosenDate
-      todayAttendances.value[existingIndex].mata_pelajaran = chosenSubject
+      if (keterangan !== undefined && keterangan !== null) {
+        todayAttendances.value[existingIndex].keterangan = keterangan
+      }
       
-      if (customJamMasuk) {
+      if (customJamMasuk !== undefined) {
         todayAttendances.value[existingIndex].jam_masuk = customJamMasuk
       } else if (!todayAttendances.value[existingIndex].jam_masuk && (newStatus === 'hadir' || newStatus === 'terlambat')) {
         todayAttendances.value[existingIndex].jam_masuk = effectiveTime
+      }
+
+      if (customJamPulang !== undefined) {
+        todayAttendances.value[existingIndex].jam_pulang = customJamPulang
       }
     } else {
       todayAttendances.value.unshift({
         id: 'att-' + Date.now(),
         user_id: student.id,
         nama_lengkap: student.nama_lengkap,
+        jenis_kelamin: student.jenis_kelamin || 'L',
         nomor_induk: student.nomor_induk,
         kelas: student.kelas,
         jam_masuk: (newStatus === 'hadir' || newStatus === 'terlambat') ? effectiveTime : null,
-        jam_pulang: null,
+        jam_pulang: customJamPulang || null,
         tanggal: chosenDate,
         status: newStatus,
-        mata_pelajaran: chosenSubject,
         metode_presensi: 'manual_guru',
-        dicatat_oleh: teacherUser?.nama_lengkap || 'Guru',
+        dicatat_oleh: teacherUser?.nama_lengkap || 'Tutor',
         jarak_masuk_meter: 0,
-        foto_masuk_url: student.foto_profil_url
+        foto_masuk_url: null,
+        keterangan: keterangan || null
       })
     }
+  }
+
+  // Tandai Semua Siswa Hadir Sekaligus dalam 1 Kelas (Batch IN - IGNORE LOCATION)
+  function batchSetAllPresent(className, targetDate, teacherUser) {
+    const chosenDate = targetDate || new Date().toISOString().split('T')[0]
+    const effectiveTime = new Date().toTimeString().split(' ')[0].substring(0, 5)
+    const targetStudents = students.value.filter(s => s.kelas === className)
+    let updatedCount = 0
+
+    targetStudents.forEach(student => {
+      const idx = todayAttendances.value.findIndex(a => 
+        a.user_id === student.id && 
+        (a.tanggal === chosenDate || (!a.tanggal && chosenDate === new Date().toISOString().split('T')[0]))
+      )
+
+      if (idx === -1) {
+        todayAttendances.value.unshift({
+          id: 'att-' + Date.now() + '-' + student.id,
+          user_id: student.id,
+          nama_lengkap: student.nama_lengkap,
+          jenis_kelamin: student.jenis_kelamin || 'L',
+          nomor_induk: student.nomor_induk,
+          kelas: student.kelas,
+          jam_masuk: effectiveTime,
+          jam_pulang: null,
+          tanggal: chosenDate,
+          status: 'hadir',
+          metode_presensi: 'manual_guru',
+          dicatat_oleh: teacherUser?.nama_lengkap || 'Tutor',
+          jarak_masuk_meter: 0,
+          foto_masuk_url: null,
+          keterangan: null
+        })
+        updatedCount++
+      } else if (todayAttendances.value[idx].status === 'alpa' || !todayAttendances.value[idx].jam_masuk) {
+        todayAttendances.value[idx].status = 'hadir'
+        todayAttendances.value[idx].jam_masuk = effectiveTime
+        todayAttendances.value[idx].dicatat_oleh = teacherUser?.nama_lengkap || 'Tutor'
+        updatedCount++
+      }
+    })
+
+    return { success: true, count: updatedCount }
+  }
+
+  // 1-Klik Set Jam Pulang Bersama untuk Semua Siswa yang Hadir (Checkout Kolektif)
+  function batchSetAllCheckOut(className, targetDate = null, teacherUser = null, customOutTime = null) {
+    const chosenDate = targetDate || new Date().toISOString().split('T')[0]
+    const effectiveOut = customOutTime || new Date().toTimeString().split(' ')[0].substring(0, 5)
+    const targetStudents = students.value.filter(s => s.kelas === className)
+    let updatedCount = 0
+
+    targetStudents.forEach(student => {
+      const idx = todayAttendances.value.findIndex(a => 
+        a.user_id === student.id && 
+        (a.tanggal === chosenDate || (!a.tanggal && chosenDate === new Date().toISOString().split('T')[0]))
+      )
+
+      if (idx > -1) {
+        const rec = todayAttendances.value[idx]
+        if (rec.status === 'hadir' || rec.status === 'terlambat') {
+          if (!rec.jam_pulang) {
+            rec.jam_pulang = effectiveOut
+            if (teacherUser?.nama_lengkap) {
+              rec.dicatat_oleh = teacherUser.nama_lengkap
+            }
+            updatedCount++
+          }
+        }
+      }
+    })
+
+    return { success: true, count: updatedCount }
+  }
+
+  // Rekapitulasi Matriks Bulanan (Tanggal 1 s.d. 31) persis Format Gambar Manual
+  function getMonthlyAttendanceMatrix(className, month, year) {
+    // month: 1 - 12, year: misal 2026
+    const daysInMonth = new Date(year, month, 0).getDate()
+    const classStudents = students.value.filter(s => s.kelas === className)
+
+    return classStudents.map((std, idx) => {
+      const days = {}
+      let totalH = 0
+      let totalS = 0
+      let totalI = 0
+      let totalA = 0
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        const record = todayAttendances.value.find(a => 
+          a.user_id === std.id && a.tanggal === dateStr
+        )
+
+        if (record) {
+          const st = record.status
+          if (st === 'hadir' || st === 'terlambat') {
+            days[day] = { symbol: 'H', status: st, jam_masuk: record.jam_masuk, jam_pulang: record.jam_pulang }
+            totalH++
+          } else if (st === 'sakit') {
+            days[day] = { symbol: 'S', status: st, jam_masuk: null, jam_pulang: null }
+            totalS++
+          } else if (st === 'izin') {
+            days[day] = { symbol: 'I', status: st, jam_masuk: null, jam_pulang: null }
+            totalI++
+          } else if (st === 'alpa') {
+            days[day] = { symbol: 'A', status: st, jam_masuk: null, jam_pulang: null }
+            totalA++
+          } else {
+            days[day] = { symbol: '', status: '', jam_masuk: null, jam_pulang: null }
+          }
+        } else {
+          days[day] = { symbol: '', status: '', jam_masuk: null, jam_pulang: null }
+        }
+      }
+
+      const totalActiveDays = totalH + totalS + totalI + totalA
+      const persentase = totalActiveDays > 0 ? Math.round((totalH / totalActiveDays) * 100) : 0
+
+      return {
+        no: idx + 1,
+        student: std,
+        days,
+        totalH,
+        totalS,
+        totalI,
+        totalA,
+        persentase
+      }
+    })
   }
 
   // Update Pengaturan Sekolah
@@ -421,7 +565,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
       email: studentData.email || `${studentData.nomor_induk}@sekolah.sch.id`,
       nama_lengkap: studentData.nama_lengkap,
       nomor_induk: studentData.nomor_induk,
-      kelas: studentData.kelas || '12-RPL-1',
+      kelas: studentData.kelas || '12',
       password: studentData.password || 'password123',
       foto_update_count: 0,
       qr_token: 'tok_' + studentData.nomor_induk + '_' + Math.random().toString(36).substring(2, 7),
@@ -552,7 +696,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
       password: teacherData.password || 'password123',
       foto_update_count: 0,
       mata_pelajaran: teacherData.mata_pelajaran || 'Mata Pelajaran Umum',
-      kelas_diajar: teacherData.kelas_diajar?.length ? [...teacherData.kelas_diajar] : ['12-RPL-1'],
+      kelas_diajar: teacherData.kelas_diajar?.length ? [...teacherData.kelas_diajar] : ['12'],
       jam_masuk_default: teacherData.jam_masuk_default || '07:00',
       jam_terlambat_default: teacherData.jam_terlambat_default || '07:15',
       jam_pulang_default: teacherData.jam_pulang_default || '15:00',
@@ -827,6 +971,9 @@ export const useAttendanceStore = defineStore('attendance', () => {
     submitAttendanceGps,
     scanStudentQr,
     setManualAttendance,
+    batchSetAllPresent,
+    batchSetAllCheckOut,
+    getMonthlyAttendanceMatrix,
     submitLeaveRequest,
     updateSchoolSettings,
     resetStudentQrToken,

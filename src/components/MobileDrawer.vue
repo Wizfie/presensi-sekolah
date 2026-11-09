@@ -18,13 +18,13 @@
               <!-- Brand & Close -->
               <div class="p-4 bg-blue-600 text-white flex items-center justify-between">
                 <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-xs flex items-center justify-center text-white font-black text-sm">
-                    P
+                  <div class="w-9 h-9 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-xs">
+                    <img src="/logo.png" alt="Logo PKBM Cahaya Mulia" class="w-full h-full object-contain" />
                   </div>
                   <div>
-                    <h2 class="text-sm font-bold tracking-tight leading-tight">PresensiKu</h2>
+                    <h2 class="text-sm font-black tracking-tight leading-tight">PKBM Cahaya Mulia</h2>
                     <p class="text-[10px] text-blue-100 truncate max-w-[170px]">
-                      {{ attendanceStore.schoolSettings.nama_sekolah }}
+                      Sistem Presensi Harian
                     </p>
                   </div>
                 </div>
@@ -267,17 +267,17 @@ function handleLogout() {
 function handleResetToSeed() {
   const confirmed = window.confirm(
     'Reset ke Seeding Awal?\n\n' +
-    'Data akan dikembalikan ke kondisi bawaan lengkap:\n' +
-    '• 3 Kelas (10-RPL-1, 11-TKJ-1, 12-RPL-1)\n' +
-    '• 90 Siswa (30 siswa per kelas)\n' +
-    '• 4 Guru dengan multi-mapel & jadwal kelas\n' +
-    '• Presensi & riwayat izin bawaan\n\n' +
+    'Data akan dikembalikan ke kondisi bawaan PKBM Cahaya Mulia:\n' +
+    '• 3 Kelas (12, 11, 10)\n' +
+    '• 13 Siswa Kelas 12 (Buku Presensi Fisik)\n' +
+    '• Guru Pengajar & Administrator\n' +
+    '• Presensi & riwayat kehadiran harian\n\n' +
     'Lanjutkan?'
   )
   if (confirmed) {
     attendanceStore.resetAllDataToDefault()
     close()
-    alert('Data berhasil di-reset ke kondisi seeding awal (90 siswa & 4 guru)!')
+    alert('Data berhasil di-reset ke kondisi seeding awal PKBM Cahaya Mulia!')
     window.location.reload()
   }
 }
