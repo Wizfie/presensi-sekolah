@@ -267,7 +267,7 @@
 
           <!-- Card Footer -->
           <div class="pt-3 border-t border-white/20 text-center text-[10px] text-blue-200 relative z-10">
-            Tunjukkan kartu ini kepada Tutor untuk dipindai saat hadir di tempat belajar
+            Tunjukkan kartu ini kepada Guru Piket untuk dipindai saat Datang &amp; Pulang belajar
           </div>
         </div>
       </div>

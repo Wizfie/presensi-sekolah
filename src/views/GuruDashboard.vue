@@ -33,13 +33,13 @@
         <div>
           <div class="flex items-center gap-2">
             <span class="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-              Tutor / Pengajar PKBM
+              Guru Piket &bull; Tutor PKBM
             </span>
             <span class="text-xs text-slate-400">&bull;</span>
             <span class="text-xs font-medium text-slate-500">TP 2026/2027</span>
           </div>
           <h2 class="text-lg sm:text-xl font-bold text-slate-900 mt-1">
-            {{ currentTeacher?.nama_lengkap || authStore.user?.nama_lengkap || 'Tutor PKBM' }}
+            {{ currentTeacher?.nama_lengkap || authStore.user?.nama_lengkap || 'Guru Piket PKBM' }}
           </h2>
           <p class="text-xs text-slate-500">
             {{ attendanceStore.schoolSettings?.nama_sekolah || 'PKBM Cahaya Mulia' }} &bull; NIP: {{ currentTeacher?.nomor_induk || '-' }}
@@ -50,7 +50,7 @@
         <div class="flex items-center gap-2 shrink-0">
           <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Presensi Kelas Harian (IN / OUT)
+            Presensi Datang &amp; Pulang (IN / OUT)
           </span>
         </div>
       </div>
@@ -470,10 +470,10 @@
           <div>
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <h3 class="font-bold text-slate-900 text-base">Pemindai Kartu QR Siswa</h3>
+              <h3 class="font-bold text-slate-900 text-base">Scanner QR Meja Piket (Datang &amp; Pulang)</h3>
             </div>
             <p class="text-xs text-slate-500 mt-0.5">
-              Pindai kartu siswa untuk presensi Masuk (IN) & Pulang (OUT) secara otomatis &bull; <strong>Ignore Location</strong>
+              Pindai kartu siswa saat kedatangan (IN) dan kepulangan (OUT) &bull; <strong>Meja Piket (Ignore Location)</strong>
             </p>
           </div>
 
@@ -899,7 +899,7 @@ watch(() => route.query.tab, (newTab) => {
 // Navigation Items (Clean & Simple)
 const navItems = computed(() => [
   { key: 'manual', icon: 'fact_check', label: 'Presensi Harian' },
-  { key: 'scan', icon: 'qr_code_scanner', label: 'Scanner QR' },
+  { key: 'scan', icon: 'qr_code_scanner', label: 'Scanner QR Piket' },
   { key: 'rekap', icon: 'table_chart', label: 'Buku Rekap' }
 ])
 
