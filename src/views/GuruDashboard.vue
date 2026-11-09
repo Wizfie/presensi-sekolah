@@ -114,7 +114,7 @@
           <div class="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 pt-2 border-t border-slate-100">
             <button
               type="button"
-              @click="handleBatchAllPresent"
+              @click="openBatchPresentModal"
               class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer select-none"
               title="Set semua siswa yang belum absen hari ini menjadi Hadir"
             >
@@ -123,7 +123,7 @@
             </button>
             <button
               type="button"
-              @click="handleBatchAllCheckOut"
+              @click="openBatchCheckoutModal"
               class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer select-none"
               title="Set jam pulang bersama untuk semua siswa yang berstatus Hadir"
             >
@@ -1261,6 +1261,176 @@
         </button>
       </div>
     </div>
+
+    <!-- Modal Konfirmasi Tandai Hadir Semua (Mobile-Friendly) -->
+    <div
+      v-if="showBatchPresentModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in"
+      @click.self="showBatchPresentModal = false"
+    >
+      <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+          <span class="material-icons text-2xl">done_all</span>
+        </div>
+
+        <div class="text-center space-y-1">
+          <h4 class="font-extrabold text-slate-900 text-base sm:text-lg">
+            Tandai Hadir Semua Siswa?
+          </h4>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Semua siswa <strong class="text-slate-800">Kelas {{ selectedClass }}</strong> yang belum tercatat pada tanggal <strong class="text-slate-800">{{ selectedDate }}</strong> akan otomatis ditandai sebagai <span class="text-emerald-700 font-bold">Hadir</span> (07:30).
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5 pt-2">
+          <button
+            type="button"
+            @click="showBatchPresentModal = false"
+            class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            @click="confirmBatchAllPresent"
+            class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <span class="material-icons text-sm">check</span>
+            <span>Ya, Tandai Hadir</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Input Jam Pulang Bersama (Mobile-Friendly) -->
+    <div
+      v-if="showBatchCheckoutModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in"
+      @click.self="showBatchCheckoutModal = false"
+    >
+      <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center mx-auto">
+          <span class="material-icons text-2xl">logout</span>
+        </div>
+
+        <div class="text-center space-y-1">
+          <h4 class="font-extrabold text-slate-900 text-base sm:text-lg">
+            Set Jam Pulang Bersama
+          </h4>
+          <p class="text-xs text-slate-500">
+            Kelas <strong class="text-slate-800">{{ selectedClass }}</strong> • <span class="font-mono text-slate-700">{{ selectedDate }}</span>
+          </p>
+        </div>
+
+        <!-- Input Time & Presets -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+          <label class="block text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+            Tentukan Jam Pulang:
+          </label>
+          <div class="flex items-center justify-center">
+            <input
+              type="time"
+              v-model="batchCheckoutTime"
+              class="text-3xl font-black font-mono text-center text-slate-900 bg-white border-2 border-indigo-200 focus:border-indigo-600 rounded-2xl px-4 py-2 shadow-xs focus:outline-none cursor-pointer"
+            />
+          </div>
+
+          <!-- Quick Presets -->
+          <div class="flex items-center justify-center gap-1.5 pt-1">
+            <button
+              type="button"
+              @click="setPresetCheckoutTime('now')"
+              class="px-2.5 py-1 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-lg text-[11px] font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer"
+            >
+              Sekarang
+            </button>
+            <button
+              type="button"
+              @click="setPresetCheckoutTime('13:00')"
+              class="px-2.5 py-1 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-lg text-[11px] font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer font-mono"
+            >
+              13:00
+            </button>
+            <button
+              type="button"
+              @click="setPresetCheckoutTime('14:00')"
+              class="px-2.5 py-1 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-lg text-[11px] font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer font-mono"
+            >
+              14:00
+            </button>
+            <button
+              type="button"
+              @click="setPresetCheckoutTime('15:00')"
+              class="px-2.5 py-1 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-lg text-[11px] font-bold text-slate-700 hover:text-indigo-700 transition cursor-pointer font-mono"
+            >
+              15:00
+            </button>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-slate-500 text-center leading-snug">
+          Jam pulang di atas akan dicatat untuk semua siswa yang berstatus Hadir pada hari ini.
+        </p>
+
+        <div class="grid grid-cols-2 gap-2.5 pt-1">
+          <button
+            type="button"
+            @click="showBatchCheckoutModal = false"
+            class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            @click="confirmBatchAllCheckOut"
+            class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <span class="material-icons text-sm">check</span>
+            <span>Terapkan</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification (Mobile & Desktop Friendly, Floating Top Center) -->
+    <transition
+      enter-active-class="transform transition ease-out duration-300"
+      enter-from-class="-translate-y-4 opacity-0 scale-95"
+      enter-to-class="translate-y-0 opacity-100 scale-100"
+      leave-active-class="transition ease-in duration-200"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="-translate-y-2 opacity-0 scale-95"
+    >
+      <div
+        v-if="toast.show"
+        class="fixed top-4 left-1/2 -translate-x-1/2 z-60 max-w-sm w-[92%] sm:w-auto flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md transition-all select-none"
+        :class="[
+          toast.type === 'success' ? 'bg-slate-900/95 text-white border-emerald-500/50 shadow-emerald-950/20' :
+          toast.type === 'warning' ? 'bg-slate-900/95 text-white border-amber-500/50 shadow-amber-950/20' :
+          toast.type === 'error' ? 'bg-slate-900/95 text-white border-rose-500/50 shadow-rose-950/20' :
+          'bg-slate-900/95 text-white border-blue-500/50 shadow-blue-950/20'
+        ]"
+      >
+        <span
+          class="material-icons text-xl shrink-0"
+          :class="[
+            toast.type === 'success' ? 'text-emerald-400' :
+            toast.type === 'warning' ? 'text-amber-400' :
+            toast.type === 'error' ? 'text-rose-400' : 'text-blue-400'
+          ]"
+        >
+          {{ toast.type === 'success' ? 'check_circle' : toast.type === 'warning' ? 'warning' : toast.type === 'error' ? 'error' : 'info' }}
+        </span>
+        <span class="text-xs font-semibold flex-1 leading-snug">{{ toast.message }}</span>
+        <button
+          type="button"
+          @click="toast.show = false"
+          class="text-slate-400 hover:text-white p-1 rounded-lg transition cursor-pointer"
+        >
+          <span class="material-icons text-base">close</span>
+        </button>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -1448,6 +1618,7 @@ function handleSingleCheckOut(student) {
     nowTime,
     selectedDate.value
   )
+  showToast(`Jam pulang ${student.nama_lengkap} dicatat (${nowTime})`, 'success')
 }
 
 function clearJamPulang(student) {
@@ -1461,6 +1632,7 @@ function clearJamPulang(student) {
     null,
     selectedDate.value
   )
+  showToast(`Jam pulang ${student.nama_lengkap} dibatalkan`, 'info')
 }
 
 function updateKeterangan(student, val) {
@@ -1481,21 +1653,68 @@ function formatTimeDisplay(t) {
   return t.length > 5 ? t.substring(0, 5) : t
 }
 
-function handleBatchAllPresent() {
-  const res = attendanceStore.batchSetAllPresent(selectedClass.value, selectedDate.value, currentTeacher.value)
-  alert(`Berhasil menandai ${res.count} siswa Kelas ${selectedClass.value} sebagai Hadir!`)
+// State Toast Notification (Mobile & Desktop Friendly)
+const toast = ref({
+  show: false,
+  message: '',
+  type: 'success', // 'success' | 'warning' | 'error' | 'info'
+  timeout: null
+})
+
+function showToast(message, type = 'success') {
+  if (toast.value.timeout) clearTimeout(toast.value.timeout)
+  toast.value.message = message
+  toast.value.type = type
+  toast.value.show = true
+  toast.value.timeout = setTimeout(() => {
+    toast.value.show = false
+  }, 3500)
 }
 
-function handleBatchAllCheckOut() {
-  const defaultTime = new Date().toTimeString().split(' ')[0].substring(0, 5)
-  const inputTime = prompt(`Set jam pulang bersama untuk semua siswa Kelas ${selectedClass.value} yang hadir hari ini:`, defaultTime)
-  if (inputTime === null) return // Batal
+// Modal State: Tandai Hadir Semua
+const showBatchPresentModal = ref(false)
 
-  const res = attendanceStore.batchSetAllCheckOut(selectedClass.value, selectedDate.value, currentTeacher.value, inputTime.trim() || defaultTime)
+function openBatchPresentModal() {
+  showBatchPresentModal.value = true
+}
+
+function confirmBatchAllPresent() {
+  const res = attendanceStore.batchSetAllPresent(selectedClass.value, selectedDate.value, currentTeacher.value)
+  showBatchPresentModal.value = false
   if (res.count > 0) {
-    alert(`Berhasil mencatat jam pulang (${inputTime.trim() || defaultTime}) untuk ${res.count} siswa Kelas ${selectedClass.value}!`)
+    showToast(`Berhasil menandai ${res.count} siswa Kelas ${selectedClass.value} sebagai Hadir!`, 'success')
   } else {
-    alert(`Semua siswa yang hadir di Kelas ${selectedClass.value} sudah memiliki jam pulang tercatat.`)
+    showToast(`Semua siswa Kelas ${selectedClass.value} sudah tercatat kehadirannya hari ini.`, 'info')
+  }
+}
+
+// Modal State: Set Jam Pulang Bersama
+const showBatchCheckoutModal = ref(false)
+const batchCheckoutTime = ref('')
+
+function openBatchCheckoutModal() {
+  batchCheckoutTime.value = new Date().toTimeString().split(' ')[0].substring(0, 5)
+  showBatchCheckoutModal.value = true
+}
+
+function setPresetCheckoutTime(val) {
+  if (val === 'now') {
+    batchCheckoutTime.value = new Date().toTimeString().split(' ')[0].substring(0, 5)
+  } else {
+    batchCheckoutTime.value = val
+  }
+}
+
+function confirmBatchAllCheckOut() {
+  const defaultTime = new Date().toTimeString().split(' ')[0].substring(0, 5)
+  const inputTime = batchCheckoutTime.value.trim() || defaultTime
+
+  const res = attendanceStore.batchSetAllCheckOut(selectedClass.value, selectedDate.value, currentTeacher.value, inputTime)
+  showBatchCheckoutModal.value = false
+  if (res.count > 0) {
+    showToast(`Berhasil mencatat jam pulang (${inputTime}) untuk ${res.count} siswa Kelas ${selectedClass.value}!`, 'success')
+  } else {
+    showToast(`Semua siswa yang hadir di Kelas ${selectedClass.value} sudah memiliki jam pulang tercatat.`, 'info')
   }
 }
 
@@ -1536,7 +1755,7 @@ async function startScanner() {
       () => {}
     )
   } catch (err) {
-    alert('Gagal mengakses kamera: ' + err.message)
+    showToast('Gagal mengakses kamera: ' + err.message, 'error')
     isScanning.value = false
   }
 }
@@ -1560,8 +1779,9 @@ async function onScanSuccess(decodedText) {
     lastScannedStudent.value = res.student || { nama: res.nama, kelas: res.kelas, nomor_induk: res.nomor_induk, jenis_kelamin: res.jenis_kelamin }
     lastScannedType.value = res.type
     lastScannedTime.value = res.jam || new Date().toTimeString().split(' ')[0].substring(0, 5)
+    showToast(`Presensi ${res.type === 'in' ? 'Masuk' : 'Pulang'} berhasil: ${lastScannedStudent.value.nama}`, 'success')
   } else {
-    alert(res.message || 'QR Code tidak valid')
+    showToast(res.message || 'QR Code tidak valid', 'error')
   }
 
   // Cooldown 2 detik sebelum scan berikutnya
