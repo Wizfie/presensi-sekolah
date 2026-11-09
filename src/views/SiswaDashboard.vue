@@ -495,6 +495,107 @@
       </div>
 
     </main>
+
+    <!-- Modal Sukses Pengajuan Izin / Sakit (Mobile-Friendly) -->
+    <div
+      v-if="showIzinSuccessModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in"
+      @click.self="closeIzinSuccessModal"
+    >
+      <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 text-center space-y-4">
+        <div
+          class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto shadow-xs"
+          :class="izinSuccessData.jenis === 'sakit' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'"
+        >
+          <span class="material-icons text-3xl">
+            {{ izinSuccessData.jenis === 'sakit' ? 'medical_services' : 'assignment_turned_in' }}
+          </span>
+        </div>
+
+        <div class="space-y-1">
+          <h4 class="font-extrabold text-slate-900 text-base sm:text-lg">
+            Pengajuan Berhasil Dikirim!
+          </h4>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Pengajuan ketidakhadiran Anda telah berhasil dicatat ke sistem presensi sekolah.
+          </p>
+        </div>
+
+        <!-- Rincian Pengajuan -->
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 text-[11px] font-bold uppercase tracking-wider">Jenis:</span>
+            <span
+              class="px-2 py-0.5 rounded-md font-bold text-[11px]"
+              :class="izinSuccessData.jenis === 'sakit' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'"
+            >
+              {{ izinSuccessData.jenis === 'sakit' ? 'Sakit' : 'Izin Keperluan' }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500 text-[11px] font-bold uppercase tracking-wider">Tanggal:</span>
+            <span class="font-bold text-slate-800 font-mono">{{ formatIndonesianDate(izinSuccessData.tanggal) }}</span>
+          </div>
+
+          <div class="pt-1.5 border-t border-slate-200/80">
+            <span class="block text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-0.5">Keterangan:</span>
+            <p class="text-slate-700 italic text-xs leading-snug line-clamp-3">
+              "{{ izinSuccessData.keterangan || '-' }}"
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          @click="closeIzinSuccessModal"
+          class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+        >
+          <span>Lihat Riwayat Presensi</span>
+          <span class="material-icons text-sm">arrow_forward</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Toast Notification (Mobile & Desktop Friendly, Floating Top Center) -->
+    <transition
+      enter-active-class="transform transition ease-out duration-300"
+      enter-from-class="-translate-y-4 opacity-0 scale-95"
+      enter-to-class="translate-y-0 opacity-100 scale-100"
+      leave-active-class="transition ease-in duration-200"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="-translate-y-2 opacity-0 scale-95"
+    >
+      <div
+        v-if="toast.show"
+        class="fixed top-4 left-1/2 -translate-x-1/2 z-60 max-w-sm w-[92%] sm:w-auto flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md transition-all select-none"
+        :class="[
+          toast.type === 'success' ? 'bg-slate-900/95 text-white border-emerald-500/50 shadow-emerald-950/20' :
+          toast.type === 'warning' ? 'bg-slate-900/95 text-white border-amber-500/50 shadow-amber-950/20' :
+          toast.type === 'error' ? 'bg-slate-900/95 text-white border-rose-500/50 shadow-rose-950/20' :
+          'bg-slate-900/95 text-white border-blue-500/50 shadow-blue-950/20'
+        ]"
+      >
+        <span
+          class="material-icons text-xl shrink-0"
+          :class="[
+            toast.type === 'success' ? 'text-emerald-400' :
+            toast.type === 'warning' ? 'text-amber-400' :
+            toast.type === 'error' ? 'text-rose-400' : 'text-blue-400'
+          ]"
+        >
+          {{ toast.type === 'success' ? 'check_circle' : toast.type === 'warning' ? 'warning' : toast.type === 'error' ? 'error' : 'info' }}
+        </span>
+        <span class="text-xs font-semibold flex-1 leading-snug">{{ toast.message }}</span>
+        <button
+          type="button"
+          @click="toast.show = false"
+          class="text-slate-400 hover:text-white p-1 rounded-lg transition cursor-pointer"
+        >
+          <span class="material-icons text-base">close</span>
+        </button>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -611,10 +712,28 @@ const isWithinRadius = computed(() => {
   return currentDistance.value <= maxRadius
 })
 
+// State Toast Notification (Mobile-Friendly)
+const toast = ref({
+  show: false,
+  message: '',
+  type: 'success', // 'success' | 'warning' | 'error' | 'info'
+  timeout: null
+})
+
+function showToast(message, type = 'success') {
+  if (toast.value.timeout) clearTimeout(toast.value.timeout)
+  toast.value.message = message
+  toast.value.type = type
+  toast.value.show = true
+  toast.value.timeout = setTimeout(() => {
+    toast.value.show = false
+  }, 3500)
+}
+
 function detectLocation() {
   isLocating.value = true
   if (!navigator.geolocation) {
-    alert('Browser tidak mendukung geolokasi GPS.')
+    showToast('Browser tidak mendukung geolokasi GPS.', 'error')
     isLocating.value = false
     return
   }
@@ -666,12 +785,12 @@ async function submitPresensi(type) {
     const res = await attendanceStore.submitAttendanceGps(currentUser.value, coords)
     if (res.success) {
       confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } })
-      alert(res.message)
+      showToast(res.message, 'success')
     } else {
-      alert(res.message)
+      showToast(res.message, 'error')
     }
   } catch (e) {
-    alert('Terjadi kesalahan: ' + e.message)
+    showToast('Terjadi kesalahan: ' + e.message, 'error')
   } finally {
     isSubmitting.value = false
   }
@@ -696,7 +815,14 @@ watch(activeTab, (tab) => {
   }
 })
 
-// Pengajuan Izin Form
+// Pengajuan Izin Form & Modal Sukses
+const showIzinSuccessModal = ref(false)
+const izinSuccessData = ref({
+  jenis: 'izin',
+  tanggal: '',
+  keterangan: ''
+})
+
 const izinForm = ref({
   jenis: 'izin',
   tanggal: todayStr,
@@ -704,17 +830,42 @@ const izinForm = ref({
 })
 
 function handleIzinSubmit() {
+  if (!izinForm.value.keterangan.trim()) {
+    showToast('Mohon isi alasan / keterangan lengkap terlebih dahulu.', 'warning')
+    return
+  }
+
+  const submittedJenis = izinForm.value.jenis
+  const submittedTanggal = izinForm.value.tanggal
+  const submittedKeterangan = izinForm.value.keterangan
+
   attendanceStore.setManualAttendance(
     currentUser.value,
-    izinForm.value.jenis,
+    submittedJenis,
     null,
     null,
     null,
-    izinForm.value.tanggal,
-    izinForm.value.keterangan
+    submittedTanggal,
+    submittedKeterangan
   )
-  alert(`Pengajuan ${izinForm.value.jenis.toUpperCase()} berhasil dikirim!`)
+
+  izinSuccessData.value = {
+    jenis: submittedJenis,
+    tanggal: submittedTanggal,
+    keterangan: submittedKeterangan
+  }
+
+  try {
+    confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } })
+  } catch (e) {}
+
+  showIzinSuccessModal.value = true
+  showToast(`Pengajuan ${submittedJenis.toUpperCase()} berhasil dikirim!`, 'success')
   izinForm.value.keterangan = ''
+}
+
+function closeIzinSuccessModal() {
+  showIzinSuccessModal.value = false
   activeTab.value = 'riwayat'
 }
 
