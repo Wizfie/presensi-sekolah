@@ -162,6 +162,7 @@ body {
 
   #printable-monthly-sheet th,
   #printable-monthly-sheet td {
+    position: static !important;
     border: 1px solid #000000 !important;
     padding: 2px 1px !important;
     -webkit-print-color-adjust: exact !important;

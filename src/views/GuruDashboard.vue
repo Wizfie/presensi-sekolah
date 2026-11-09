@@ -589,8 +589,8 @@
       <!-- TAB 3: REKAPITULASI BULANAN (MATRIKS FORMAT GAMBAR FISIK) -->
       <!-- ============================================================== -->
       <div v-if="activeTab === 'rekap'" class="space-y-4">
-        <!-- Control Bar: Filter Kelas, Bulan, Tahun, Cetak & Export -->
-        <div class="no-print bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <!-- Control Bar: Filter Kelas, Bulan, Tahun, Switcher Tampilan, Cetak & Export -->
+        <div class="no-print bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div class="flex flex-wrap items-center gap-2.5">
             <!-- Filter Kelas -->
             <div class="flex items-center gap-1.5">
@@ -628,6 +628,32 @@
                 <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
               </select>
             </div>
+
+            <!-- Switcher Mode Tampilan: Kartu (Mobile) vs Tabel Matriks (Fisik) -->
+            <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+              <button
+                type="button"
+                @click="rekapViewMode = 'cards'"
+                :class="rekapViewMode === 'cards' ? 'bg-white text-blue-700 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900 font-semibold'"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition cursor-pointer"
+                title="Tampilan ringkas kartu per siswa, sangat nyaman di HP"
+              >
+                <span class="material-icons text-sm">view_agenda</span>
+                <span>Ringkasan Kartu</span>
+                <span class="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded-full font-bold">HP</span>
+              </button>
+              <button
+                type="button"
+                @click="rekapViewMode = 'matrix'"
+                :class="rekapViewMode === 'matrix' ? 'bg-white text-blue-700 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900 font-semibold'"
+                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition cursor-pointer"
+                title="Tabel matriks lengkap 31 hari format buku cetak fisik"
+              >
+                <span class="material-icons text-sm">table_chart</span>
+                <span>Tabel Matriks</span>
+                <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded-full font-bold">Fisik</span>
+              </button>
+            </div>
           </div>
 
           <!-- Tombol Export Excel & Cetak Landscape -->
@@ -635,15 +661,15 @@
             <button
               type="button"
               @click="exportMonthlyToExcel"
-              class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
             >
               <span class="material-icons text-sm">download</span>
-              <span>Export Excel (.xlsx)</span>
+              <span>Export Excel</span>
             </button>
             <button
               type="button"
               @click="printMonthlySheet"
-              class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
             >
               <span class="material-icons text-sm">print</span>
               <span>Cetak Lembar Absen</span>
@@ -652,9 +678,255 @@
         </div>
 
         <!-- ============================================================== -->
+        <!-- ALTERNATIF 1: TAMPILAN RINGKASAN KARTU SISWA (KHUSUS MOBILE / CEPAT) -->
+        <!-- ============================================================== -->
+        <div v-show="rekapViewMode === 'cards'" class="no-print space-y-4">
+          <!-- Overview Statistik Kehadiran Kelas Bulan Ini -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div class="p-3 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <span class="material-icons text-xl">groups</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Siswa</p>
+                <p class="text-lg font-black text-slate-900 leading-tight">{{ classMonthlyStats.totalStudents }}</p>
+              </div>
+            </div>
+
+            <div class="p-3 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <span class="material-icons text-xl">trending_up</span>
+              </div>
+              <div class="min-w-0">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rata-rata Hadir</p>
+                <p class="text-lg font-black text-emerald-600 leading-tight">{{ classMonthlyStats.avgPct }}%</p>
+              </div>
+            </div>
+
+            <div class="p-3 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 col-span-2 sm:col-span-2">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+                <span class="material-icons text-xl">pie_chart</span>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Akumulasi Kelas</p>
+                <div class="flex items-center gap-2 mt-0.5 text-xs font-bold">
+                  <span class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">H: {{ classMonthlyStats.sumH }}</span>
+                  <span class="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">S: {{ classMonthlyStats.sumS }}</span>
+                  <span class="text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">I: {{ classMonthlyStats.sumI }}</span>
+                  <span class="text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">A: {{ classMonthlyStats.sumA }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search Input & Info Banner -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            <div class="relative flex-1">
+              <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base">search</span>
+              <input
+                v-model="rekapSearchQuery"
+                type="text"
+                placeholder="Cari nama siswa atau NISN..."
+                class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+              />
+              <button
+                v-if="rekapSearchQuery"
+                type="button"
+                @click="rekapSearchQuery = ''"
+                class="material-icons absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-sm cursor-pointer"
+              >
+                close
+              </button>
+            </div>
+            <div class="flex items-center justify-between sm:justify-end gap-2 text-xs text-slate-600 px-1">
+              <span>Menampilkan: <strong>{{ filteredMatrixData.length }}</strong> siswa</span>
+              <button
+                type="button"
+                @click="rekapViewMode = 'matrix'"
+                class="md:hidden text-blue-600 font-bold hover:underline flex items-center gap-1 text-[11px]"
+              >
+                <span>Lihat Format Tabel Matriks</span>
+                <span class="material-icons text-xs">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- List Kartu Siswa -->
+          <div v-if="filteredMatrixData.length > 0" class="space-y-3">
+            <div
+              v-for="(row, rIdx) in filteredMatrixData"
+              :key="'card-' + row.student.id"
+              class="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:border-blue-300 transition-all overflow-hidden"
+            >
+              <!-- Card Header & Summary -->
+              <div class="p-3.5 sm:p-4 space-y-3">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
+                      {{ rIdx + 1 }}
+                    </span>
+                    <div class="min-w-0">
+                      <h4 class="font-extrabold text-slate-900 text-sm truncate uppercase">
+                        {{ row.student.nama_lengkap }}
+                      </h4>
+                      <p class="text-[11px] text-slate-500 font-mono mt-0.5 flex items-center gap-1.5">
+                        <span>NISN: {{ row.student.nomor_induk || '-' }}</span>
+                        <span class="text-slate-300">&bull;</span>
+                        <span
+                          class="font-bold"
+                          :class="row.student.jenis_kelamin === 'P' ? 'text-pink-600' : 'text-blue-700'"
+                        >
+                          {{ row.student.jenis_kelamin === 'P' ? '♀ Perempuan' : '♂ Laki-laki' }}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Persentase Badge -->
+                  <div class="shrink-0 text-right">
+                    <span
+                      class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black border"
+                      :class="[
+                        row.persentase >= 85
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          : row.persentase >= 75
+                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                            : 'bg-rose-50 text-rose-800 border-rose-200'
+                      ]"
+                    >
+                      {{ row.persentase }}% Hadir
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Visual Progress Bar Kehadiran -->
+                <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all duration-300"
+                    :class="[
+                      row.persentase >= 85
+                        ? 'bg-emerald-500'
+                        : row.persentase >= 75
+                          ? 'bg-amber-500'
+                          : 'bg-rose-500'
+                    ]"
+                    :style="{ width: `${row.persentase}%` }"
+                  ></div>
+                </div>
+
+                <!-- 4 Pill Rekapitulasi (Hadir, Sakit, Izin, Alpa) -->
+                <div class="grid grid-cols-4 gap-1.5 text-center text-xs">
+                  <div class="p-2 rounded-xl bg-emerald-50/70 border border-emerald-200/80">
+                    <p class="text-[10px] font-bold text-emerald-700 uppercase">Hadir</p>
+                    <p class="text-sm font-black text-emerald-800 mt-0.5">{{ row.totalH }}</p>
+                  </div>
+                  <div class="p-2 rounded-xl bg-amber-50/70 border border-amber-200/80">
+                    <p class="text-[10px] font-bold text-amber-700 uppercase">Sakit</p>
+                    <p class="text-sm font-black text-amber-800 mt-0.5">{{ row.totalS }}</p>
+                  </div>
+                  <div class="p-2 rounded-xl bg-blue-50/70 border border-blue-200/80">
+                    <p class="text-[10px] font-bold text-blue-700 uppercase">Izin</p>
+                    <p class="text-sm font-black text-blue-800 mt-0.5">{{ row.totalI }}</p>
+                  </div>
+                  <div class="p-2 rounded-xl bg-rose-50/70 border border-rose-200/80">
+                    <p class="text-[10px] font-bold text-rose-700 uppercase">Alpa</p>
+                    <p class="text-sm font-black text-rose-800 mt-0.5">{{ row.totalA }}</p>
+                  </div>
+                </div>
+
+                <!-- Tombol Toggle Accordion Kalender Detail -->
+                <button
+                  type="button"
+                  @click="toggleExpandStudent(row.student.id)"
+                  class="w-full pt-2 flex items-center justify-between text-xs font-bold text-slate-700 hover:text-blue-600 transition cursor-pointer border-t border-slate-100"
+                >
+                  <span class="flex items-center gap-1.5">
+                    <span class="material-icons text-sm text-slate-500">event_note</span>
+                    <span>{{ expandedStudentId === row.student.id ? 'Tutup Kalender & Detail' : 'Buka Kalender & Ralat Kehadiran' }}</span>
+                  </span>
+                  <span class="material-icons text-sm transition-transform" :class="{ 'rotate-180': expandedStudentId === row.student.id }">
+                    expand_more
+                  </span>
+                </button>
+              </div>
+
+              <!-- Accordion Detail Kalender 1..31 & Catatan Ketidakhadiran -->
+              <div
+                v-if="expandedStudentId === row.student.id"
+                class="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200 space-y-3 animate-fade-in"
+              >
+                <!-- Catatan Hari Tidak Hadir -->
+                <div>
+                  <p class="text-[11px] font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                    <span class="material-icons text-xs text-amber-600">notifications_active</span>
+                    <span>Catatan Ketidakhadiran Bulan {{ monthNames[rekapMonth - 1] }}:</span>
+                  </p>
+                  
+                  <div v-if="getStudentAbsenceList(row).length > 0" class="flex flex-wrap gap-1.5">
+                    <span
+                      v-for="abs in getStudentAbsenceList(row)"
+                      :key="abs.day"
+                      class="px-2 py-0.5 rounded-lg text-xs font-bold border flex items-center gap-1"
+                      :class="abs.badgeClass"
+                    >
+                      <span>Tgl {{ abs.day }}:</span>
+                      <span>{{ abs.label }}</span>
+                    </span>
+                  </div>
+                  <div v-else class="text-xs text-emerald-700 bg-emerald-50/80 px-2.5 py-1.5 rounded-lg border border-emerald-200 font-medium">
+                    ✅ Kehadiran sempurna (tidak ada catatan sakit, izin, atau alpa).
+                  </div>
+                </div>
+
+                <!-- Mini Kalender Interaktif 1..daysInMonth -->
+                <div>
+                  <div class="flex items-center justify-between text-[11px] text-slate-600 mb-1">
+                    <span class="font-bold">Kalender Bulan {{ monthNames[rekapMonth - 1] }} {{ rekapYear }}:</span>
+                    <span class="text-[10px] text-slate-500 italic">Sentuh tanggal untuk mengubah</span>
+                  </div>
+
+                  <div class="grid grid-cols-7 sm:grid-cols-10 md:grid-cols-11 gap-1">
+                    <button
+                      v-for="day in daysInSelectedMonth"
+                      :key="day"
+                      type="button"
+                      @click="openQuickEdit(row.student, day)"
+                      class="p-1.5 rounded-lg text-center border text-[11px] font-bold transition flex flex-col items-center justify-center cursor-pointer hover:ring-2 hover:ring-blue-400"
+                      :class="[
+                        isWeekend(day) ? 'bg-slate-200/70 text-slate-400 border-slate-300' : 'bg-white border-slate-200',
+                        row.days[day]?.symbol === 'H' ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-black' : '',
+                        row.days[day]?.symbol === 'S' ? 'bg-amber-100 text-amber-800 border-amber-300 font-black' : '',
+                        row.days[day]?.symbol === 'I' ? 'bg-blue-100 text-blue-800 border-blue-300 font-black' : '',
+                        row.days[day]?.symbol === 'A' ? 'bg-rose-100 text-rose-800 border-rose-300 font-black' : ''
+                      ]"
+                    >
+                      <span class="text-[10px] leading-none">{{ day }}</span>
+                      <span class="text-[11px] leading-tight font-black mt-0.5">
+                        {{ row.days[day]?.symbol || (isWeekend(day) ? '•' : '-') }}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State Pencarian -->
+          <div v-else class="p-8 bg-white rounded-2xl border border-slate-200 text-center space-y-2">
+            <span class="material-icons text-3xl text-slate-300">search_off</span>
+            <p class="text-xs font-bold text-slate-700">Tidak ada siswa yang sesuai pencarian</p>
+            <p class="text-[11px] text-slate-500">Coba ganti kata kunci pencarian Anda.</p>
+          </div>
+        </div>
+
+        <!-- ============================================================== -->
         <!-- LEMBAR DAFTAR HADIR SISWA (TAMPILAN MATRIKS PERSIS GAMBAR) -->
         <!-- ============================================================== -->
-        <div id="printable-monthly-sheet" class="print-container bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+        <div
+          id="printable-monthly-sheet"
+          class="print-container bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4"
+          :class="{ 'hidden print:block': rekapViewMode === 'cards' }"
+        >
           <!-- Kop Header Lembar Absensi (Persis Gambar) -->
           <div class="flex items-center justify-center gap-3 sm:gap-4 pb-2 border-b border-slate-900">
             <img src="/logo.png" alt="Logo PKBM" class="w-12 h-12 sm:w-14 sm:h-14 object-contain shrink-0" />
@@ -677,13 +949,28 @@
             <span>Bulan: <strong class="text-sm font-black">{{ monthNames[rekapMonth - 1] }} {{ rekapYear }}</strong></span>
           </div>
 
-          <!-- Petunjuk Geser Layar untuk Mobile -->
-          <div class="no-print md:hidden flex items-center justify-between text-[11px] text-blue-800 bg-blue-50 px-3 py-2 rounded-xl border border-blue-200">
-            <span class="flex items-center gap-1.5 font-medium">
-              <span class="material-icons text-sm text-blue-600">swipe</span>
-              Geser tabel ke samping untuk melihat tanggal 1 s.d. 31
-            </span>
-            <span class="font-bold">➡️</span>
+          <!-- Petunjuk Geser Layar & Tips Rotasi untuk Mobile -->
+          <div class="no-print md:hidden flex flex-col gap-1.5 text-[11px] text-blue-900 bg-blue-50 px-3 py-2 rounded-xl border border-blue-200">
+            <div class="flex items-center justify-between font-medium">
+              <span class="flex items-center gap-1.5">
+                <span class="material-icons text-sm text-blue-600">swipe</span>
+                Geser tabel ke samping untuk melihat tgl 1 s.d. 31 (Nama Siswa tetap terkunci di kiri)
+              </span>
+              <span class="font-bold">➡️</span>
+            </div>
+            <div class="flex items-center justify-between text-[10px] text-blue-700 pt-1 border-t border-blue-200/60">
+              <span class="flex items-center gap-1">
+                <span class="material-icons text-xs">screen_rotation</span>
+                Putar ponsel ke mendatar (Landscape) untuk layar lebih lega
+              </span>
+              <button
+                type="button"
+                @click="rekapViewMode = 'cards'"
+                class="font-bold underline text-blue-800 hover:text-blue-950 cursor-pointer"
+              >
+                Beralih ke Ringkasan Kartu
+              </button>
+            </div>
           </div>
 
           <!-- Matriks Tabel Tanggal 1 s.d. 31 -->
@@ -692,8 +979,8 @@
               <thead class="bg-slate-100 text-slate-900 font-bold">
                 <!-- Baris 1 Header Kolom -->
                 <tr>
-                  <th rowspan="2" class="border border-slate-800 px-1 py-1.5 text-center w-8">NOMOR</th>
-                  <th rowspan="2" class="border border-slate-800 px-2 py-1.5 text-left min-w-[140px]">NAMA SISWA</th>
+                  <th rowspan="2" class="sticky left-0 z-20 bg-slate-100 border border-slate-800 px-1 py-1.5 text-center w-8 print:static">NOMOR</th>
+                  <th rowspan="2" class="sticky left-8 z-20 bg-slate-100 border border-slate-800 px-2 py-1.5 text-left min-w-[130px] max-w-[160px] truncate shadow-xs print:static print:max-w-none">NAMA SISWA</th>
                   <th rowspan="2" class="border border-slate-800 px-1 py-1.5 text-center w-8">L/P</th>
                   <th :colspan="daysInSelectedMonth" class="border border-slate-800 px-1 py-0.5 text-center bg-slate-200">
                     Tanggal
@@ -723,12 +1010,12 @@
                 <tr
                   v-for="(row, rIdx) in monthlyMatrixData"
                   :key="row.student.id"
-                  class="hover:bg-slate-50 transition"
+                  class="hover:bg-slate-50 transition group"
                 >
-                  <td class="border border-slate-800 px-1 py-1 text-center font-bold">
+                  <td class="sticky left-0 z-10 bg-white group-hover:bg-slate-50 border border-slate-800 px-1 py-1 text-center font-bold print:static">
                     {{ rIdx + 1 }}
                   </td>
-                  <td class="border border-slate-800 px-2 py-1 font-bold text-slate-900 truncate uppercase">
+                  <td class="sticky left-8 z-10 bg-white group-hover:bg-slate-50 border border-slate-800 px-2 py-1 font-bold text-slate-900 truncate uppercase max-w-[160px] shadow-xs print:static print:max-w-none">
                     {{ row.student.nama_lengkap }}
                   </td>
                   <td class="border border-slate-800 px-1 py-1 text-center font-bold" :class="row.student.jenis_kelamin === 'P' ? 'text-pink-600' : 'text-blue-700'" :title="row.student.jenis_kelamin === 'P' ? 'Perempuan (P)' : 'Laki-laki (L)'">
@@ -770,6 +1057,37 @@
                   </td>
                 </tr>
               </tbody>
+              <!-- Baris Total Kehadiran Kelas (Footer Tabel) -->
+              <tfoot class="bg-slate-100 font-bold border-t-2 border-slate-900">
+                <tr>
+                  <td colspan="3" class="sticky left-0 z-10 bg-slate-100 border border-slate-800 px-2 py-1 text-center font-black print:static">
+                    TOTAL KEHADIRAN KELAS
+                  </td>
+                  <td
+                    v-for="day in daysInSelectedMonth"
+                    :key="'sum-' + day"
+                    class="border border-slate-800 px-0.5 py-1 text-center font-bold text-slate-800"
+                    :class="isWeekend(day) ? 'bg-slate-200 text-slate-400' : ''"
+                  >
+                    {{ monthlyMatrixData.filter(s => s.days[day]?.symbol === 'H').length || '' }}
+                  </td>
+                  <td class="border border-slate-800 px-1 py-1 text-center font-bold text-emerald-900 bg-emerald-100">
+                    {{ classMonthlyStats.sumH }}
+                  </td>
+                  <td class="border border-slate-800 px-1 py-1 text-center font-bold text-amber-900 bg-amber-100">
+                    {{ classMonthlyStats.sumS }}
+                  </td>
+                  <td class="border border-slate-800 px-1 py-1 text-center font-bold text-blue-900 bg-blue-100">
+                    {{ classMonthlyStats.sumI }}
+                  </td>
+                  <td class="border border-slate-800 px-1 py-1 text-center font-bold text-rose-900 bg-rose-100">
+                    {{ classMonthlyStats.sumA }}
+                  </td>
+                  <td class="border border-slate-800 px-1 py-1 text-center font-bold bg-slate-200">
+                    {{ classMonthlyStats.avgPct }}%
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
 
@@ -1272,6 +1590,74 @@ const mengetahuiNip = ref(savedMengetahuiNip || '')
 watch(mengetahuiNip, (val) => {
   localStorage.setItem('presensi_rekap_mengetahui_nip', val || '')
 })
+
+// State Mode Tampilan Rekap (Kartu Mobile vs Matriks Tabel)
+const savedRekapViewMode = localStorage.getItem('presensi_guru_rekap_view_mode')
+const isMobileInitial = typeof window !== 'undefined' && window.innerWidth < 768
+const rekapViewMode = ref(savedRekapViewMode || (isMobileInitial ? 'cards' : 'matrix'))
+
+watch(rekapViewMode, (val) => {
+  if (val) localStorage.setItem('presensi_guru_rekap_view_mode', val)
+})
+
+// Search query untuk mode kartu siswa di mobile
+const rekapSearchQuery = ref('')
+
+// State expand kartu siswa di mode mobile (ID siswa)
+const expandedStudentId = ref(null)
+
+function toggleExpandStudent(id) {
+  expandedStudentId.value = expandedStudentId.value === id ? null : id
+}
+
+// Data siswa hasil filter di mode kartu
+const filteredMatrixData = computed(() => {
+  const list = monthlyMatrixData.value || []
+  if (!rekapSearchQuery.value.trim()) return list
+  const q = rekapSearchQuery.value.toLowerCase().trim()
+  return list.filter(row => 
+    row.student.nama_lengkap.toLowerCase().includes(q) ||
+    (row.student.nomor_induk && String(row.student.nomor_induk).includes(q))
+  )
+})
+
+// Ringkasan Akumulasi Kehadiran Kelas Bulan Ini
+const classMonthlyStats = computed(() => {
+  const rows = monthlyMatrixData.value || []
+  const totalStudents = rows.length
+  const sumH = rows.reduce((acc, r) => acc + (r.totalH || 0), 0)
+  const sumS = rows.reduce((acc, r) => acc + (r.totalS || 0), 0)
+  const sumI = rows.reduce((acc, r) => acc + (r.totalI || 0), 0)
+  const sumA = rows.reduce((acc, r) => acc + (r.totalA || 0), 0)
+  const avgPct = totalStudents > 0 
+    ? Math.round(rows.reduce((acc, r) => acc + (r.persentase || 0), 0) / totalStudents)
+    : 0
+  return { totalStudents, avgPct, sumH, sumS, sumI, sumA }
+})
+
+// Ambil daftar tanggal tidak hadir (Sakit, Izin, Alpa) per siswa
+function getStudentAbsenceList(row) {
+  const absences = []
+  for (let day = 1; day <= daysInSelectedMonth.value; day++) {
+    const d = row.days[day]
+    if (d && d.symbol && d.symbol !== 'H') {
+      let label = 'Hadir'
+      let badgeClass = 'bg-slate-100 text-slate-800 border-slate-300'
+      if (d.symbol === 'S') {
+        label = 'Sakit'
+        badgeClass = 'bg-amber-100 text-amber-800 border-amber-300'
+      } else if (d.symbol === 'I') {
+        label = 'Izin'
+        badgeClass = 'bg-blue-100 text-blue-800 border-blue-300'
+      } else if (d.symbol === 'A') {
+        label = 'Alpa'
+        badgeClass = 'bg-rose-100 text-rose-800 border-rose-300'
+      }
+      absences.push({ day, symbol: d.symbol, label, badgeClass })
+    }
+  }
+  return absences
+}
 
 function printMonthlySheet() {
   const style = document.createElement('style')
