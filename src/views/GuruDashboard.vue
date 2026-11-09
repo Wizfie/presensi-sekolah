@@ -773,18 +773,66 @@
             </table>
           </div>
 
-          <!-- Tanda Tangan Cetak Lembar Absen (Tampil di Layar Buku Rekap & Saat Print) -->
+          <!-- Tanda Tangan Pengesahan (Editable di Layar, Bersih Saat Print & Export) -->
           <div class="pt-8 pb-4 grid grid-cols-2 text-center text-xs text-slate-900 border-t border-slate-200 mt-4">
-            <div>
+            <!-- Kolom Kiri: Mengetahui (Editable) -->
+            <div class="flex flex-col items-center">
               <p class="text-slate-600">Mengetahui,</p>
-              <p class="font-bold text-slate-900 mt-0.5">Ketua PKBM Cahaya Mulia</p>
-              <div class="h-16"></div>
-              <p class="font-bold underline text-slate-900">( ............................................ )</p>
+              
+              <!-- Jabatan Mengetahui (Editable di Layar, Plain Text saat Print) -->
+              <div class="mt-0.5">
+                <span class="print:inline hidden font-bold text-slate-900">{{ mengetahuiJabatan || 'Ketua PKBM Cahaya Mulia' }}</span>
+                <input
+                  v-model="mengetahuiJabatan"
+                  type="text"
+                  class="no-print font-bold text-slate-900 text-center border-b border-dashed border-slate-300 hover:border-blue-400 focus:border-blue-600 focus:outline-none bg-transparent px-1 py-0.5 text-xs w-60 transition-colors"
+                  placeholder="Jabatan (Ketua PKBM Cahaya Mulia)"
+                  title="Klik untuk mengubah jabatan penandatangan"
+                />
+              </div>
+
+              <div class="h-16 flex items-center justify-center">
+                <span class="no-print text-[10px] text-slate-300 italic select-none">(Ruang Tanda Tangan &amp; Stempel)</span>
+              </div>
+
+              <!-- Nama Mengetahui (Editable di Layar, Plain Text saat Print) -->
+              <div class="w-full">
+                <span class="print:inline hidden font-bold underline text-slate-900">
+                  ({{ mengetahuiNama ? ` ${mengetahuiNama} ` : ' ............................................ ' }})
+                </span>
+                <div class="no-print flex items-center justify-center gap-1">
+                  <span class="text-slate-700 font-bold">(</span>
+                  <input
+                    v-model="mengetahuiNama"
+                    type="text"
+                    class="font-bold underline text-slate-900 text-center border-b border-dashed border-slate-300 hover:border-blue-400 focus:border-blue-600 focus:outline-none bg-transparent px-1 text-xs w-60 transition-colors"
+                    placeholder="Ketik Nama Mengetahui (Bisa Diedit)"
+                    title="Klik untuk mengisi/mengubah nama penandatangan"
+                  />
+                  <span class="text-slate-700 font-bold">)</span>
+                </div>
+                
+                <!-- NIP Opsional Mengetahui -->
+                <div class="mt-0.5">
+                  <span v-if="mengetahuiNip" class="print:inline hidden text-[10px] text-slate-600 font-mono">NIP: {{ mengetahuiNip }}</span>
+                  <input
+                    v-model="mengetahuiNip"
+                    type="text"
+                    class="no-print text-[10px] text-slate-500 font-mono text-center border-b border-dashed border-transparent hover:border-slate-300 focus:border-blue-600 focus:outline-none bg-transparent px-1 w-44 transition-colors"
+                    placeholder="NIP/NIY (Opsional)"
+                    title="Ketik NIP/NIY penandatangan jika ada"
+                  />
+                </div>
+              </div>
             </div>
-            <div>
+
+            <!-- Kolom Kanan: Guru / Piket -->
+            <div class="flex flex-col items-center">
               <p class="text-slate-600">Pamulang, {{ currentPrintDate }}</p>
-              <p class="font-bold text-slate-900 mt-0.5">Tutor / Wali Kelas</p>
-              <div class="h-16"></div>
+              <p class="font-bold text-slate-900 mt-0.5">Guru / Piket</p>
+              <div class="h-16 flex items-center justify-center">
+                <span class="no-print text-[10px] text-slate-300 italic select-none">(Ruang Tanda Tangan)</span>
+              </div>
               <p class="font-bold underline text-slate-900">( {{ currentTeacher?.nama_lengkap || authStore.user?.nama_lengkap || '............................................' }} )</p>
               <p class="text-[10px] text-slate-500 font-mono mt-0.5">NIP: {{ currentTeacher?.nomor_induk || authStore.user?.nomor_induk || '-' }}</p>
             </div>
@@ -1203,6 +1251,28 @@ const currentPrintDate = computed(() => {
   })
 })
 
+// State Penandatangan "Mengetahui" (Editable & Tersimpan di localStorage)
+const savedMengetahuiJabatan = localStorage.getItem('presensi_rekap_mengetahui_jabatan')
+const mengetahuiJabatan = ref(savedMengetahuiJabatan !== null ? savedMengetahuiJabatan : 'Ketua PKBM Cahaya Mulia')
+
+watch(mengetahuiJabatan, (val) => {
+  localStorage.setItem('presensi_rekap_mengetahui_jabatan', val || '')
+})
+
+const savedMengetahuiNama = localStorage.getItem('presensi_rekap_mengetahui_nama')
+const mengetahuiNama = ref(savedMengetahuiNama || '')
+
+watch(mengetahuiNama, (val) => {
+  localStorage.setItem('presensi_rekap_mengetahui_nama', val || '')
+})
+
+const savedMengetahuiNip = localStorage.getItem('presensi_rekap_mengetahui_nip')
+const mengetahuiNip = ref(savedMengetahuiNip || '')
+
+watch(mengetahuiNip, (val) => {
+  localStorage.setItem('presensi_rekap_mengetahui_nip', val || '')
+})
+
 function printMonthlySheet() {
   const style = document.createElement('style')
   style.id = 'rekap-landscape-print'
@@ -1322,8 +1392,8 @@ function exportMonthlyToExcel() {
   aoa.push(sigRow1)
 
   const sigRow2 = new Array(totalCols).fill('')
-  sigRow2[leftStartCol] = 'Ketua PKBM Cahaya Mulia'
-  sigRow2[rightStartCol] = 'Tutor / Wali Kelas'
+  sigRow2[leftStartCol] = mengetahuiJabatan.value || 'Ketua PKBM Cahaya Mulia'
+  sigRow2[rightStartCol] = 'Guru / Piket'
   aoa.push(sigRow2)
 
   aoa.push([])
@@ -1331,11 +1401,14 @@ function exportMonthlyToExcel() {
   aoa.push([])
 
   const sigRow6 = new Array(totalCols).fill('')
-  sigRow6[leftStartCol] = '( ............................................ )'
+  sigRow6[leftStartCol] = `( ${mengetahuiNama.value || '............................................'} )`
   sigRow6[rightStartCol] = `( ${teacherName} )`
   aoa.push(sigRow6)
 
   const sigRow7 = new Array(totalCols).fill('')
+  if (mengetahuiNip.value) {
+    sigRow7[leftStartCol] = `NIP. ${mengetahuiNip.value}`
+  }
   sigRow7[rightStartCol] = `NIP. ${teacherNip}`
   aoa.push(sigRow7)
 
@@ -1367,7 +1440,8 @@ function exportMonthlyToExcel() {
     { s: { r: sigStart, c: leftStartCol }, e: { r: sigStart, c: leftEndCol } },
     { s: { r: sigStart + 1, c: leftStartCol }, e: { r: sigStart + 1, c: leftEndCol } },
     { s: { r: sigStart + 5, c: leftStartCol }, e: { r: sigStart + 5, c: leftEndCol } },
-    // Tanda Tangan Pembuat / Tutor (Kanan)
+    ...(mengetahuiNip.value ? [{ s: { r: sigStart + 6, c: leftStartCol }, e: { r: sigStart + 6, c: leftEndCol } }] : []),
+    // Tanda Tangan Pembuat / Guru Piket (Kanan)
     { s: { r: sigStart, c: rightStartCol }, e: { r: sigStart, c: rightEndCol } },
     { s: { r: sigStart + 1, c: rightStartCol }, e: { r: sigStart + 1, c: rightEndCol } },
     { s: { r: sigStart + 5, c: rightStartCol }, e: { r: sigStart + 5, c: rightEndCol } },
@@ -1562,7 +1636,7 @@ function exportMonthlyToExcel() {
     })
   }
 
-  // 9. Terapkan Style Tanda Tangan (Mengetahui & Pembuat / Tutor)
+  // 9. Terapkan Style Tanda Tangan (Mengetahui & Guru / Piket)
   // Kiri: Mengetahui
   setStyle(sigStart, leftStartCol, {
     font: { name: 'Calibri', sz: 10, color: { rgb: '0F172A' } },
@@ -1573,11 +1647,17 @@ function exportMonthlyToExcel() {
     alignment: { horizontal: 'center', vertical: 'center' }
   })
   setStyle(sigStart + 5, leftStartCol, {
-    font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } },
+    font: { name: 'Calibri', sz: 10, bold: true, underline: true, color: { rgb: '0F172A' } },
     alignment: { horizontal: 'center', vertical: 'center' }
   })
+  if (mengetahuiNip.value) {
+    setStyle(sigStart + 6, leftStartCol, {
+      font: { name: 'Calibri', sz: 9, color: { rgb: '475569' } },
+      alignment: { horizontal: 'center', vertical: 'center' }
+    })
+  }
 
-  // Kanan: Pembuat / Tutor Wali Kelas
+  // Kanan: Pembuat / Guru Piket
   setStyle(sigStart, rightStartCol, {
     font: { name: 'Calibri', sz: 10, color: { rgb: '0F172A' } },
     alignment: { horizontal: 'center', vertical: 'center' }
