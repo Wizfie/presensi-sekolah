@@ -101,8 +101,8 @@
                 T
               </div>
               <div>
-                <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Tutor / Guru</p>
-                <p class="text-[11px] text-slate-500">Budi Santoso, S.Pd (Presensi Kelas & Scan)</p>
+                <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Guru Piket / Tutor</p>
+                <p class="text-[11px] text-slate-500">Budi Santoso, S.Pd (Presensi Datang, Pulang &amp; Scan QR)</p>
               </div>
             </div>
             <span class="text-xs text-blue-600 font-medium">Buka &rarr;</span>

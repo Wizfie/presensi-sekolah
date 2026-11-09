@@ -36,7 +36,6 @@
               Guru Piket &bull; Tutor PKBM
             </span>
             <span class="text-xs text-slate-400">&bull;</span>
-            <span class="text-xs font-medium text-slate-500">TP 2026/2027</span>
           </div>
           <h2 class="text-lg sm:text-xl font-bold text-slate-900 mt-1">
             {{ currentTeacher?.nama_lengkap || authStore.user?.nama_lengkap || 'Guru Piket PKBM' }}

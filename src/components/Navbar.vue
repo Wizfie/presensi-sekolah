@@ -22,8 +22,8 @@
         <div>
           <div class="flex items-center gap-1.5">
             <span class="font-bold text-slate-900 tracking-tight text-sm sm:text-base">PKBM Cahaya Mulia</span>
-            <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200">
-              {{ authStore.user?.role || 'Siswa' }}
+            <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              {{ authStore.user?.role === 'guru' ? 'Guru Piket' : authStore.user?.role === 'siswa' ? 'Siswa' : 'Admin' }}
             </span>
           </div>
           <p class="text-[11px] text-slate-500 hidden sm:block leading-tight">

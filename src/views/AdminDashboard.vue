@@ -206,22 +206,22 @@
         </Card>
       </div>
 
-      <!-- TAB MANAJEMEN GURU & ALOKASI KELAS -->
+      <!-- TAB MANAJEMEN GURU & ALOKASI KELAS (GURU PIKET & TUTOR) -->
       <div v-else-if="activeTab === 'guru'" class="space-y-4">
         <!-- Guru Contextual Summary Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
-            <p class="text-xs font-semibold text-slate-500 uppercase">Total Guru & Staf</p>
+            <p class="text-xs font-semibold text-slate-500 uppercase">Total Guru &amp; Piket</p>
             <div class="flex items-center justify-between mt-1">
               <span class="text-2xl font-bold text-slate-900">{{ attendanceStore.teachers.length }}</span>
-              <span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-medium">Pengajar</span>
+              <span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-medium">Pendidik / Piket</span>
             </div>
           </div>
           <div class="bg-white p-4 rounded-xl border border-indigo-100 shadow-xs">
-            <p class="text-xs font-semibold text-indigo-600 uppercase">Mata Pelajaran Aktif</p>
+            <p class="text-xs font-semibold text-indigo-600 uppercase">Metode Presensi Aktif</p>
             <div class="flex items-center justify-between mt-1">
-              <span class="text-2xl font-bold text-indigo-700">{{ uniqueSubjectsCount }}</span>
-              <span class="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-medium">Mapel</span>
+              <span class="text-lg font-bold text-indigo-700">QR &amp; Manual</span>
+              <span class="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-medium">Bebas Lokasi</span>
             </div>
           </div>
           <div class="bg-white p-4 rounded-xl border border-emerald-100 shadow-xs">
@@ -233,7 +233,7 @@
           </div>
         </div>
 
-        <Card title="Daftar Tenaga Pendidik & Alokasi Kelas" description="Kelola data guru, mata pelajaran yang diampu, jam mengajar, dan alokasi kelas">
+        <Card title="Daftar Guru Piket &amp; Tutor PKBM" description="Kelola data guru piket, hak akses scanner QR meja piket, dan alokasi kelas yang dikelola">
           <template #action>
             <div class="flex items-center gap-2">
               <button
@@ -247,7 +247,7 @@
                 <span>Sampah ({{ attendanceStore.deletedTeachers.length }})</span>
               </button>
               <Button size="sm" variant="default" @click="openAddTeacherModal">
-                + Tambah Guru Baru
+                + Tambah Guru Piket / Tutor
               </Button>
             </div>
           </template>
@@ -258,7 +258,7 @@
               <input
                 v-model="searchTeacherQuery"
                 type="text"
-                placeholder="Cari nama guru, NIP, mapel, atau email..."
+                placeholder="Cari nama guru, NIP, peran tugas, atau email..."
                 class="w-full h-9 pl-9 pr-3 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -270,10 +270,10 @@
             <table class="w-full text-left text-xs text-slate-600">
               <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
                 <tr>
-                  <th class="py-3 px-4">Nama Guru</th>
+                  <th class="py-3 px-4">Nama Guru / Tutor</th>
                   <th class="py-3 px-4">NIP / Email</th>
-                  <th class="py-3 px-4">Mata Pelajaran</th>
-                  <th class="py-3 px-4">Alokasi Kelas Diajar</th>
+                  <th class="py-3 px-4">Peran &amp; Tugas</th>
+                  <th class="py-3 px-4">Alokasi Kelas Dikelola</th>
                   <th class="py-3 px-4 text-center">Aksi</th>
                 </tr>
               </thead>
@@ -286,7 +286,7 @@
                     </div>
                     <div>
                       <span class="font-bold text-slate-900">{{ t.nama_lengkap }}</span>
-                      <span class="block text-[11px] text-slate-400 font-normal">Guru Pengampu</span>
+                      <span class="block text-[11px] text-slate-400 font-normal">Guru Piket / Tutor</span>
                     </div>
                   </td>
                   <td class="py-3 px-4 font-mono">
@@ -334,7 +334,7 @@
                 </tr>
                 <tr v-if="filteredTeachers.length === 0">
                   <td colspan="5" class="py-8 text-center text-slate-400 text-xs">
-                    {{ attendanceStore.teachers.length === 0 ? 'Belum ada data guru. Klik tombol "+ Tambah Guru Baru" di atas.' : 'Tidak ada data guru yang cocok dengan pencarian.' }}
+                    {{ attendanceStore.teachers.length === 0 ? 'Belum ada data guru piket / tutor. Klik tombol "+ Tambah Guru Piket / Tutor" di atas.' : 'Tidak ada data guru yang cocok dengan pencarian.' }}
                   </td>
                 </tr>
               </tbody>
@@ -348,14 +348,14 @@
               :key="t.id"
               :title="t.nama_lengkap"
               :subtitle="`NIP: ${t.nomor_induk} • ${t.mata_pelajaran}`"
-              :extra="`Mengajar: ${t.kelas_diajar?.join(', ') || '-'}`"
+              :extra="`Kelas Dikelola: ${t.kelas_diajar?.join(', ') || '-'}`"
               :avatarUrl="t.foto_profil_url"
               :initials="getInitials(t.nama_lengkap)"
               @click="openTeacherDetailSheet(t)"
             />
 
             <div v-if="filteredTeachers.length === 0" class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-slate-200">
-              {{ attendanceStore.teachers.length === 0 ? 'Belum ada data guru.' : 'Tidak ada data guru yang cocok dengan pencarian.' }}
+              {{ attendanceStore.teachers.length === 0 ? 'Belum ada data guru piket / tutor.' : 'Tidak ada data guru yang cocok dengan pencarian.' }}
             </div>
           </div>
         </Card>
@@ -1199,9 +1199,12 @@
       <div v-if="isTeacherModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
         <div class="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
           <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h3 class="font-bold text-slate-900 text-base">
-              {{ teacherModalMode === 'create' ? 'Tambah Guru Baru' : 'Edit Data Guru' }}
-            </h3>
+            <div>
+              <h3 class="font-bold text-slate-900 text-base">
+                {{ teacherModalMode === 'create' ? 'Tambah Guru Piket / Tutor Baru' : 'Edit Data Guru Piket / Tutor' }}
+              </h3>
+              <p class="text-[11px] text-slate-500">PKBM Cahaya Mulia &bull; Akses Presensi Harian &amp; Scanner QR</p>
+            </div>
             <button @click="isTeacherModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
               ✕
             </button>
@@ -1209,12 +1212,12 @@
 
           <form @submit.prevent="saveTeacherForm" class="space-y-3.5 mt-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap & Gelar</label>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap &amp; Gelar</label>
               <input
                 v-model="teacherForm.nama_lengkap"
                 type="text"
                 required
-                placeholder="Contoh: Budi Santoso, S.Kom"
+                placeholder="Contoh: Budi Santoso, S.Pd"
                 class="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
@@ -1231,12 +1234,12 @@
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Email Sekolah</label>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Email Akun PKBM</label>
               <input
                 v-model="teacherForm.email"
                 type="email"
                 required
-                placeholder="guru@sekolah.sch.id"
+                placeholder="tutor@pkbm.sch.id"
                 class="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
@@ -1244,7 +1247,7 @@
             <div>
               <div class="flex items-center justify-between mb-1">
                 <label class="block text-xs font-semibold text-slate-700">
-                  Mata Pelajaran yang Diampu
+                  Peran Tugas &amp; Mata Pelajaran
                 </label>
                 <span class="text-[10px] text-slate-400">Bisa lebih dari 1 (pisahkan koma)</span>
               </div>
@@ -1252,7 +1255,7 @@
                 v-model="teacherForm.mata_pelajaran"
                 type="text"
                 required
-                placeholder="Contoh: Matematika, Bahasa Indonesia, PKn, Sosiologi"
+                placeholder="Contoh: Guru Piket Harian, Tutor Matematika, Pamong Belajar"
                 class="w-full h-9 px-3 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
               <div v-if="teacherForm.mata_pelajaran?.trim()" class="flex flex-wrap gap-1 mt-1.5">
@@ -1266,14 +1269,14 @@
                 </span>
               </div>
               <p class="text-[10px] text-slate-400 mt-1">
-                Gunakan tanda koma (<code>,</code>) jika guru mengajar lebih dari satu mata pelajaran.
+                Peran tugas di PKBM (contoh: <em>Guru Piket Harian, Tutor Paket C</em>). Pisahkan tanda koma jika lebih dari satu.
               </p>
             </div>
 
             <div>
               <div class="flex items-center justify-between mb-1">
                 <label class="block text-xs font-semibold text-slate-700">
-                  Alokasi Kelas yang Diajar
+                  Alokasi Kelas Dikelola (Binaan)
                   <span class="text-rose-500 font-bold">*</span>
                 </label>
                 <span class="text-[11px] text-slate-400">Total: {{ attendanceStore.allClasses.length }} kelas</span>
@@ -1287,7 +1290,7 @@
                       v-model="teacherForm.kelas_diajar"
                       class="rounded text-blue-600 focus:ring-blue-500"
                     />
-                    <span class="truncate">{{ cls }}</span>
+                    <span class="truncate">Kelas {{ cls }}</span>
                   </label>
                 </div>
                 <div class="pt-2 border-t border-slate-200/80 flex items-center justify-between">
@@ -1302,7 +1305,7 @@
                   </button>
                 </div>
               </div>
-              <p class="text-[11px] text-slate-400 mt-1">Guru hanya akan dapat melihat data siswa di kelas yang dicentang.</p>
+              <p class="text-[11px] text-slate-400 mt-1">Guru piket / tutor hanya akan dapat melihat data siswa dan rekapitulasi di kelas yang dicentang.</p>
             </div>
 
             <!-- Password Akun Guru (Tambah / Reset Password Jika Lupa) -->
@@ -1417,7 +1420,7 @@
                 Batal
               </Button>
               <Button type="submit" variant="default" size="sm">
-                {{ teacherModalMode === 'create' ? 'Simpan Guru' : 'Perbarui Guru' }}
+                {{ teacherModalMode === 'create' ? 'Simpan Guru / Piket' : 'Perbarui Guru / Piket' }}
               </Button>
             </div>
           </form>
@@ -1518,7 +1521,7 @@
       <!-- Mobile Detail Sheet: Guru (Flutter BottomSheet Style) -->
       <MobileDetailSheet
         v-model:open="isTeacherDetailSheetOpen"
-        :title="selectedTeacherItem?.nama_lengkap || 'Detail Guru'"
+        :title="selectedTeacherItem?.nama_lengkap || 'Detail Guru / Piket'"
         :subtitle="`NIP: ${selectedTeacherItem?.nomor_induk || '-'} • ${selectedTeacherItem?.mata_pelajaran || '-'}`"
       >
         <div v-if="selectedTeacherItem" class="space-y-4">
@@ -1554,7 +1557,7 @@
 
           <!-- Rombel / Kelas Diajar -->
           <div class="p-3.5 rounded-2xl border border-slate-200 bg-white space-y-2">
-            <span class="text-xs font-bold text-slate-900 block">Alokasi Kelas Binaan / Ajar</span>
+            <span class="text-xs font-bold text-slate-900 block">Alokasi Kelas yang Dikelola</span>
             <div class="flex flex-wrap gap-1.5 pt-1">
               <span
                 v-for="cls in selectedTeacherItem.kelas_diajar"
@@ -1610,7 +1613,7 @@
               <span class="material-icons text-rose-600">delete_outline</span>
               <div class="min-w-0 pr-1">
                 <h3 class="font-bold text-slate-900 text-sm leading-snug break-words">
-                  Arsip Data Terhapus ({{ trashType === 'siswa' ? 'Siswa' : 'Guru' }})
+                  Arsip Data Terhapus ({{ trashType === 'siswa' ? 'Siswa' : 'Guru / Piket' }})
                 </h3>
                 <p class="text-[11px] text-slate-500 leading-normal break-words mt-0.5">Sistem Soft Delete: Data dapat dipulihkan kapan saja</p>
               </div>
@@ -1671,7 +1674,7 @@
               </div>
 
               <div v-if="attendanceStore.deletedTeachers.length === 0" class="py-8 text-center text-slate-400">
-                Tidak ada data guru dalam arsip terhapus.
+                Tidak ada data guru piket / tutor dalam arsip terhapus.
               </div>
             </template>
           </div>
@@ -1973,10 +1976,10 @@ async function handleDeleteFromSheet(type) {
   } else if (type === 'guru') {
     if (selectedTeacherItem.value) {
       const t = selectedTeacherItem.value
-      if (confirm(`Pindahkan data guru "${t.nama_lengkap}" (${t.nomor_induk}) ke status nonaktif (Soft Delete)?\n\nHak akses presensi dan jadwal akan dinonaktifkan.`)) {
+      if (confirm(`Pindahkan data guru piket "${t.nama_lengkap}" (${t.nomor_induk}) ke status nonaktif (Soft Delete)?\n\nHak akses presensi harian dan scanner QR akan dinonaktifkan.`)) {
         attendanceStore.deleteTeacher(t.id)
         isTeacherDetailSheetOpen.value = false
-        alert('Data guru berhasil dinonaktifkan (Soft Delete).')
+        alert('Data guru piket berhasil dinonaktifkan (Soft Delete).')
       }
     }
   }
@@ -1998,7 +2001,7 @@ function restoreStudentConfirm(student) {
 
 function restoreTeacherConfirm(teacher) {
   attendanceStore.restoreTeacher(teacher.id)
-  alert(`Data guru "${teacher.nama_lengkap}" berhasil dipulihkan!`)
+  alert(`Data guru piket "${teacher.nama_lengkap}" berhasil dipulihkan!`)
 }
 
 const route = useRoute()
@@ -2038,8 +2041,8 @@ const currentTabMeta = computed(() => {
     case 'guru':
       return {
         icon: 'school',
-        title: 'Manajemen Tenaga Pendidik',
-        desc: 'Kelola data guru, mata pelajaran yang diampu, alokasi kelas, dan hak akses presensi'
+        title: 'Manajemen Guru Piket & Tutor',
+        desc: 'Kelola data guru piket, hak akses scanner QR meja piket, dan alokasi kelas binaan'
       }
     case 'admin':
       return {
@@ -2082,7 +2085,7 @@ const coveredClassesCount = computed(() => {
 // Sidebar nav items untuk Admin
 const navItems = computed(() => [
   { key: 'siswa', icon: 'people', label: `Manajemen Siswa`, badge: attendanceStore.students.length },
-  { key: 'guru', icon: 'school', label: `Manajemen Guru`, badge: attendanceStore.teachers.length },
+  { key: 'guru', icon: 'school', label: `Guru Piket & Tutor`, badge: attendanceStore.teachers.length },
   { key: 'admin', icon: 'admin_panel_settings', label: `Manajemen Admin`, badge: attendanceStore.admins?.length || 0 },
   { key: 'kartu', icon: 'badge', label: 'Cetak Kartu ID QR' },
   { key: 'settings', icon: 'settings', label: 'Pengaturan GPS & Radius' },
@@ -2378,18 +2381,18 @@ function saveTeacherForm() {
 
   if (teacherModalMode.value === 'create') {
     attendanceStore.addTeacher(teacherForm.value)
-    alert(`Guru ${teacherForm.value.nama_lengkap} berhasil ditambahkan!`)
+    alert(`Guru / Piket ${teacherForm.value.nama_lengkap} berhasil ditambahkan!`)
   } else {
     attendanceStore.updateTeacher(editingTeacherId.value, teacherForm.value)
-    alert(`Data guru ${teacherForm.value.nama_lengkap} berhasil diperbarui!`)
+    alert(`Data guru / piket ${teacherForm.value.nama_lengkap} berhasil diperbarui!`)
   }
   isTeacherModalOpen.value = false
 }
 
 function deleteTeacherConfirm(teacher) {
-  if (confirm(`Pindahkan data guru "${teacher.nama_lengkap}" (${teacher.nomor_induk}) ke status nonaktif (Soft Delete)?\n\nHak akses presensi dan jadwal akan dinonaktifkan.`)) {
+  if (confirm(`Pindahkan data guru piket "${teacher.nama_lengkap}" (${teacher.nomor_induk}) ke status nonaktif (Soft Delete)?\n\nHak akses presensi harian dan scanner QR akan dinonaktifkan.`)) {
     attendanceStore.deleteTeacher(teacher.id)
-    alert('Data guru berhasil dinonaktifkan (Soft Delete).')
+    alert('Data guru piket berhasil dinonaktifkan (Soft Delete).')
   }
 }
 
