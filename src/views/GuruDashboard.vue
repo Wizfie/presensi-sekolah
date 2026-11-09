@@ -269,15 +269,38 @@
                   class="w-full bg-transparent text-xs font-mono font-bold text-slate-800 focus:outline-none"
                 />
               </div>
-              <div class="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200">
-                <span class="text-[10px] font-bold text-slate-500 uppercase shrink-0">OUT:</span>
-                <input
-                  type="text"
-                  :value="formatTimeDisplay(getStudentAttendance(std.id)?.jam_pulang)"
-                  @change="updateJamPulang(std, $event.target.value)"
-                  placeholder="14:00"
-                  class="w-full bg-transparent text-xs font-mono font-bold text-slate-800 focus:outline-none"
-                />
+              <!-- Jam OUT: Tombol Set Pulang saat kosong, berubah jadi jam pulang saat sudah ada -->
+              <div v-if="!getStudentAttendance(std.id)?.jam_pulang" class="flex items-center">
+                <button
+                  type="button"
+                  @click="handleSingleCheckOut(std)"
+                  class="w-full h-full py-1.5 px-2 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 shadow-2xs"
+                  title="Klik untuk mencatat jam pulang siswa sekarang"
+                >
+                  <span class="material-icons text-xs text-amber-600">logout</span>
+                  <span>Set Pulang</span>
+                </button>
+              </div>
+              <div v-else class="flex items-center justify-between gap-1 bg-emerald-50/80 px-2 py-1.5 rounded-lg border border-emerald-300">
+                <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                  <span class="text-[10px] font-bold text-emerald-700 uppercase shrink-0">OUT:</span>
+                  <input
+                    type="text"
+                    :value="formatTimeDisplay(getStudentAttendance(std.id)?.jam_pulang)"
+                    @change="updateJamPulang(std, $event.target.value)"
+                    placeholder="14:00"
+                    title="Klik untuk mengedit jam pulang manual"
+                    class="w-full bg-transparent text-xs font-mono font-bold text-emerald-900 focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  @click="clearJamPulang(std)"
+                  class="text-emerald-700 hover:text-rose-600 p-0.5 cursor-pointer shrink-0 transition-colors"
+                  title="Batalkan / hapus jam pulang"
+                >
+                  <span class="material-icons text-xs">close</span>
+                </button>
               </div>
             </div>
 
@@ -420,13 +443,37 @@
                     />
                   </td>
                   <td class="py-3 px-3.5 text-center">
-                    <input
-                      type="text"
-                      :value="formatTimeDisplay(getStudentAttendance(std.id)?.jam_pulang)"
-                      @change="updateJamPulang(std, $event.target.value)"
-                      placeholder="--:--"
-                      class="w-20 px-2 py-1 text-center bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
+                    <!-- Jika jam pulang belum tercatat: Tombol Set Pulang Single -->
+                    <button
+                      v-if="!getStudentAttendance(std.id)?.jam_pulang"
+                      type="button"
+                      @click="handleSingleCheckOut(std)"
+                      class="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition-all cursor-pointer active:scale-95 shadow-2xs group/btn"
+                      title="Klik untuk mencatat jam pulang siswa sekarang"
+                    >
+                      <span class="material-icons text-xs text-amber-600 group-hover/btn:text-amber-800">logout</span>
+                      <span>Pulang</span>
+                    </button>
+
+                    <!-- Jika sudah tercatat: Tampilkan Jam Pulang (editable) + Opsi Hapus -->
+                    <div v-else class="inline-flex items-center gap-1 group/out">
+                      <input
+                        type="text"
+                        :value="formatTimeDisplay(getStudentAttendance(std.id)?.jam_pulang)"
+                        @change="updateJamPulang(std, $event.target.value)"
+                        placeholder="--:--"
+                        title="Klik untuk mengedit jam pulang manual"
+                        class="w-18 px-1.5 py-1 text-center bg-emerald-50 border border-emerald-300 rounded-lg text-xs font-mono font-bold text-emerald-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                      <button
+                        type="button"
+                        @click="clearJamPulang(std)"
+                        class="opacity-0 group-hover/out:opacity-100 text-slate-400 hover:text-rose-600 p-0.5 rounded transition-opacity cursor-pointer"
+                        title="Hapus / batalkan jam pulang"
+                      >
+                        <span class="material-icons text-xs">close</span>
+                      </button>
+                    </div>
                   </td>
                   <td class="py-3 px-3.5">
                     <div class="flex items-center gap-1.5">
@@ -1370,12 +1417,48 @@ function updateJamMasuk(student, val) {
 
 function updateJamPulang(student, val) {
   const clean = val.trim()
+  const currentAtt = getStudentAttendance(student.id)
   attendanceStore.setManualAttendance(
     student,
-    'hadir',
+    currentAtt?.status || 'hadir',
     currentTeacher.value,
-    undefined,
+    currentAtt?.jam_masuk,
     clean || null,
+    selectedDate.value
+  )
+}
+
+function handleSingleCheckOut(student) {
+  const nowTime = new Date().toTimeString().split(' ')[0].substring(0, 5)
+  const currentAtt = getStudentAttendance(student.id)
+  
+  // Jika status saat ini bukan hadir/terlambat/sakit/izin (misal belum tercatat atau alpa), jadikan 'hadir'
+  let targetStatus = currentAtt?.status
+  if (!targetStatus || targetStatus === 'alpa') {
+    targetStatus = 'hadir'
+  }
+  
+  const jamMasuk = currentAtt?.jam_masuk || (targetStatus === 'hadir' ? '07:30' : null)
+
+  attendanceStore.setManualAttendance(
+    student,
+    targetStatus,
+    currentTeacher.value,
+    jamMasuk,
+    nowTime,
+    selectedDate.value
+  )
+}
+
+function clearJamPulang(student) {
+  const currentAtt = getStudentAttendance(student.id)
+  if (!currentAtt) return
+  attendanceStore.setManualAttendance(
+    student,
+    currentAtt.status || 'hadir',
+    currentTeacher.value,
+    currentAtt.jam_masuk,
+    null,
     selectedDate.value
   )
 }
