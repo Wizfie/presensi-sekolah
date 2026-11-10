@@ -58,12 +58,30 @@ flowchart LR
 | **Guru Piket 2** | `siti.tutor@pkbm.sch.id` | `199003152015022003` | Siti Nurhaliza, M.Pd (Kelas 11, 12) |
 | **Siswa Demo** | `ade@pkbm.sch.id` | `20241201` | ADE IZA MUKTI (Kelas 12 — siap demo presensi) |
 
-### 1.4 Ambil API Keys Supabase
-1. Buka **Project Settings** -> **API** (atau **API Keys** pada tampilan dashboard terbaru).
-2. Catat:
-   - **Project URL** (contoh: `https://abcdefgh.supabase.co`) -> untuk `VITE_SUPABASE_URL`
-   - **anon public** key / **Publishable key** -> untuk `VITE_SUPABASE_ANON_KEY`
-3. **Larangan Keras:** Jangan pernah menaruh `service_role` / `secret` key di `.env` maupun di Cloudflare Pages.
+### 1.4 Ambil Project URL & API Keys Supabase
+Terdapat dua cara untuk menyalin kredensial yang dibutuhkan (`VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY`) dari [Supabase Dashboard](https://supabase.com/dashboard):
+
+#### Opsi A — Cara Tercepat (Tombol **Connect** di Bar Atas)
+1. Buka project Anda di Supabase Dashboard, lalu klik tombol **Connect** di bar bagian atas.
+2. Pilih tab **App Frameworks** -> pilih **Vue** (atau **Vite**).
+3. Salin kedua nilai berikut (pastikan nama variabel di `.env` / Cloudflare Pages tetap **`VITE_SUPABASE_URL`** dan **`VITE_SUPABASE_ANON_KEY`**):
+   - URL project (`https://<project-ref>.supabase.co`) -> isi ke **`VITE_SUPABASE_URL`**
+   - Key publik (`sb_publishable_...` atau JWT `eyJhbGci...`) -> isi ke **`VITE_SUPABASE_ANON_KEY`**
+
+#### Opsi B — Via Sidebar **Project Settings** *(Tampilan Dashboard Terbaru & Lama)*
+Klik ikon gerigi **Project Settings** di bagian paling bawah sidebar kiri:
+1. **Ambil `VITE_SUPABASE_URL`:**
+   - Buka **Project Settings -> Data API** *(pada tampilan dashboard lama: **Project Settings -> API**)*.
+   - Salin nilai **URL / Project URL** (format: `https://<project-ref>.supabase.co`).
+2. **Ambil `VITE_SUPABASE_ANON_KEY`:**
+   - Buka **Project Settings -> API Keys** *(pada tampilan dashboard lama: **Project Settings -> API**)*.
+   - Di tab **Publishable and secret API keys** (tampilan baru): salin **Publishable key** (berawalan `sb_publishable_...`).
+   - *Atau* di tab **Legacy anon, service_role API keys** (tampilan lama): salin **anon public** key (berawalan `eyJhbGci...`).
+   - Keduanya sama-sama kompatibel untuk diisi ke `VITE_SUPABASE_ANON_KEY`.
+
+> **Larangan Keras:**
+> - **JANGAN PERNAH** menyalin **Secret key** (`sb_secret_...`) maupun **service_role** key ke `.env`, GitHub, atau Cloudflare Pages! Key tersebut mem-bypass seluruh proteksi RLS dan hanya boleh dipakai di server backend.
+> - Yang aman untuk browser hanyalah **Project URL** dan **Publishable / anon public key** karena aksesnya sudah dikunci oleh Row Level Security (`RLS`).
 
 ### 1.5 Kunci Registrasi Publik (Direkomendasikan Saat Live)
 Karena aplikasi ini tidak memiliki halaman daftar mandiri (semua akun dibuat oleh Administrator melalui Dashboard Admin):
@@ -100,8 +118,8 @@ Karena aplikasi ini tidak memiliki halaman daftar mandiri (semua akun dibuat ole
    | Variable Name | Value | Keterangan |
    | :--- | :--- | :--- |
    | `NODE_VERSION` | `22` | Wajib `>=20.19` atau `22` (kebutuhan Vite 8) |
-   | `VITE_SUPABASE_URL` | `https://xxxx.supabase.co` | Project URL Supabase Anda |
-   | `VITE_SUPABASE_ANON_KEY` | `eyJhbGciOi...` | Anon / Publishable key Supabase |
+   | `VITE_SUPABASE_URL` | `https://xxxx.supabase.co` | Dari **Data API** -> *Project URL* |
+   | `VITE_SUPABASE_ANON_KEY` | `sb_publishable_...` / `eyJhbGciOi...` | Dari **API Keys** -> *Publishable* / *anon public* |
    | `VITE_ENABLE_DEMO_LOGIN` | `true` *(demo)* / `false` *(live)* | Tampilkan/sembunyikan tombol *Akses Demo Cepat* |
 
 6. Klik **Save and Deploy** dan tunggu 1–2 menit hingga status **Success**.
@@ -115,7 +133,7 @@ Karena aplikasi ini tidak memiliki halaman daftar mandiri (semua akun dibuat ole
 1. Buat file `.env.production` di root folder `Presensi Sekolah/` (jangan di-commit ke git):
    ```env
    VITE_SUPABASE_URL=https://xxxx.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJhbGciOi...
+   VITE_SUPABASE_ANON_KEY=sb_publishable_your_key_or_anon_jwt
    VITE_ENABLE_DEMO_LOGIN=true
    ```
 2. Jalankan install & build lokal (gunakan Node `v20.19+` atau `v22+`):

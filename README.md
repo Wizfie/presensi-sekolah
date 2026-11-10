@@ -77,16 +77,18 @@ Copy-Item .env.example .env
 cp .env.example .env
 ```
 
-Isi `.env` dari menu **Supabase -> Project Settings -> API**:
+Isi `.env` dengan **Project URL** dan **Publishable / anon public key** dari **Supabase Dashboard**:
+- **Cara cepat:** klik tombol **Connect** di bar atas -> **App Frameworks -> Vue / Vite**
+- **Via menu:** **Project Settings -> Data API** (salin *Project URL*) & **Project Settings -> API Keys** (salin *Publishable key* `sb_publishable_...` atau tab *Legacy* -> *anon public* `eyJhbGci...`)
 
 ```env
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_ANON_KEY=sb_publishable_your_key_or_anon_jwt
 VITE_ENABLE_DEMO_LOGIN=false
 ```
 
 > ⚠️ **Catatan:**
-> - Jangan pernah commit file `.env` (sudah masuk `.gitignore`) dan jangan pernah menaruh `service_role` key di frontend.
+> - Jangan pernah commit file `.env` (sudah masuk `.gitignore`) dan **jangan pernah** menaruh `Secret key` (`sb_secret_...`) atau `service_role` key di frontend.
 > - Set `VITE_ENABLE_DEMO_LOGIN=true` hanya saat sesi demo/presentasi untuk menampilkan tombol *"Akses Demo Cepat"* di halaman login.
 > - Jika `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` dibiarkan placeholder (`sample-project`), aplikasi otomatis berjalan pada mode preview offline lokal (`localStorage`).
 
