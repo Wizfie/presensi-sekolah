@@ -105,8 +105,8 @@ D. ARSITEKTUR PRODUCTION, KEAMANAN & PWA:
       - Mendukung instalasi PWA ke layar utama HP dan fallback offline lokal
         otomatis apabila environment Supabase belum dikonfigurasi.
    4. Kesiapan Deploy & Siklus Demo -> Operasional Nyata:
-      - Siap di-host di Cloudflare Pages + Custom Domain HTTPS (`_redirects` &
-        `_headers`).
+      - Siap di-host di Cloudflare Pages / Workers + Custom Domain HTTPS
+        (`public/_headers` & native SPA fallback).
       - Tombol "Akses Demo Cepat" dikendalikan env `VITE_ENABLE_DEMO_LOGIN`.
       - Tersedia skrip SQL `supabase_seed_demo.sql` untuk demo awal (1 Admin
         Root, 2 Guru, 33 Siswa) dan `supabase_clean_demo.sql` untuk membersihkan

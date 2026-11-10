@@ -27,7 +27,7 @@
 
 - **Frontend:** Vue.js 3 (`<script setup>`), Vue Router 4, Pinia, Tailwind CSS 3
 - **Backend & Database:** Supabase (Auth + PostgreSQL + RLS + RPC + Realtime)
-- **Hosting & CDN:** Cloudflare Pages (`public/_redirects`, `public/_headers`)
+- **Hosting & CDN:** Cloudflare Pages / Workers Static Assets (`public/_headers`, native SPA fallback)
 - **Build Tool & PWA:** Vite 8, `vite-plugin-pwa`
 - **Libraries:** `html5-qrcode`, `leaflet`, `qrcode`, `xlsx-js-style`, `lucide-vue-next`
 
@@ -127,8 +127,7 @@ Ringkasnya:
 ```text
 presensi-sekolah/
 ├── public/
-│   ├── _headers                 # Security & cache headers Cloudflare Pages
-│   ├── _redirects               # SPA fallback routing (/* /index.html 200)
+│   ├── _headers                 # Security, izin kamera/GPS & cache headers Cloudflare
 │   └── logo.png                 # Logo & ikon PWA aplikasi
 ├── docs/                        # Dokumentasi & diagram flowchart PKM
 ├── src/
@@ -166,7 +165,7 @@ presensi-sekolah/
 |---------|--------|
 | `npm run build` gagal di Cloudflare Pages | Pastikan environment variable `NODE_VERSION` diisi `22` (minimal `20.19+` untuk Vite 8) |
 | Login berhasil tapi langsung kembali ke halaman login / data kosong | Pastikan sudah menjalankan `supabase_schema.sql` dan user tersebut memiliki row aktif (`is_deleted = false`) di `public.profiles` |
-| Redirect / refresh halaman `/guru`, `/siswa`, `/admin` menjadi 404 | Pastikan `public/_redirects` terikut di hasil build `dist/_redirects` |
+| Redirect / refresh halaman `/guru`, `/siswa`, `/admin` menjadi 404 | Pastikan `not_found_handling: single-page-application` (Workers) atau tidak ada `404.html` di `dist/` (Pages); **jangan** pakai `/* /index.html 200` di `_redirects` (memicu error `100324`) |
 | GPS atau Kamera QR diblokir browser | Pastikan akses menggunakan **HTTPS** (Custom Domain Cloudflare / `*.pages.dev`) dan izin browser aktif |
 | Perubahan `VITE_ENABLE_DEMO_LOGIN` tidak berubah di web | Environment `VITE_*` dibaca saat build time; lakukan **Retry deployment** di Cloudflare Pages |
 

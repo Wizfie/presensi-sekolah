@@ -6,7 +6,7 @@ Panduan singkat deploy **Presensi PKBM Cahaya Mulia** dari setup awal, sesi demo
 - `supabase_schema.sql` — Schema DB, RLS, trigger keamanan, RPC, dan Realtime
 - `supabase_seed_demo.sql` — Data demo awal (33 siswa, 2 guru, 1 admin, presensi & 1 izin)
 - `supabase_clean_demo.sql` — Pembersihan pasca-demo (sisakan Root Admin `ADM-001`, kelas & GPS)
-- `public/_redirects` & `public/_headers` — SPA routing & izin kamera/GPS/PWA untuk Cloudflare Pages
+- `public/_headers` — Izin kamera/GPS & kontrol cache PWA untuk Cloudflare Pages / Workers
 - `.env.example` — Template environment frontend
 
 ---
@@ -89,6 +89,7 @@ Kamera QR, GPS, dan PWA **wajib HTTPS**.
 
 ## Troubleshooting Cepat
 - **Build gagal (`vite build`):** Pastikan `NODE_VERSION=22` terpasang di Environment Variables Cloudflare Pages.
+- **Deploy gagal `code: 100324` (`Invalid _redirects`):** Jangan pakai rule `/* /index.html 200` di `_redirects`. Pastikan `public/_redirects` tidak ada (Cloudflare Workers & Pages sudah menangani SPA routing secara otomatis jika tidak ada `404.html`).
 - **Tombol demo tidak berubah:** Variabel `VITE_*` dibaca saat build; klik **Retry deployment** lalu refresh cache PWA.
-- **Refresh `/guru`, `/siswa`, `/admin` error 404:** Pastikan `public/_redirects` terikut masuk ke `dist/_redirects`.
+- **Refresh `/guru`, `/siswa`, `/admin` error 404:** Di Cloudflare Workers pastikan `not_found_handling` = `single-page-application`; di Cloudflare Pages pastikan tidak ada file `404.html` di `dist/`.
 - **Kamera QR / GPS diblokir:** Wajib akses via `https://` dan izinkan akses kamera/lokasi di browser HP.
