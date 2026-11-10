@@ -3,6 +3,13 @@ import { ref, watch, computed } from 'vue'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getCurrentAcademicYear } from '../utils/academicYear'
 import {
+  getWibDateStr,
+  getWibTimeStr,
+  normalizeClockInput,
+  extractWibTimeHHMMSS,
+  buildWibTimestampIso
+} from '../utils/dateTime'
+import {
   defaultClasses,
   defaultSchoolSettings,
   generateStudents,
@@ -13,7 +20,11 @@ import {
 } from '../utils/seeder'
 
 export const useAttendanceStore = defineStore('attendance', () => {
-  // Helper normalisasi format kelas (tanpa angka Romawi: X -> 10, XI -> 11, XII -> 12)
+  const isUuid = (val) =>
+    typeof val === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+
+  // Normalisasi format kelas (X -> 10, XI -> 11, XII -> 12)
   function convertRomanClass(cls) {
     if (!cls || typeof cls !== 'string') return cls
     return cls
@@ -22,7 +33,6 @@ export const useAttendanceStore = defineStore('attendance', () => {
       .replace(/^X[-_\s]/i, '10-')
   }
 
-  // Helper muat data dari localStorage
   function loadStorage(key, fallback) {
     const saved = localStorage.getItem(key)
     if (saved) {
@@ -30,7 +40,6 @@ export const useAttendanceStore = defineStore('attendance', () => {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed)) {
           let modified = false
-          // Kasus 1: Array of strings (seperti presensi_classes)
           if (parsed.length > 0 && typeof parsed[0] === 'string') {
             const normalized = parsed.map(c => {
               const converted = convertRomanClass(c)
@@ -43,7 +52,6 @@ export const useAttendanceStore = defineStore('attendance', () => {
             return normalized
           }
 
-          // Kasus 2: Array of objects (siswa, guru, presensi, izin)
           parsed.forEach(item => {
             if (item) {
               if (item.foto_profil_url && item.foto_profil_url.includes('images.unsplash.com')) {
@@ -87,121 +95,472 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return fallback
   }
 
-  // 1. DATA AWAL (DEFAULT SEEDING: KELAS 12, 11, 10 PKBM CAHAYA MULIA)
-  const defaultStudents = generateStudents()
-  const defaultTodayAttendances = generateTodayAttendances(defaultStudents)
-  const defaultLeaveRequests = generateLeaveRequests()
+  // Migrasi data lokal lama jika tidak memakai Supabase
+  if (!isSupabaseConfigured) {
+    try {
+      const storedSettings = localStorage.getItem('presensi_school_settings')
+      if (
+        storedSettings &&
+        (storedSettings.includes('SMK') ||
+          storedSettings.includes('Budi Luhur') ||
+          storedSettings.includes('Teknologi Unggulan'))
+      ) {
+        const seedStudents = generateStudents()
+        localStorage.setItem('presensi_school_settings', JSON.stringify(defaultSchoolSettings))
+        localStorage.setItem('presensi_students', JSON.stringify(seedStudents))
+        localStorage.setItem('presensi_teachers', JSON.stringify(defaultTeachers))
+        localStorage.setItem('presensi_admins', JSON.stringify(defaultAdmins))
+        localStorage.setItem('presensi_today_attendances', JSON.stringify(generateTodayAttendances(seedStudents)))
+        localStorage.setItem('presensi_classes', JSON.stringify(defaultClasses))
+        localStorage.setItem('presensi_leave_requests', JSON.stringify(generateLeaveRequests()))
+      }
+    } catch (e) {}
+  } else {
+    // Bersihkan cache dummy lokal saat berjalan pada mode Supabase Production
+    const legacyKeys = [
+      'presensi_school_settings',
+      'presensi_students',
+      'presensi_teachers',
+      'presensi_admins',
+      'presensi_today_attendances',
+      'presensi_leave_requests',
+      'presensi_classes',
+      'presensi_admin_password',
+      'presensi_rekap_mengetahui_jabatan',
+      'presensi_rekap_mengetahui_nama',
+      'presensi_rekap_mengetahui_nip'
+    ]
+    legacyKeys.forEach(k => {
+      try {
+        localStorage.removeItem(k)
+      } catch (e) {}
+    })
+  }
 
-  // Auto-migrasi ke data PKBM Cahaya Mulia jika data tersimpan masih versi lama (SMK/Budi Luhur)
-  try {
-    const storedSettings = localStorage.getItem('presensi_school_settings')
-    if (storedSettings && (storedSettings.includes('SMK') || storedSettings.includes('Budi Luhur') || storedSettings.includes('Teknologi Unggulan'))) {
-      localStorage.setItem('presensi_school_settings', JSON.stringify(defaultSchoolSettings))
-      localStorage.setItem('presensi_students', JSON.stringify(defaultStudents))
-      localStorage.setItem('presensi_teachers', JSON.stringify(defaultTeachers))
-      localStorage.setItem('presensi_admins', JSON.stringify(defaultAdmins))
-      localStorage.setItem('presensi_today_attendances', JSON.stringify(defaultTodayAttendances))
-      localStorage.setItem('presensi_classes', JSON.stringify(defaultClasses))
-      localStorage.setItem('presensi_leave_requests', JSON.stringify(defaultLeaveRequests))
-    }
-  } catch (e) {}
+  const initialMockStudents = !isSupabaseConfigured ? generateStudents() : []
+  const initialSchoolSettings = isSupabaseConfigured
+    ? {
+        ...defaultSchoolSettings,
+        mengetahui_jabatan: 'Ketua PKBM Cahaya Mulia',
+        mengetahui_nama: '',
+        mengetahui_nip: ''
+      }
+    : loadStorage('presensi_school_settings', {
+        ...defaultSchoolSettings,
+        mengetahui_jabatan: 'Ketua PKBM Cahaya Mulia',
+        mengetahui_nama: '',
+        mengetahui_nip: ''
+      })
 
-  // 2. STATE PERSISTENT DENGAN LOCALSTORAGE
-  const schoolSettings = ref(loadStorage('presensi_school_settings', defaultSchoolSettings))
+  const schoolSettings = ref(initialSchoolSettings)
   if (!schoolSettings.value.tahun_pelajaran) {
     schoolSettings.value.tahun_pelajaran = getCurrentAcademicYear()
   }
+
   const activeAcademicYear = computed(() => {
     return schoolSettings.value?.tahun_pelajaran || getCurrentAcademicYear()
   })
 
-  const rawStudents = ref(loadStorage('presensi_students', defaultStudents))
-  const rawTeachers = ref(loadStorage('presensi_teachers', defaultTeachers))
-  const rawAdmins = ref(loadStorage('presensi_admins', defaultAdmins))
-  const todayAttendances = ref(loadStorage('presensi_today_attendances', defaultTodayAttendances))
-  const leaveRequests = ref(loadStorage('presensi_leave_requests', defaultLeaveRequests))
-  const classes = ref(loadStorage('presensi_classes', defaultClasses))
+  const rawStudents = ref(isSupabaseConfigured ? [] : loadStorage('presensi_students', initialMockStudents))
+  const rawTeachers = ref(isSupabaseConfigured ? [] : loadStorage('presensi_teachers', defaultTeachers))
+  const rawAdmins = ref(isSupabaseConfigured ? [] : loadStorage('presensi_admins', defaultAdmins))
+  const todayAttendances = ref(
+    isSupabaseConfigured
+      ? []
+      : loadStorage('presensi_today_attendances', generateTodayAttendances(initialMockStudents))
+  )
+  const leaveRequests = ref(
+    isSupabaseConfigured ? [] : loadStorage('presensi_leave_requests', generateLeaveRequests())
+  )
+  const classes = ref(isSupabaseConfigured ? [] : loadStorage('presensi_classes', defaultClasses))
 
-  // Soft Delete Filter: Komputasi data aktif & data terhapus (soft deleted)
+  const isLoading = ref(false)
+  const hasLoaded = ref(!isSupabaseConfigured)
+  const loadedForUserId = ref(null)
+  let fetchPromise = null
+  let realtimeChannel = null
+
+  // Simpan lookup seluruh profil (termasuk non-aktif) untuk resolusi nama pada riwayat presensi
+  const allProfilesMap = ref(new Map())
+
   const students = computed(() => rawStudents.value.filter(s => !s.is_deleted))
   const deletedStudents = computed(() => rawStudents.value.filter(s => s.is_deleted))
-  
+
   const teachers = computed(() => rawTeachers.value.filter(t => !t.is_deleted))
   const deletedTeachers = computed(() => rawTeachers.value.filter(t => t.is_deleted))
 
   const admins = computed(() => rawAdmins.value.filter(a => !a.is_deleted))
   const deletedAdmins = computed(() => rawAdmins.value.filter(a => a.is_deleted))
 
-  // Sinkronisasi otomatis ke localStorage setiap ada perubahan (Tab refresh aman!)
-  watch(schoolSettings, (val) => {
-    localStorage.setItem('presensi_school_settings', JSON.stringify(val))
-  }, { deep: true })
+  // Sinkronisasi localStorage HANYA saat berjalan tanpa Supabase
+  if (!isSupabaseConfigured) {
+    watch(schoolSettings, val => localStorage.setItem('presensi_school_settings', JSON.stringify(val)), { deep: true })
+    watch(rawStudents, val => localStorage.setItem('presensi_students', JSON.stringify(val)), { deep: true })
+    watch(rawTeachers, val => localStorage.setItem('presensi_teachers', JSON.stringify(val)), { deep: true })
+    watch(rawAdmins, val => localStorage.setItem('presensi_admins', JSON.stringify(val)), { deep: true })
+    watch(todayAttendances, val => localStorage.setItem('presensi_today_attendances', JSON.stringify(val)), { deep: true })
+    watch(leaveRequests, val => localStorage.setItem('presensi_leave_requests', JSON.stringify(val)), { deep: true })
+    watch(classes, val => localStorage.setItem('presensi_classes', JSON.stringify(val)), { deep: true })
+  }
 
-  watch(rawStudents, (val) => {
-    localStorage.setItem('presensi_students', JSON.stringify(val))
-  }, { deep: true })
+  function mapSettingsRow(row) {
+    if (!row) return schoolSettings.value
+    return {
+      ...defaultSchoolSettings,
+      ...row,
+      jam_masuk: (row.jam_masuk || '07:30:00').substring(0, 5),
+      jam_terlambat: (row.jam_terlambat || '08:00:00').substring(0, 5),
+      jam_pulang: (row.jam_pulang || '14:00:00').substring(0, 5),
+      mengetahui_jabatan: row.mengetahui_jabatan ?? 'Ketua PKBM Cahaya Mulia',
+      mengetahui_nama: row.mengetahui_nama ?? '',
+      mengetahui_nip: row.mengetahui_nip ?? ''
+    }
+  }
 
-  watch(rawTeachers, (val) => {
-    localStorage.setItem('presensi_teachers', JSON.stringify(val))
-  }, { deep: true })
+  function indexProfiles(profilesList) {
+    const map = new Map()
+    rawStudents.value = []
+    rawTeachers.value = []
+    rawAdmins.value = []
 
-  watch(rawAdmins, (val) => {
-    localStorage.setItem('presensi_admins', JSON.stringify(val))
-  }, { deep: true })
+    for (const p of profilesList || []) {
+      map.set(p.id, p)
+      if (p.role === 'siswa') rawStudents.value.push(p)
+      else if (p.role === 'guru') rawTeachers.value.push(p)
+      else if (p.role === 'admin') rawAdmins.value.push(p)
+    }
+    allProfilesMap.value = map
+  }
 
-  watch(todayAttendances, (val) => {
-    localStorage.setItem('presensi_today_attendances', JSON.stringify(val))
-  }, { deep: true })
+  function upsertProfileInLists(profile) {
+    if (!profile?.id) return
+    allProfilesMap.value.set(profile.id, profile)
 
-  watch(leaveRequests, (val) => {
-    localStorage.setItem('presensi_leave_requests', JSON.stringify(val))
-  }, { deep: true })
+    const targetList =
+      profile.role === 'siswa'
+        ? rawStudents
+        : profile.role === 'guru'
+          ? rawTeachers
+          : rawAdmins
 
-  watch(classes, (val) => {
-    localStorage.setItem('presensi_classes', JSON.stringify(val))
-  }, { deep: true })
+    const idx = targetList.value.findIndex(item => item.id === profile.id)
+    if (idx >= 0) {
+      targetList.value[idx] = { ...targetList.value[idx], ...profile }
+    } else {
+      targetList.value.push(profile)
+    }
+  }
 
-  // Daftar seluruh kelas unik yang terdaftar (gabungan dari master kelas, data siswa, & guru)
+  function mapPresensiRow(row) {
+    if (!row) return null
+    const std = allProfilesMap.value.get(row.user_id)
+    const recorder = row.dicatat_oleh ? allProfilesMap.value.get(row.dicatat_oleh) : null
+    const recorderLabel =
+      recorder?.nama_lengkap ||
+      (typeof row.dicatat_oleh === 'string' && !isUuid(row.dicatat_oleh) ? row.dicatat_oleh : null)
+
+    return {
+      id: row.id,
+      user_id: row.user_id,
+      nama_lengkap: std?.nama_lengkap || row.nama_lengkap || '-',
+      jenis_kelamin: std?.jenis_kelamin || row.jenis_kelamin || 'L',
+      nomor_induk: std?.nomor_induk || row.nomor_induk || '',
+      kelas: std?.kelas || row.kelas || '',
+      tanggal: row.tanggal,
+      jam_masuk: extractWibTimeHHMMSS(row.jam_masuk),
+      jam_pulang: extractWibTimeHHMMSS(row.jam_pulang),
+      status: row.status,
+      metode_presensi: row.metode_presensi,
+      dicatat_oleh: recorderLabel || (row.metode_presensi === 'manual_guru' ? 'Guru Piket' : null),
+      dicatat_oleh_id: isUuid(row.dicatat_oleh) ? row.dicatat_oleh : null,
+      jarak_masuk_meter: row.jarak_masuk_meter ?? 0,
+      jarak_pulang_meter: row.jarak_pulang_meter ?? null,
+      foto_masuk_url: row.foto_masuk_url || null,
+      keterangan: row.keterangan || row.catatan || null
+    }
+  }
+
+  function upsertLocalAttendance(mapped) {
+    if (!mapped) return
+    const idx = todayAttendances.value.findIndex(
+      a =>
+        (mapped.id && a.id === mapped.id) ||
+        (a.user_id === mapped.user_id && a.tanggal === mapped.tanggal)
+    )
+    if (idx >= 0) {
+      todayAttendances.value[idx] = { ...todayAttendances.value[idx], ...mapped }
+    } else {
+      todayAttendances.value.unshift(mapped)
+    }
+  }
+
+  function mapLeaveRow(row) {
+    if (!row) return null
+    const std = allProfilesMap.value.get(row.user_id)
+    return {
+      ...row,
+      nama_lengkap: std?.nama_lengkap || row.nama_lengkap || '-',
+      kelas: std?.kelas || row.kelas || ''
+    }
+  }
+
+  async function fetchAllAttendanceRows() {
+    const allRows = []
+    const pageSize = 1000
+    let from = 0
+
+    while (true) {
+      const { data, error } = await supabase
+        .from('presensi')
+        .select('*')
+        .order('tanggal', { ascending: false })
+        .order('created_at', { ascending: false })
+        .range(from, from + pageSize - 1)
+
+      if (error) throw error
+      if (!data || data.length === 0) break
+
+      allRows.push(...data)
+      if (data.length < pageSize) break
+      from += pageSize
+    }
+    return allRows
+  }
+
+  function setupRealtimeSubscription() {
+    if (!isSupabaseConfigured || !supabase || realtimeChannel) return
+    try {
+      realtimeChannel = supabase
+        .channel('presensi-live-sync')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'presensi' },
+          payload => {
+            if (payload.eventType === 'DELETE' && payload.old?.id) {
+              todayAttendances.value = todayAttendances.value.filter(a => a.id !== payload.old.id)
+            } else if (payload.new) {
+              upsertLocalAttendance(mapPresensiRow(payload.new))
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'pengaturan_sekolah' },
+          payload => {
+            if (payload.new) {
+              schoolSettings.value = mapSettingsRow(payload.new)
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'classes' },
+          payload => {
+            if (payload.eventType === 'DELETE' && payload.old?.name) {
+              classes.value = classes.value.filter(c => c !== payload.old.name)
+            } else if (payload.new?.name && !classes.value.includes(payload.new.name)) {
+              classes.value.push(payload.new.name)
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'profiles' },
+          payload => {
+            if (payload.new) {
+              upsertProfileInLists(payload.new)
+            }
+          }
+        )
+        .subscribe()
+    } catch (e) {
+      console.warn('Realtime sync notice:', e)
+    }
+  }
+
+  function resetRemoteState() {
+    if (realtimeChannel && supabase) {
+      try {
+        supabase.removeChannel(realtimeChannel)
+      } catch (e) {}
+      realtimeChannel = null
+    }
+
+    if (isSupabaseConfigured) {
+      rawStudents.value = []
+      rawTeachers.value = []
+      rawAdmins.value = []
+      todayAttendances.value = []
+      leaveRequests.value = []
+      classes.value = []
+      allProfilesMap.value = new Map()
+      schoolSettings.value = {
+        ...defaultSchoolSettings,
+        mengetahui_jabatan: 'Ketua PKBM Cahaya Mulia',
+        mengetahui_nama: '',
+        mengetahui_nip: ''
+      }
+      hasLoaded.value = false
+      loadedForUserId.value = null
+      fetchPromise = null
+    }
+  }
+
+  async function initializeData(force = false) {
+    if (!isSupabaseConfigured || !supabase) {
+      hasLoaded.value = true
+      return
+    }
+
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) {
+      resetRemoteState()
+      return
+    }
+
+    if (!force && hasLoaded.value && loadedForUserId.value === session.user.id) {
+      return
+    }
+    if (!force && fetchPromise) {
+      return fetchPromise
+    }
+
+    isLoading.value = true
+    fetchPromise = (async () => {
+      try {
+        const [settingsRes, classesRes, profilesRes, attendanceRows, leavesRes] = await Promise.all([
+          supabase.from('pengaturan_sekolah').select('*').order('id').limit(1).maybeSingle(),
+          supabase.from('classes').select('name').order('name'),
+          supabase.from('profiles').select('*').order('nama_lengkap'),
+          fetchAllAttendanceRows(),
+          supabase.from('pengajuan_izin').select('*').order('created_at', { ascending: false }).limit(500)
+        ])
+
+        if (settingsRes.data) {
+          schoolSettings.value = mapSettingsRow(settingsRes.data)
+        }
+
+        if (classesRes.data) {
+          classes.value = classesRes.data.map(c => c.name)
+        }
+
+        if (profilesRes.data) {
+          indexProfiles(profilesRes.data)
+        }
+
+        todayAttendances.value = (attendanceRows || []).map(mapPresensiRow).filter(Boolean)
+
+        if (leavesRes.data) {
+          leaveRequests.value = leavesRes.data.map(mapLeaveRow).filter(Boolean)
+        }
+
+        hasLoaded.value = true
+        loadedForUserId.value = session.user.id
+        setupRealtimeSubscription()
+      } catch (err) {
+        console.error('Failed loading Supabase data:', err)
+      } finally {
+        isLoading.value = false
+        fetchPromise = null
+      }
+    })()
+
+    return fetchPromise
+  }
+
+  async function ensureDataLoaded() {
+    if (!isSupabaseConfigured || !supabase) return
+    await initializeData(false)
+  }
+
+  // Daftar seluruh kelas unik yang terdaftar (gabungan dari master kelas, siswa, & guru)
   const allClasses = computed(() => {
     const fromStudents = students.value.map(s => s.kelas).filter(Boolean)
     const fromTeachers = teachers.value.flatMap(t => t.kelas_diajar || []).filter(Boolean)
     const set = new Set([...classes.value, ...fromStudents, ...fromTeachers])
-    return Array.from(set).sort()
+    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
   })
 
-  // Tambah kelas baru secara dinamis
-  function addClass(className) {
+  async function addClass(className) {
     if (!className) return { success: false, message: 'Nama kelas tidak boleh kosong' }
     const clean = className.trim().toUpperCase()
     if (!clean) return { success: false, message: 'Nama kelas tidak boleh kosong' }
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('classes').upsert({ name: clean }, { onConflict: 'name' })
+      if (error) {
+        return { success: false, message: error.message || 'Gagal menyimpan kelas baru.' }
+      }
+    }
+
     if (!classes.value.includes(clean)) {
       classes.value.push(clean)
     }
     return { success: true, className: clean }
   }
 
-  function deleteClass(className) {
+  async function deleteClass(className) {
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.from('classes').delete().eq('name', className)
+      if (error) {
+        return { success: false, message: error.message || 'Gagal menghapus kelas.' }
+      }
+    }
     classes.value = classes.value.filter(c => c !== className)
     return { success: true }
   }
 
-  // 3. FUNGSI LOGIKA PRESENSI
+  // Perhitungan jarak Haversine (meter)
   function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371000 // Radius bumi dalam meter
+    const R = 6371000
     const dLat = (lat2 - lat1) * Math.PI / 180
     const dLon = (lon2 - lon1) * Math.PI / 180
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+      Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2)
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return Math.round(R * c * 10) / 10
   }
 
-  // Presensi Mandiri Siswa (GPS Ringan - Tanpa Kamera Selfie & Tanpa Mapel)
+  // Presensi Mandiri Siswa (GPS)
   async function submitAttendanceGps(user, coords) {
     if (!coords || typeof coords.latitude !== 'number' || typeof coords.longitude !== 'number') {
       return { success: false, message: 'Gagal mendeteksi koordinat GPS. Pastikan izin lokasi aktif.' }
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('submit_presensi_gps', {
+        p_lat: coords.latitude,
+        p_long: coords.longitude,
+        p_foto_url: null
+      })
+
+      if (error) {
+        return { success: false, message: error.message || 'Gagal mencatat presensi ke server.' }
+      }
+      if (!res?.success) {
+        return {
+          success: false,
+          distance: res?.distance,
+          message: res?.message || 'Presensi GPS gagal dicatat.'
+        }
+      }
+
+      if (res.record) {
+        upsertLocalAttendance(mapPresensiRow(res.record))
+      }
+
+      return {
+        success: true,
+        type: res.type,
+        status: res.status,
+        jam: res.jam,
+        jarak: res.jarak,
+        message: res.message
+      }
     }
 
     const distance = calculateDistance(
@@ -220,23 +579,20 @@ export const useAttendanceStore = defineStore('attendance', () => {
     }
 
     const now = new Date()
-    const timeStr = now.toTimeString().split(' ')[0]
-    const todayStr = new Date().toISOString().split('T')[0]
+    const timeStr = getWibTimeStr(now)
+    const todayStr = getWibDateStr(now)
     const [h, m] = (schoolSettings.value.jam_terlambat || '08:00').split(':').map(Number)
-    const lateThreshold = new Date()
-    lateThreshold.setHours(h, m, 0)
+    const lateThreshold = new Date(now)
+    lateThreshold.setHours(h, m, 0, 0)
 
     const isLate = now > lateThreshold
     const status = isLate ? 'terlambat' : 'hadir'
 
-    // Cari presensi siswa hari ini
-    const existingIndex = todayAttendances.value.findIndex(a => 
-      a.user_id === user.id &&
-      (a.tanggal === todayStr || (!a.tanggal && todayStr === new Date().toISOString().split('T')[0]))
+    const existingIndex = todayAttendances.value.findIndex(
+      a => a.user_id === user.id && (a.tanggal === todayStr || !a.tanggal)
     )
 
     if (existingIndex === -1) {
-      // Presensi Masuk (IN)
       const newRecord = {
         id: 'att-' + Date.now(),
         user_id: user.id,
@@ -247,7 +603,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
         tanggal: todayStr,
         jam_masuk: timeStr,
         jam_pulang: null,
-        status: status,
+        status,
         metode_presensi: 'mandiri_gps',
         jarak_masuk_meter: distance,
         foto_masuk_url: null,
@@ -257,13 +613,12 @@ export const useAttendanceStore = defineStore('attendance', () => {
       return {
         success: true,
         type: 'masuk',
-        status: status,
+        status,
         jam: timeStr,
         jarak: distance,
         message: `Presensi Masuk berhasil dicatat (${status.toUpperCase()}) pada pukul ${timeStr} WIB!`
       }
     } else {
-      // Presensi Pulang (OUT)
       if (todayAttendances.value[existingIndex].jam_pulang) {
         return {
           success: false,
@@ -284,27 +639,48 @@ export const useAttendanceStore = defineStore('attendance', () => {
     }
   }
 
-  // Scan Kartu QR oleh Guru/Piket (IGNORE LOCATION - Tanpa Cek GPS)
+  // Scan Kartu QR oleh Guru/Piket (Ignore Location)
   async function scanStudentQr(qrToken, teacherUser) {
-    const student = students.value.find(s => s.qr_token === qrToken || s.nomor_induk === qrToken)
+    const cleanToken = (qrToken || '').trim()
+    if (!cleanToken) {
+      return { success: false, message: 'QR Code kosong atau tidak terbaca.' }
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('scan_qr_presensi_siswa', {
+        p_qr_token: cleanToken
+      })
+
+      if (error) {
+        return { success: false, message: error.message || 'Gagal memproses scan QR ke server.' }
+      }
+      if (!res?.success) {
+        return { success: false, message: res?.message || 'QR Code atau NISN tidak terdaftar.' }
+      }
+
+      if (res.record) {
+        upsertLocalAttendance(mapPresensiRow(res.record))
+      }
+      return res
+    }
+
+    const student = students.value.find(s => s.qr_token === cleanToken || s.nomor_induk === cleanToken)
     if (!student) {
       return { success: false, message: 'QR Code atau NISN tidak terdaftar dalam sistem PKBM Cahaya Mulia.' }
     }
 
     const now = new Date()
-    const timeStr = now.toTimeString().split(' ')[0]
-    const todayStr = new Date().toISOString().split('T')[0]
+    const timeStr = getWibTimeStr(now)
+    const todayStr = getWibDateStr(now)
 
-    const existingIndex = todayAttendances.value.findIndex(a => 
-      a.user_id === student.id && 
-      (a.tanggal === todayStr || (!a.tanggal && todayStr === new Date().toISOString().split('T')[0]))
+    const existingIndex = todayAttendances.value.findIndex(
+      a => a.user_id === student.id && (a.tanggal === todayStr || !a.tanggal)
     )
 
     if (existingIndex === -1) {
-      // Presensi Masuk (IN)
       const [h, m] = (schoolSettings.value.jam_terlambat || '08:00').split(':').map(Number)
-      const lateThreshold = new Date()
-      lateThreshold.setHours(h, m, 0)
+      const lateThreshold = new Date(now)
+      lateThreshold.setHours(h, m, 0, 0)
       const status = now > lateThreshold ? 'terlambat' : 'hadir'
 
       const record = {
@@ -317,9 +693,9 @@ export const useAttendanceStore = defineStore('attendance', () => {
         tanggal: todayStr,
         jam_masuk: timeStr,
         jam_pulang: null,
-        status: status,
+        status,
         metode_presensi: 'qr_guru',
-        dicatat_oleh: teacherUser?.nama_lengkap || 'Tutor PKBM',
+        dicatat_oleh: teacherUser?.nama_lengkap || 'Guru Piket',
         jarak_masuk_meter: 0,
         foto_masuk_url: null,
         keterangan: null
@@ -332,12 +708,11 @@ export const useAttendanceStore = defineStore('attendance', () => {
         jenis_kelamin: student.jenis_kelamin || 'L',
         nomor_induk: student.nomor_induk,
         kelas: student.kelas,
-        status: status,
+        status,
         jam: timeStr,
         message: `Presensi MASUK - ${student.nama_lengkap} (Kelas ${student.kelas}) berhasil dicatat!`
       }
     } else {
-      // Presensi Pulang (OUT)
       if (todayAttendances.value[existingIndex].jam_pulang) {
         return {
           success: true,
@@ -353,7 +728,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
       }
 
       todayAttendances.value[existingIndex].jam_pulang = timeStr
-      todayAttendances.value[existingIndex].dicatat_oleh = teacherUser?.nama_lengkap || 'Tutor PKBM'
+      todayAttendances.value[existingIndex].dicatat_oleh = teacherUser?.nama_lengkap || 'Guru Piket'
       return {
         success: true,
         type: 'pulang',
@@ -368,131 +743,216 @@ export const useAttendanceStore = defineStore('attendance', () => {
     }
   }
 
-  // Update Manual Presensi Siswa oleh Guru/Tutor (IGNORE LOCATION - Tanpa Cek GPS)
-  function setManualAttendance(student, newStatus, teacherUser, customJamMasuk = null, customJamPulang = null, targetDate = null, keterangan = null) {
-    const chosenDate = targetDate || new Date().toISOString().split('T')[0]
-    const effectiveTime = customJamMasuk || new Date().toTimeString().split(' ')[0].substring(0, 5)
+  // Update Manual Presensi Siswa oleh Guru/Piket (Ignore Location)
+  async function setManualAttendance(
+    student,
+    newStatus,
+    teacherUser,
+    customJamMasuk = undefined,
+    customJamPulang = undefined,
+    targetDate = null,
+    keterangan = undefined
+  ) {
+    const todayStr = getWibDateStr()
+    const chosenDate = targetDate || todayStr
+    const effectiveTime = getWibTimeStr()
 
-    const existingIndex = todayAttendances.value.findIndex(a => 
-      a.user_id === student.id && 
-      (a.tanggal === chosenDate || (!a.tanggal && chosenDate === new Date().toISOString().split('T')[0]))
+    const existingIndex = todayAttendances.value.findIndex(
+      a => a.user_id === student.id && (a.tanggal === chosenDate || (!a.tanggal && chosenDate === todayStr))
     )
+    const existing = existingIndex > -1 ? todayAttendances.value[existingIndex] : null
 
-    if (existingIndex > -1) {
-      todayAttendances.value[existingIndex].status = newStatus
-      todayAttendances.value[existingIndex].metode_presensi = 'manual_guru'
-      todayAttendances.value[existingIndex].dicatat_oleh = teacherUser?.nama_lengkap || 'Tutor'
-      todayAttendances.value[existingIndex].tanggal = chosenDate
-      if (keterangan !== undefined && keterangan !== null) {
-        todayAttendances.value[existingIndex].keterangan = keterangan
-      }
-      
-      if (customJamMasuk !== undefined) {
-        todayAttendances.value[existingIndex].jam_masuk = customJamMasuk
-      } else if (!todayAttendances.value[existingIndex].jam_masuk && (newStatus === 'hadir' || newStatus === 'terlambat')) {
-        todayAttendances.value[existingIndex].jam_masuk = effectiveTime
-      }
+    let finalJamMasuk = existing?.jam_masuk || null
+    if (customJamMasuk !== undefined) {
+      finalJamMasuk = customJamMasuk ? normalizeClockInput(customJamMasuk) || customJamMasuk : null
+    } else if (!finalJamMasuk && (newStatus === 'hadir' || newStatus === 'terlambat')) {
+      finalJamMasuk = effectiveTime
+    }
 
-      if (customJamPulang !== undefined) {
-        todayAttendances.value[existingIndex].jam_pulang = customJamPulang
-      }
-    } else {
-      todayAttendances.value.unshift({
-        id: 'att-' + Date.now(),
+    let finalJamPulang = existing?.jam_pulang || null
+    if (customJamPulang !== undefined) {
+      finalJamPulang = customJamPulang ? normalizeClockInput(customJamPulang) || customJamPulang : null
+    }
+
+    const finalKeterangan = keterangan !== undefined ? keterangan : existing?.keterangan || null
+    const recorderName = teacherUser?.nama_lengkap || 'Guru Piket'
+
+    const optimisticRecord = {
+      id: existing?.id || 'att-' + Date.now() + '-' + student.id,
+      user_id: student.id,
+      nama_lengkap: student.nama_lengkap,
+      jenis_kelamin: student.jenis_kelamin || 'L',
+      nomor_induk: student.nomor_induk,
+      kelas: student.kelas,
+      jam_masuk: finalJamMasuk,
+      jam_pulang: finalJamPulang,
+      tanggal: chosenDate,
+      status: newStatus,
+      metode_presensi: 'manual_guru',
+      dicatat_oleh: recorderName,
+      dicatat_oleh_id: isUuid(teacherUser?.id) ? teacherUser.id : existing?.dicatat_oleh_id || null,
+      jarak_masuk_meter: existing?.jarak_masuk_meter ?? 0,
+      foto_masuk_url: existing?.foto_masuk_url || null,
+      keterangan: finalKeterangan
+    }
+
+    upsertLocalAttendance(optimisticRecord)
+
+    if (isSupabaseConfigured && supabase) {
+      const payload = {
         user_id: student.id,
-        nama_lengkap: student.nama_lengkap,
-        jenis_kelamin: student.jenis_kelamin || 'L',
-        nomor_induk: student.nomor_induk,
-        kelas: student.kelas,
-        jam_masuk: (newStatus === 'hadir' || newStatus === 'terlambat') ? effectiveTime : null,
-        jam_pulang: customJamPulang || null,
         tanggal: chosenDate,
         status: newStatus,
         metode_presensi: 'manual_guru',
-        dicatat_oleh: teacherUser?.nama_lengkap || 'Tutor',
-        jarak_masuk_meter: 0,
-        foto_masuk_url: null,
-        keterangan: keterangan || null
-      })
+        dicatat_oleh: isUuid(teacherUser?.id) ? teacherUser.id : null,
+        jam_masuk: finalJamMasuk ? buildWibTimestampIso(chosenDate, finalJamMasuk) : null,
+        jam_pulang: finalJamPulang ? buildWibTimestampIso(chosenDate, finalJamPulang) : null,
+        keterangan: finalKeterangan,
+        catatan: finalKeterangan
+      }
+
+      const { data, error } = await supabase
+        .from('presensi')
+        .upsert(payload, { onConflict: 'user_id,tanggal' })
+        .select('*')
+        .single()
+
+      if (error) {
+        return { success: false, message: error.message || 'Gagal menyimpan perubahan presensi.' }
+      }
+      if (data) {
+        upsertLocalAttendance(mapPresensiRow(data))
+      }
     }
+
+    return { success: true }
   }
 
-  // Tandai Semua Siswa Hadir Sekaligus dalam 1 Kelas (Batch IN - IGNORE LOCATION)
-  function batchSetAllPresent(className, targetDate, teacherUser) {
-    const chosenDate = targetDate || new Date().toISOString().split('T')[0]
-    const effectiveTime = new Date().toTimeString().split(' ')[0].substring(0, 5)
+  // Tandai Semua Siswa Hadir Sekaligus dalam 1 Kelas
+  async function batchSetAllPresent(className, targetDate, teacherUser) {
+    const todayStr = getWibDateStr()
+    const chosenDate = targetDate || todayStr
+    const effectiveTime = getWibTimeStr().substring(0, 5)
     const targetStudents = students.value.filter(s => s.kelas === className)
+    const payloads = []
     let updatedCount = 0
 
     targetStudents.forEach(student => {
-      const idx = todayAttendances.value.findIndex(a => 
-        a.user_id === student.id && 
-        (a.tanggal === chosenDate || (!a.tanggal && chosenDate === new Date().toISOString().split('T')[0]))
+      const idx = todayAttendances.value.findIndex(
+        a => a.user_id === student.id && (a.tanggal === chosenDate || (!a.tanggal && chosenDate === todayStr))
       )
+      const rec = idx > -1 ? todayAttendances.value[idx] : null
 
-      if (idx === -1) {
-        todayAttendances.value.unshift({
-          id: 'att-' + Date.now() + '-' + student.id,
+      if (!rec || rec.status === 'alpa' || !rec.jam_masuk) {
+        const jamMasukVal = extractWibTimeHHMMSS(effectiveTime)
+        upsertLocalAttendance({
+          id: rec?.id || 'att-' + Date.now() + '-' + student.id,
           user_id: student.id,
           nama_lengkap: student.nama_lengkap,
           jenis_kelamin: student.jenis_kelamin || 'L',
           nomor_induk: student.nomor_induk,
           kelas: student.kelas,
-          jam_masuk: effectiveTime,
-          jam_pulang: null,
+          jam_masuk: jamMasukVal,
+          jam_pulang: rec?.jam_pulang || null,
           tanggal: chosenDate,
           status: 'hadir',
           metode_presensi: 'manual_guru',
-          dicatat_oleh: teacherUser?.nama_lengkap || 'Tutor',
+          dicatat_oleh: teacherUser?.nama_lengkap || 'Guru Piket',
+          dicatat_oleh_id: isUuid(teacherUser?.id) ? teacherUser.id : null,
           jarak_masuk_meter: 0,
           foto_masuk_url: null,
-          keterangan: null
+          keterangan: rec?.keterangan || null
         })
-        updatedCount++
-      } else if (todayAttendances.value[idx].status === 'alpa' || !todayAttendances.value[idx].jam_masuk) {
-        todayAttendances.value[idx].status = 'hadir'
-        todayAttendances.value[idx].jam_masuk = effectiveTime
-        todayAttendances.value[idx].dicatat_oleh = teacherUser?.nama_lengkap || 'Tutor'
+
+        payloads.push({
+          user_id: student.id,
+          tanggal: chosenDate,
+          status: 'hadir',
+          metode_presensi: 'manual_guru',
+          dicatat_oleh: isUuid(teacherUser?.id) ? teacherUser.id : null,
+          jam_masuk: buildWibTimestampIso(chosenDate, jamMasukVal),
+          jam_pulang: rec?.jam_pulang ? buildWibTimestampIso(chosenDate, rec.jam_pulang) : null,
+          keterangan: rec?.keterangan || null,
+          catatan: rec?.keterangan || null
+        })
         updatedCount++
       }
     })
 
+    if (isSupabaseConfigured && supabase && payloads.length > 0) {
+      const { data, error } = await supabase
+        .from('presensi')
+        .upsert(payloads, { onConflict: 'user_id,tanggal' })
+        .select('*')
+
+      if (error) {
+        return { success: false, count: 0, message: error.message || 'Gagal menyimpan presensi kolektif.' }
+      }
+      if (data) {
+        data.forEach(row => upsertLocalAttendance(mapPresensiRow(row)))
+      }
+    }
+
     return { success: true, count: updatedCount }
   }
 
-  // 1-Klik Set Jam Pulang Bersama untuk Semua Siswa yang Hadir (Checkout Kolektif)
-  function batchSetAllCheckOut(className, targetDate = null, teacherUser = null, customOutTime = null) {
-    const chosenDate = targetDate || new Date().toISOString().split('T')[0]
-    const effectiveOut = customOutTime || new Date().toTimeString().split(' ')[0].substring(0, 5)
+  // 1-Klik Set Jam Pulang Bersama untuk Semua Siswa yang Hadir
+  async function batchSetAllCheckOut(className, targetDate = null, teacherUser = null, customOutTime = null) {
+    const todayStr = getWibDateStr()
+    const chosenDate = targetDate || todayStr
+    const effectiveOut = extractWibTimeHHMMSS(customOutTime || getWibTimeStr().substring(0, 5))
     const targetStudents = students.value.filter(s => s.kelas === className)
+    const payloads = []
     let updatedCount = 0
 
     targetStudents.forEach(student => {
-      const idx = todayAttendances.value.findIndex(a => 
-        a.user_id === student.id && 
-        (a.tanggal === chosenDate || (!a.tanggal && chosenDate === new Date().toISOString().split('T')[0]))
+      const idx = todayAttendances.value.findIndex(
+        a => a.user_id === student.id && (a.tanggal === chosenDate || (!a.tanggal && chosenDate === todayStr))
       )
 
       if (idx > -1) {
         const rec = todayAttendances.value[idx]
-        if (rec.status === 'hadir' || rec.status === 'terlambat') {
-          if (!rec.jam_pulang) {
-            rec.jam_pulang = effectiveOut
-            if (teacherUser?.nama_lengkap) {
-              rec.dicatat_oleh = teacherUser.nama_lengkap
-            }
-            updatedCount++
+        if ((rec.status === 'hadir' || rec.status === 'terlambat') && !rec.jam_pulang) {
+          rec.jam_pulang = effectiveOut
+          if (teacherUser?.nama_lengkap) {
+            rec.dicatat_oleh = teacherUser.nama_lengkap
           }
+
+          payloads.push({
+            user_id: student.id,
+            tanggal: chosenDate,
+            status: rec.status,
+            metode_presensi: rec.metode_presensi || 'manual_guru',
+            dicatat_oleh: isUuid(teacherUser?.id) ? teacherUser.id : rec.dicatat_oleh_id || null,
+            jam_masuk: rec.jam_masuk ? buildWibTimestampIso(chosenDate, rec.jam_masuk) : null,
+            jam_pulang: buildWibTimestampIso(chosenDate, effectiveOut),
+            keterangan: rec.keterangan || null,
+            catatan: rec.keterangan || null
+          })
+          updatedCount++
         }
       }
     })
 
+    if (isSupabaseConfigured && supabase && payloads.length > 0) {
+      const { data, error } = await supabase
+        .from('presensi')
+        .upsert(payloads, { onConflict: 'user_id,tanggal' })
+        .select('*')
+
+      if (error) {
+        return { success: false, count: 0, message: error.message || 'Gagal menyimpan jam pulang kolektif.' }
+      }
+      if (data) {
+        data.forEach(row => upsertLocalAttendance(mapPresensiRow(row)))
+      }
+    }
+
     return { success: true, count: updatedCount }
   }
 
-  // Rekapitulasi Matriks Bulanan (Tanggal 1 s.d. 31) persis Format Gambar Manual
+  // Rekapitulasi Matriks Bulanan (Tanggal 1 s.d. 31)
   function getMonthlyAttendanceMatrix(className, month, year) {
-    // month: 1 - 12, year: misal 2026
     const daysInMonth = new Date(year, month, 0).getDate()
     const classStudents = students.value.filter(s => s.kelas === className)
 
@@ -505,8 +965,8 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-        const record = todayAttendances.value.find(a => 
-          a.user_id === std.id && a.tanggal === dateStr
+        const record = todayAttendances.value.find(
+          a => a.user_id === std.id && a.tanggal === dateStr
         )
 
         if (record) {
@@ -547,167 +1007,338 @@ export const useAttendanceStore = defineStore('attendance', () => {
     })
   }
 
-  // Update Pengaturan Sekolah
-  function updateSchoolSettings(newSettings) {
+  // Update Pengaturan Sekolah (Admin)
+  async function updateSchoolSettings(newSettings) {
     schoolSettings.value = { ...schoolSettings.value, ...newSettings }
+
+    if (isSupabaseConfigured && supabase) {
+      const targetId = schoolSettings.value.id || 1
+      const { error } = await supabase
+        .from('pengaturan_sekolah')
+        .update({
+          nama_sekolah: schoolSettings.value.nama_sekolah,
+          alamat: schoolSettings.value.alamat || '',
+          tahun_pelajaran: schoolSettings.value.tahun_pelajaran,
+          latitude: Number(schoolSettings.value.latitude),
+          longitude: Number(schoolSettings.value.longitude),
+          radius_meter: Number(schoolSettings.value.radius_meter),
+          jam_masuk: (schoolSettings.value.jam_masuk || '07:30').slice(0, 5) + ':00',
+          jam_terlambat: (schoolSettings.value.jam_terlambat || '08:00').slice(0, 5) + ':00',
+          jam_pulang: (schoolSettings.value.jam_pulang || '14:00').slice(0, 5) + ':00',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', targetId)
+
+      if (error) {
+        return { success: false, message: error.message || 'Gagal menyimpan pengaturan sekolah.' }
+      }
+    }
+
+    return { success: true }
   }
 
-  // Reset Token Siswa
-  function resetStudentQrToken(studentId) {
+  // Simpan Nama & Jabatan Penandatangan "Mengetahui" (Guru Piket & Admin)
+  async function updateRekapSignatory(jabatan, nama, nip) {
+    schoolSettings.value.mengetahui_jabatan = jabatan
+    schoolSettings.value.mengetahui_nama = nama
+    schoolSettings.value.mengetahui_nip = nip
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('update_rekap_signatory', {
+        p_jabatan: jabatan || 'Ketua PKBM Cahaya Mulia',
+        p_nama: nama || '',
+        p_nip: nip || ''
+      })
+      if (error || !res?.success) {
+        return {
+          success: false,
+          message: error?.message || res?.message || 'Gagal menyimpan penandatangan rekap.'
+        }
+      }
+    }
+
+    return { success: true }
+  }
+
+  // Reset Token Kartu Siswa
+  async function resetStudentQrToken(studentId) {
     const student = students.value.find(s => s.id === studentId)
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('reset_siswa_qr_token', {
+        p_siswa_id: studentId
+      })
+      if (error || !res?.success) {
+        return { success: false, message: error?.message || res?.message || 'Gagal mereset token QR.' }
+      }
+      if (student) {
+        student.qr_token = res.new_qr_token
+      }
+      return { success: true, new_token: res.new_qr_token }
+    }
+
     if (student) {
       student.qr_token = 'tok_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now()
       return { success: true, new_token: student.qr_token }
     }
-    return { success: false }
+    return { success: false, message: 'Data siswa tidak ditemukan.' }
   }
 
-  // CRUD Manajemen Siswa
+  // ===================== CRUD SISWA =====================
   async function addStudent(studentData) {
-    if (studentData.kelas) {
-      addClass(studentData.kelas)
-    }
+    const cleanName = (studentData.nama_lengkap || '').trim()
+    const cleanNisn = (studentData.nomor_induk || '').trim()
+    const cleanKelas = (studentData.kelas || '12').trim().toUpperCase()
+    const cleanEmail = (
+      studentData.email || `${cleanNisn.toLowerCase().replace(/[^a-z0-9]/g, '')}@pkbm.sch.id`
+    ).toLowerCase()
 
-    const newStudent = {
-      id: 'usr-siswa-' + Date.now(),
-      email: studentData.email || `${studentData.nomor_induk}@sekolah.sch.id`,
-      nama_lengkap: studentData.nama_lengkap,
-      nomor_induk: studentData.nomor_induk,
-      kelas: studentData.kelas || '12',
-      password: studentData.password || 'password123',
-      foto_update_count: 0,
-      qr_token: 'tok_' + studentData.nomor_induk + '_' + Math.random().toString(36).substring(2, 7),
-      foto_profil_url: studentData.foto_profil_url || ''
+    if (!cleanName || !cleanNisn) {
+      return { success: false, message: 'Nama lengkap dan NISN wajib diisi.' }
     }
 
     if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.from('profiles').insert([
-          {
-            nama_lengkap: newStudent.nama_lengkap,
-            nomor_induk: newStudent.nomor_induk,
-            kelas: newStudent.kelas,
-            role: 'siswa',
-            qr_token: newStudent.qr_token,
-            foto_profil_url: newStudent.foto_profil_url
-          }
-        ])
-        if (error) throw error
-      } catch (err) {
-        console.error('Supabase add student error:', err)
+      const { data: res, error } = await supabase.rpc('admin_create_user', {
+        p_email: cleanEmail,
+        p_password: studentData.password || 'password123',
+        p_nama_lengkap: cleanName,
+        p_nomor_induk: cleanNisn,
+        p_jenis_kelamin: studentData.jenis_kelamin || 'L',
+        p_role: 'siswa',
+        p_kelas: cleanKelas,
+        p_foto_profil_url: studentData.foto_profil_url || ''
+      })
+
+      if (error || !res?.success) {
+        return {
+          success: false,
+          message: error?.message || res?.message || 'Gagal menambahkan data siswa.'
+        }
       }
+
+      if (res.profile) {
+        upsertProfileInLists(res.profile)
+      }
+      if (cleanKelas && !classes.value.includes(cleanKelas)) {
+        classes.value.push(cleanKelas)
+      }
+      return { success: true, student: res.profile }
     }
 
+    await addClass(cleanKelas)
+    const newStudent = {
+      id: 'usr-siswa-' + Date.now(),
+      email: cleanEmail,
+      nama_lengkap: cleanName,
+      jenis_kelamin: studentData.jenis_kelamin || 'L',
+      nomor_induk: cleanNisn,
+      kelas: cleanKelas,
+      password: studentData.password || 'password123',
+      foto_update_count: 0,
+      qr_token: 'tok_' + cleanNisn + '_' + Math.random().toString(36).substring(2, 7),
+      foto_profil_url: studentData.foto_profil_url || '',
+      is_deleted: false
+    }
     rawStudents.value.push(newStudent)
     return { success: true, student: newStudent }
   }
 
   async function updateStudent(id, studentData) {
-    if (studentData.kelas) {
-      addClass(studentData.kelas)
-    }
-    const idx = rawStudents.value.findIndex(s => s.id === id)
-    if (idx !== -1) {
-      rawStudents.value[idx] = { ...rawStudents.value[idx], ...studentData }
-      if (isSupabaseConfigured && supabase) {
-        try {
-          await supabase.from('profiles').update(studentData).eq('id', id)
-        } catch (err) {
-          console.error('Supabase update student error:', err)
+    const cleanKelas = studentData.kelas ? studentData.kelas.trim().toUpperCase() : undefined
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_update_user', {
+        p_user_id: id,
+        p_email: studentData.email ? studentData.email.trim().toLowerCase() : null,
+        p_password: studentData.password && studentData.password.trim() ? studentData.password.trim() : null,
+        p_nama_lengkap: studentData.nama_lengkap?.trim() || null,
+        p_nomor_induk: studentData.nomor_induk?.trim() || null,
+        p_jenis_kelamin: studentData.jenis_kelamin || null,
+        p_kelas: cleanKelas || null,
+        p_foto_profil_url: studentData.foto_profil_url ?? null,
+        p_foto_update_count:
+          typeof studentData.foto_update_count === 'number' ? studentData.foto_update_count : null
+      })
+
+      if (error || !res?.success) {
+        return {
+          success: false,
+          message: error?.message || res?.message || 'Gagal memperbarui data siswa.'
         }
       }
-      return { success: true }
+
+      if (res.profile) {
+        upsertProfileInLists(res.profile)
+      }
+      if (cleanKelas && !classes.value.includes(cleanKelas)) {
+        classes.value.push(cleanKelas)
+      }
+      return { success: true, student: res.profile }
     }
-    return { success: false }
+
+    if (cleanKelas) await addClass(cleanKelas)
+    const idx = rawStudents.value.findIndex(s => s.id === id)
+    if (idx !== -1) {
+      const patch = { ...studentData }
+      if (cleanKelas) patch.kelas = cleanKelas
+      if (!patch.password) delete patch.password
+      rawStudents.value[idx] = { ...rawStudents.value[idx], ...patch }
+      return { success: true, student: rawStudents.value[idx] }
+    }
+    return { success: false, message: 'Data siswa tidak ditemukan.' }
   }
 
-  // Soft Delete Siswa
   async function deleteStudent(id) {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_set_user_deleted', {
+        p_user_id: id,
+        p_is_deleted: true
+      })
+      if (error || !res?.success) {
+        return { success: false, message: error?.message || res?.message || 'Gagal menonaktifkan siswa.' }
+      }
+    }
+
     const student = rawStudents.value.find(s => s.id === id)
     if (student) {
       student.is_deleted = true
       student.deleted_at = new Date().toISOString()
-      if (isSupabaseConfigured && supabase) {
-        try {
-          await supabase.from('profiles').update({ is_deleted: true, deleted_at: student.deleted_at }).eq('id', id)
-        } catch (err) {
-          console.error('Supabase soft delete student error:', err)
-        }
-      }
       return { success: true }
     }
-    return { success: false }
+    return { success: false, message: 'Data siswa tidak ditemukan.' }
   }
 
-  // Restore Siswa dari Sampah (Soft Delete Recovery)
-  function restoreStudent(id) {
+  async function restoreStudent(id) {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_set_user_deleted', {
+        p_user_id: id,
+        p_is_deleted: false
+      })
+      if (error || !res?.success) {
+        return { success: false, message: error?.message || res?.message || 'Gagal memulihkan siswa.' }
+      }
+    }
+
     const student = rawStudents.value.find(s => s.id === id)
     if (student) {
       student.is_deleted = false
       student.deleted_at = null
-      if (isSupabaseConfigured && supabase) {
-        supabase.from('profiles').update({ is_deleted: false, deleted_at: null }).eq('id', id)
-      }
       return { success: true }
     }
-    return { success: false }
+    return { success: false, message: 'Data siswa tidak ditemukan.' }
   }
 
-  // Submit Pengajuan Izin Siswa
+  // Submit Pengajuan Izin Siswa (Supabase RPC + Mock fallback)
   async function submitLeaveRequest(data) {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('submit_pengajuan_izin', {
+        p_tanggal: data.tanggal_mulai,
+        p_jenis: data.jenis,
+        p_keterangan: data.keterangan,
+        p_bukti_url: data.bukti_surat_url || null
+      })
+
+      if (error || !res?.success) {
+        return {
+          success: false,
+          message: error?.message || res?.message || 'Gagal mengirim pengajuan izin.'
+        }
+      }
+
+      if (res.leave) {
+        const mappedLeave = mapLeaveRow(res.leave)
+        leaveRequests.value.unshift(mappedLeave)
+      }
+      if (res.presensi) {
+        upsertLocalAttendance(mapPresensiRow(res.presensi))
+      }
+      return { success: true, data: res.leave }
+    }
+
     const newRequest = {
       id: 'leave-' + Date.now(),
       user_id: data.user_id,
       nama_lengkap: data.nama_lengkap,
       kelas: data.kelas,
       tanggal_mulai: data.tanggal_mulai,
-      tanggal_selesai: data.tanggal_selesai,
+      tanggal_selesai: data.tanggal_selesai || data.tanggal_mulai,
       jenis: data.jenis,
       keterangan: data.keterangan,
       bukti_surat_url: data.bukti_surat_url || null,
-      status: 'pending',
+      status: 'approved',
       created_at: new Date().toISOString()
     }
-
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.from('pengajuan_izin').insert([{
-          user_id: data.user_id,
-          tanggal_mulai: data.tanggal_mulai,
-          tanggal_selesai: data.tanggal_selesai,
-          jenis: data.jenis,
-          keterangan: data.keterangan,
-          bukti_surat_url: data.bukti_surat_url || null,
-          status: 'pending'
-        }])
-        if (error) console.error('Supabase submit permit error:', error)
-      } catch (err) {
-        console.error('Supabase submit permit exception:', err)
-      }
-    }
-
     leaveRequests.value.unshift(newRequest)
+
+    await setManualAttendance(
+      {
+        id: data.user_id,
+        nama_lengkap: data.nama_lengkap,
+        kelas: data.kelas,
+        nomor_induk: data.nomor_induk || ''
+      },
+      data.jenis,
+      null,
+      null,
+      null,
+      data.tanggal_mulai,
+      data.keterangan
+    )
+
     return { success: true, data: newRequest }
   }
 
-  // CRUD Manajemen Guru & Alokasi Kelas
-  function addTeacher(teacherData) {
-    if (teacherData.kelas_diajar && teacherData.kelas_diajar.length) {
-      teacherData.kelas_diajar.forEach(c => addClass(c))
+  // ===================== CRUD GURU PIKET / TUTOR =====================
+  async function addTeacher(teacherData) {
+    const cleanName = (teacherData.nama_lengkap || '').trim()
+    const cleanNip = (teacherData.nomor_induk || '').trim()
+    const cleanEmail = (teacherData.email || `guru.${Date.now()}@pkbm.sch.id`).trim().toLowerCase()
+    const kelasDiajar = teacherData.kelas_diajar?.length ? [...teacherData.kelas_diajar] : ['12']
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_create_user', {
+        p_email: cleanEmail,
+        p_password: teacherData.password || 'password123',
+        p_nama_lengkap: cleanName,
+        p_nomor_induk: cleanNip,
+        p_jenis_kelamin: teacherData.jenis_kelamin || 'L',
+        p_role: 'guru',
+        p_kelas: null,
+        p_kelas_diajar: kelasDiajar,
+        p_mata_pelajaran: teacherData.mata_pelajaran || 'Guru Piket Harian',
+        p_jabatan: 'Guru Piket',
+        p_foto_profil_url: teacherData.foto_profil_url || ''
+      })
+
+      if (error || !res?.success) {
+        return {
+          success: false,
+          message: error?.message || res?.message || 'Gagal menambahkan guru/piket.'
+        }
+      }
+
+      if (res.profile) {
+        upsertProfileInLists(res.profile)
+      }
+      kelasDiajar.forEach(c => {
+        if (c && !classes.value.includes(c)) classes.value.push(c)
+      })
+      return { success: true, teacher: res.profile }
     }
 
+    for (const c of kelasDiajar) await addClass(c)
     const newTeacher = {
       id: 'usr-guru-' + Date.now(),
-      email: teacherData.email || `guru.${Date.now()}@sekolah.sch.id`,
-      nama_lengkap: teacherData.nama_lengkap,
-      nomor_induk: teacherData.nomor_induk,
+      email: cleanEmail,
+      nama_lengkap: cleanName,
+      nomor_induk: cleanNip,
       password: teacherData.password || 'password123',
       foto_update_count: 0,
-      mata_pelajaran: teacherData.mata_pelajaran || 'Mata Pelajaran Umum',
-      kelas_diajar: teacherData.kelas_diajar?.length ? [...teacherData.kelas_diajar] : ['12'],
-      jam_masuk_default: teacherData.jam_masuk_default || '07:00',
-      jam_terlambat_default: teacherData.jam_terlambat_default || '07:15',
-      jam_pulang_default: teacherData.jam_pulang_default || '15:00',
+      mata_pelajaran: teacherData.mata_pelajaran || 'Guru Piket Harian',
+      kelas_diajar: kelasDiajar,
+      jam_masuk_default: teacherData.jam_masuk_default || '07:30',
+      jam_terlambat_default: teacherData.jam_terlambat_default || '08:00',
+      jam_pulang_default: teacherData.jam_pulang_default || '14:00',
       jadwal_kelas: teacherData.jadwal_kelas || {},
       foto_profil_url: teacherData.foto_profil_url || '',
       is_deleted: false,
@@ -717,68 +1348,159 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return { success: true, teacher: newTeacher }
   }
 
-  function updateTeacher(id, teacherData) {
-    if (teacherData.kelas_diajar && teacherData.kelas_diajar.length) {
-      teacherData.kelas_diajar.forEach(c => addClass(c))
+  async function updateTeacher(id, teacherData) {
+    const kelasDiajar = teacherData.kelas_diajar ? [...teacherData.kelas_diajar] : null
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_update_user', {
+        p_user_id: id,
+        p_email: teacherData.email ? teacherData.email.trim().toLowerCase() : null,
+        p_password: teacherData.password && teacherData.password.trim() ? teacherData.password.trim() : null,
+        p_nama_lengkap: teacherData.nama_lengkap?.trim() || null,
+        p_nomor_induk: teacherData.nomor_induk?.trim() || null,
+        p_jenis_kelamin: teacherData.jenis_kelamin || null,
+        p_kelas_diajar: kelasDiajar,
+        p_mata_pelajaran: teacherData.mata_pelajaran ?? null,
+        p_foto_profil_url: teacherData.foto_profil_url ?? null,
+        p_foto_update_count:
+          typeof teacherData.foto_update_count === 'number' ? teacherData.foto_update_count : null
+      })
+
+      if (error || !res?.success) {
+        return {
+          success: false,
+          message: error?.message || res?.message || 'Gagal memperbarui data guru.'
+        }
+      }
+
+      if (res.profile) {
+        upsertProfileInLists(res.profile)
+      }
+      if (kelasDiajar) {
+        kelasDiajar.forEach(c => {
+          if (c && !classes.value.includes(c)) classes.value.push(c)
+        })
+      }
+      return { success: true, teacher: res.profile }
+    }
+
+    if (kelasDiajar) {
+      for (const c of kelasDiajar) await addClass(c)
     }
     const idx = rawTeachers.value.findIndex(t => t.id === id)
     if (idx !== -1) {
-      rawTeachers.value[idx] = { ...rawTeachers.value[idx], ...teacherData }
+      const patch = { ...teacherData }
+      if (!patch.password) delete patch.password
+      rawTeachers.value[idx] = { ...rawTeachers.value[idx], ...patch }
       return { success: true, teacher: rawTeachers.value[idx] }
     }
-    return { success: false }
+    return { success: false, message: 'Data guru tidak ditemukan.' }
   }
 
-  // Soft Delete Guru
-  function deleteTeacher(id) {
+  async function deleteTeacher(id) {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_set_user_deleted', {
+        p_user_id: id,
+        p_is_deleted: true
+      })
+      if (error || !res?.success) {
+        return { success: false, message: error?.message || res?.message || 'Gagal menonaktifkan guru.' }
+      }
+    }
+
     const teacher = rawTeachers.value.find(t => t.id === id)
     if (teacher) {
       teacher.is_deleted = true
       teacher.deleted_at = new Date().toISOString()
       return { success: true }
     }
-    return { success: false }
+    return { success: false, message: 'Data guru tidak ditemukan.' }
   }
 
-  // Restore Guru dari Sampah
-  function restoreTeacher(id) {
+  async function restoreTeacher(id) {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_set_user_deleted', {
+        p_user_id: id,
+        p_is_deleted: false
+      })
+      if (error || !res?.success) {
+        return { success: false, message: error?.message || res?.message || 'Gagal memulihkan guru.' }
+      }
+    }
+
     const teacher = rawTeachers.value.find(t => t.id === id)
     if (teacher) {
       teacher.is_deleted = false
       teacher.deleted_at = null
       return { success: true }
     }
-    return { success: false }
+    return { success: false, message: 'Data guru tidak ditemukan.' }
   }
 
-  function updateTeacherSchedule(teacherId, scheduleData, className = null) {
+  async function updateTeacherSchedule(teacherId, scheduleData, className = null) {
     const teacher = rawTeachers.value.find(t => t.id === teacherId)
-    if (teacher) {
-      if (!teacher.jadwal_kelas) teacher.jadwal_kelas = {}
-      if (className) {
-        teacher.jadwal_kelas[className] = {
-          jam_masuk: scheduleData.jam_masuk || scheduleData.jam_masuk_default || teacher.jadwal_kelas[className]?.jam_masuk || teacher.jam_masuk_default || '07:00',
-          jam_terlambat: scheduleData.jam_terlambat || scheduleData.jam_terlambat_default || teacher.jadwal_kelas[className]?.jam_terlambat || teacher.jam_terlambat_default || '07:15',
-          jam_pulang: scheduleData.jam_pulang || scheduleData.jam_pulang_default || teacher.jadwal_kelas[className]?.jam_pulang || teacher.jam_pulang_default || '15:00',
-          mata_pelajaran: scheduleData.mata_pelajaran || teacher.jadwal_kelas[className]?.mata_pelajaran || ''
-        }
+    if (!teacher) return { success: false }
+
+    if (!teacher.jadwal_kelas) teacher.jadwal_kelas = {}
+    if (className) {
+      teacher.jadwal_kelas[className] = {
+        jam_masuk:
+          scheduleData.jam_masuk ||
+          scheduleData.jam_masuk_default ||
+          teacher.jadwal_kelas[className]?.jam_masuk ||
+          teacher.jam_masuk_default ||
+          '07:30',
+        jam_terlambat:
+          scheduleData.jam_terlambat ||
+          scheduleData.jam_terlambat_default ||
+          teacher.jadwal_kelas[className]?.jam_terlambat ||
+          teacher.jam_terlambat_default ||
+          '08:00',
+        jam_pulang:
+          scheduleData.jam_pulang ||
+          scheduleData.jam_pulang_default ||
+          teacher.jadwal_kelas[className]?.jam_pulang ||
+          teacher.jam_pulang_default ||
+          '14:00',
+        mata_pelajaran: scheduleData.mata_pelajaran || teacher.jadwal_kelas[className]?.mata_pelajaran || ''
       }
-      if (scheduleData.jam_masuk_default || scheduleData.jam_masuk) {
-        teacher.jam_masuk_default = scheduleData.jam_masuk_default || scheduleData.jam_masuk
-      }
-      if (scheduleData.jam_terlambat_default || scheduleData.jam_terlambat) {
-        teacher.jam_terlambat_default = scheduleData.jam_terlambat_default || scheduleData.jam_terlambat
-      }
-      if (scheduleData.jam_pulang_default || scheduleData.jam_pulang) {
-        teacher.jam_pulang_default = scheduleData.jam_pulang_default || scheduleData.jam_pulang
-      }
-      return { success: true, teacher }
     }
-    return { success: false }
+    if (scheduleData.jam_masuk_default || scheduleData.jam_masuk) {
+      teacher.jam_masuk_default = scheduleData.jam_masuk_default || scheduleData.jam_masuk
+    }
+    if (scheduleData.jam_terlambat_default || scheduleData.jam_terlambat) {
+      teacher.jam_terlambat_default = scheduleData.jam_terlambat_default || scheduleData.jam_terlambat
+    }
+    if (scheduleData.jam_pulang_default || scheduleData.jam_pulang) {
+      teacher.jam_pulang_default = scheduleData.jam_pulang_default || scheduleData.jam_pulang
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase
+        .from('profiles')
+        .update({
+          jam_masuk_default: teacher.jam_masuk_default,
+          jam_terlambat_default: teacher.jam_terlambat_default,
+          jam_pulang_default: teacher.jam_pulang_default,
+          jadwal_kelas: teacher.jadwal_kelas
+        })
+        .eq('id', teacherId)
+    }
+
+    return { success: true, teacher }
   }
 
-  // Reset Kuota Kesempatan Ganti Foto Mandiri (Fitur Khusus Admin)
-  function resetStudentPhotoQuota(id) {
+  async function resetStudentPhotoQuota(id) {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_update_user', {
+        p_user_id: id,
+        p_foto_update_count: 0
+      })
+      if (error || !res?.success) {
+        return { success: false, message: error?.message || res?.message || 'Gagal mereset kuota foto.' }
+      }
+    }
+
     const student = rawStudents.value.find(s => s.id === id)
     if (student) {
       student.foto_update_count = 0
@@ -787,7 +1509,17 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return { success: false }
   }
 
-  function resetTeacherPhotoQuota(id) {
+  async function resetTeacherPhotoQuota(id) {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_update_user', {
+        p_user_id: id,
+        p_foto_update_count: 0
+      })
+      if (error || !res?.success) {
+        return { success: false, message: error?.message || res?.message || 'Gagal mereset kuota foto.' }
+      }
+    }
+
     const teacher = rawTeachers.value.find(t => t.id === id)
     if (teacher) {
       teacher.foto_update_count = 0
@@ -796,8 +1528,17 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return { success: false }
   }
 
-  // Ganti / Reset Password Siswa & Guru oleh Admin
-  function setStudentPassword(id, newPassword = 'password123') {
+  async function setStudentPassword(id, newPassword = 'password123') {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_reset_user_password', {
+        p_user_id: id,
+        p_new_password: newPassword
+      })
+      if (error || !res?.success) {
+        return { success: false, message: error?.message || res?.message }
+      }
+      return { success: true }
+    }
     const student = rawStudents.value.find(s => s.id === id)
     if (student) {
       student.password = newPassword
@@ -806,7 +1547,17 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return { success: false }
   }
 
-  function setTeacherPassword(id, newPassword = 'password123') {
+  async function setTeacherPassword(id, newPassword = 'password123') {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_reset_user_password', {
+        p_user_id: id,
+        p_new_password: newPassword
+      })
+      if (error || !res?.success) {
+        return { success: false, message: error?.message || res?.message }
+      }
+      return { success: true }
+    }
     const teacher = rawTeachers.value.find(t => t.id === id)
     if (teacher) {
       teacher.password = newPassword
@@ -816,18 +1567,37 @@ export const useAttendanceStore = defineStore('attendance', () => {
   }
 
   // ===================== CRUD ADMINISTRATOR & STAF TU =====================
-  function addAdmin(adminData) {
+  async function addAdmin(adminData) {
     const cleanNip = (adminData.nomor_induk || '').trim()
     const cleanEmail = (adminData.email || '').trim().toLowerCase()
+    const cleanName = (adminData.nama_lengkap || '').trim()
 
-    if (!adminData.nama_lengkap || !adminData.nama_lengkap.trim()) {
-      return { success: false, message: 'Nama lengkap Administrator wajib diisi!' }
-    }
-    if (!cleanNip) {
-      return { success: false, message: 'Nomor Induk / NIK Administrator wajib diisi!' }
-    }
-    if (!cleanEmail) {
-      return { success: false, message: 'Email Administrator wajib diisi!' }
+    if (!cleanName) return { success: false, message: 'Nama lengkap Administrator wajib diisi!' }
+    if (!cleanNip) return { success: false, message: 'Nomor Induk / NIK Administrator wajib diisi!' }
+    if (!cleanEmail) return { success: false, message: 'Email Administrator wajib diisi!' }
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_create_user', {
+        p_email: cleanEmail,
+        p_password: adminData.password || 'password123',
+        p_nama_lengkap: cleanName,
+        p_nomor_induk: cleanNip,
+        p_jenis_kelamin: 'L',
+        p_role: 'admin',
+        p_jabatan: (adminData.jabatan || 'Staf Tata Usaha').trim()
+      })
+
+      if (error || !res?.success) {
+        return {
+          success: false,
+          message: error?.message || res?.message || 'Gagal menambahkan Administrator.'
+        }
+      }
+
+      if (res.profile) {
+        upsertProfileInLists(res.profile)
+      }
+      return { success: true, admin: res.profile }
     }
 
     if (rawAdmins.value.some(a => !a.is_deleted && a.nomor_induk.toLowerCase() === cleanNip.toLowerCase())) {
@@ -839,7 +1609,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
     const newAdmin = {
       id: `usr-admin-${Date.now()}`,
-      nama_lengkap: adminData.nama_lengkap.trim(),
+      nama_lengkap: cleanName,
       nomor_induk: cleanNip,
       email: cleanEmail,
       role: 'admin',
@@ -854,12 +1624,35 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return { success: true, admin: newAdmin }
   }
 
-  function updateAdmin(id, adminData) {
-    const admin = rawAdmins.value.find(a => a.id === id)
-    if (!admin) return { success: false, message: 'Data Administrator tidak ditemukan.' }
-
+  async function updateAdmin(id, adminData) {
     const cleanNip = (adminData.nomor_induk || '').trim()
     const cleanEmail = (adminData.email || '').trim().toLowerCase()
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_update_user', {
+        p_user_id: id,
+        p_email: cleanEmail || null,
+        p_password: adminData.password && adminData.password.trim() ? adminData.password.trim() : null,
+        p_nama_lengkap: adminData.nama_lengkap?.trim() || null,
+        p_nomor_induk: cleanNip || null,
+        p_jabatan: adminData.jabatan?.trim() || null
+      })
+
+      if (error || !res?.success) {
+        return {
+          success: false,
+          message: error?.message || res?.message || 'Gagal memperbarui data Administrator.'
+        }
+      }
+
+      if (res.profile) {
+        upsertProfileInLists(res.profile)
+      }
+      return { success: true, admin: res.profile }
+    }
+
+    const admin = rawAdmins.value.find(a => a.id === id)
+    if (!admin) return { success: false, message: 'Data Administrator tidak ditemukan.' }
 
     if (rawAdmins.value.some(a => a.id !== id && !a.is_deleted && a.nomor_induk.toLowerCase() === cleanNip.toLowerCase())) {
       return { success: false, message: 'Nomor Induk / NIK Admin sudah digunakan oleh akun lain!' }
@@ -878,7 +1671,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return { success: true, admin }
   }
 
-  function deleteAdmin(id, currentUserId = null) {
+  async function deleteAdmin(id, currentUserId = null) {
     const admin = rawAdmins.value.find(a => a.id === id)
     if (!admin) return { success: false, message: 'Data Administrator tidak ditemukan.' }
     if (admin.is_root) {
@@ -888,12 +1681,35 @@ export const useAttendanceStore = defineStore('attendance', () => {
       return { success: false, message: 'Anda tidak dapat menghapus akun Anda sendiri yang sedang aktif digunakan!' }
     }
 
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_set_user_deleted', {
+        p_user_id: id,
+        p_is_deleted: true
+      })
+      if (error || !res?.success) {
+        return {
+          success: false,
+          message: error?.message || res?.message || 'Gagal menghapus akun Administrator.'
+        }
+      }
+    }
+
     admin.is_deleted = true
     admin.deleted_at = new Date().toISOString()
     return { success: true }
   }
 
-  function restoreAdmin(id) {
+  async function restoreAdmin(id) {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_set_user_deleted', {
+        p_user_id: id,
+        p_is_deleted: false
+      })
+      if (error || !res?.success) {
+        return { success: false, message: error?.message || res?.message }
+      }
+    }
+
     const admin = rawAdmins.value.find(a => a.id === id)
     if (admin) {
       admin.is_deleted = false
@@ -903,7 +1719,21 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return { success: false }
   }
 
-  function setAdminPassword(id, newPassword = 'password123') {
+  async function setAdminPassword(id, newPassword = 'password123') {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('admin_reset_user_password', {
+        p_user_id: id,
+        p_new_password: newPassword
+      })
+      if (error || !res?.success) {
+        return {
+          success: false,
+          message: error?.message || res?.message || 'Gagal mereset password Administrator.'
+        }
+      }
+      return { success: true }
+    }
+
     const admin = rawAdmins.value.find(a => a.id === id)
     if (admin) {
       admin.password = newPassword
@@ -912,50 +1742,12 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return { success: false }
   }
 
-  // Reset semua data kembali ke default seeding lengkap (3 kelas @ 30 siswa, 4 guru multi-mapel, 2 admin)
-  function resetAllDataToDefault() {
-    const studentsSeed = generateStudents()
-    const attendancesSeed = generateTodayAttendances(studentsSeed)
-    const leaveSeed = generateLeaveRequests()
-
-    schoolSettings.value = { ...defaultSchoolSettings }
-    rawStudents.value = [...studentsSeed]
-    rawTeachers.value = [...defaultTeachers]
-    rawAdmins.value = [...defaultAdmins]
-    todayAttendances.value = [...attendancesSeed]
-    leaveRequests.value = [...leaveSeed]
-    classes.value = [...defaultClasses]
-
-    localStorage.setItem('presensi_school_settings', JSON.stringify(defaultSchoolSettings))
-    localStorage.setItem('presensi_students', JSON.stringify(studentsSeed))
-    localStorage.setItem('presensi_teachers', JSON.stringify(defaultTeachers))
-    localStorage.setItem('presensi_admins', JSON.stringify(defaultAdmins))
-    localStorage.setItem('presensi_today_attendances', JSON.stringify(attendancesSeed))
-    localStorage.setItem('presensi_leave_requests', JSON.stringify(leaveSeed))
-    localStorage.setItem('presensi_classes', JSON.stringify(defaultClasses))
-    localStorage.removeItem('presensi_admin_password')
-  }
-
-  // Kosongkan semua data untuk pengujian dari kondisi nol / baru (Clean Slate)
-  function clearAllDataToCleanSlate() {
-    rawStudents.value = []
-    rawTeachers.value = []
-    // Tetap pertahankan akun Super Admin root agar penguji tidak terkunci
-    rawAdmins.value = [defaultAdmins[0]]
-    todayAttendances.value = []
-    leaveRequests.value = []
-    classes.value = []
-
-    localStorage.setItem('presensi_students', JSON.stringify([]))
-    localStorage.setItem('presensi_teachers', JSON.stringify([]))
-    localStorage.setItem('presensi_admins', JSON.stringify([defaultAdmins[0]]))
-    localStorage.setItem('presensi_today_attendances', JSON.stringify([]))
-    localStorage.setItem('presensi_leave_requests', JSON.stringify([]))
-    localStorage.setItem('presensi_classes', JSON.stringify([]))
-    localStorage.removeItem('presensi_admin_password')
-  }
-
   return {
+    isLoading,
+    hasLoaded,
+    ensureDataLoaded,
+    initializeData,
+    resetRemoteState,
     schoolSettings,
     activeAcademicYear,
     students,
@@ -985,6 +1777,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
     getMonthlyAttendanceMatrix,
     submitLeaveRequest,
     updateSchoolSettings,
+    updateRekapSignatory,
     resetStudentQrToken,
     addStudent,
     updateStudent,
@@ -1000,8 +1793,6 @@ export const useAttendanceStore = defineStore('attendance', () => {
     addAdmin,
     updateAdmin,
     deleteAdmin,
-    setAdminPassword,
-    resetAllDataToDefault,
-    clearAllDataToCleanSlate
+    setAdminPassword
   }
 })

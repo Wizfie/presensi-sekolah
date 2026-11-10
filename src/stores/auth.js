@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { useAttendanceStore } from './attendance'
 
 export const useAuthStore = defineStore('auth', () => {
-  // Mock users PKBM Cahaya Mulia
+  // Akun mock lokal (hanya aktif apabila env Supabase belum dikonfigurasi untuk preview offline)
   const mockUsers = [
     {
       id: '11111111-1111-1111-1111-111111111111',
@@ -31,20 +32,6 @@ export const useAuthStore = defineStore('auth', () => {
       foto_profil_url: ''
     },
     {
-      id: 'usr-tutor-2',
-      email: 'siti.tutor@pkbm.sch.id',
-      alias_emails: ['siti.guru@sekolah.sch.id'],
-      nama_lengkap: 'Siti Nurhaliza, M.Pd',
-      nomor_induk: '199003152015022003',
-      role: 'guru',
-      kelas: '11',
-      kelas_diajar: ['12', '11'],
-      jam_masuk_default: '07:30',
-      jam_pulang_default: '14:00',
-      qr_token: 'tok_guru_siti_secure',
-      foto_profil_url: ''
-    },
-    {
       id: 'std-12-01',
       email: 'ade@pkbm.sch.id',
       alias_emails: ['ade@pkbm.sch.id', 'ahmad@sekolah.sch.id'],
@@ -55,132 +42,190 @@ export const useAuthStore = defineStore('auth', () => {
       kelas: '12',
       qr_token: 'tok_std_12_20241201',
       foto_profil_url: ''
-    },
-    {
-      id: 'std-12-02',
-      email: 'ahmad.slamet@pkbm.sch.id',
-      alias_emails: ['ahmad.slamet@pkbm.sch.id'],
-      nama_lengkap: 'AHMAD SLAMET RIYADI',
-      jenis_kelamin: 'L',
-      nomor_induk: '20241202',
-      role: 'siswa',
-      kelas: '12',
-      qr_token: 'tok_std_12_20241202',
-      foto_profil_url: ''
-    },
-    {
-      id: 'std-12-03',
-      email: 'cinta@pkbm.sch.id',
-      alias_emails: ['cinta@pkbm.sch.id'],
-      nama_lengkap: 'CINTA RAYA KHAIRUNNISA',
-      jenis_kelamin: 'P',
-      nomor_induk: '20241203',
-      role: 'siswa',
-      kelas: '12',
-      qr_token: 'tok_std_12_20241203',
-      foto_profil_url: ''
     }
   ]
 
-  const savedUser = localStorage.getItem('presensi_user')
-  let parsedUser = null
-  if (savedUser) {
-    try {
-      parsedUser = JSON.parse(savedUser)
-      let modified = false
-      // Bersihkan avatar unsplash lama yang tersimpan di localStorage
-      if (parsedUser && parsedUser.foto_profil_url && parsedUser.foto_profil_url.includes('images.unsplash.com')) {
-        parsedUser.foto_profil_url = ''
-        modified = true
-      }
-      if (parsedUser && parsedUser.kelas && typeof parsedUser.kelas === 'string') {
-        const converted = parsedUser.kelas.replace(/^XII[-_\s]/i, '12-').replace(/^XI[-_\s]/i, '11-').replace(/^X[-_\s]/i, '10-')
-        if (converted !== parsedUser.kelas) {
-          parsedUser.kelas = converted
-          modified = true
-        }
-      }
-      if (parsedUser && parsedUser.kelas_diajar && Array.isArray(parsedUser.kelas_diajar)) {
-        parsedUser.kelas_diajar = parsedUser.kelas_diajar.map(c => {
-          const converted = c.replace(/^XII[-_\s]/i, '12-').replace(/^XI[-_\s]/i, '11-').replace(/^X[-_\s]/i, '10-')
-          if (converted !== c) modified = true
-          return converted
-        })
-      }
-      if (modified) {
-        localStorage.setItem('presensi_user', JSON.stringify(parsedUser))
-      }
-    } catch (e) {
-      parsedUser = null
-    }
+  const DEMO_CREDENTIALS = {
+    admin: 'admin@pkbm.sch.id',
+    guru: 'tutor@pkbm.sch.id',
+    siswa: 'ade@pkbm.sch.id'
   }
-  const user = ref(parsedUser || mockUsers[1]) // Default Guru
+
+  const user = ref(null)
+  const initialized = ref(false)
   const isMockMode = ref(!isSupabaseConfigured)
+  const isDemoEnabled = import.meta.env.VITE_ENABLE_DEMO_LOGIN === 'true'
 
-  async function loginWithMock(role) {
-    const selected = mockUsers.find(u => u.role === role) || mockUsers[0]
-    user.value = selected
-    localStorage.setItem('presensi_user', JSON.stringify(selected))
-    return { success: true, user: selected }
+  let initPromise = null
+  let authListenerRegistered = false
+
+  function sanitizeLocalProfile(profile) {
+    if (!profile) return null
+    const clean = { ...profile }
+    if (clean.foto_profil_url && clean.foto_profil_url.includes('images.unsplash.com')) {
+      clean.foto_profil_url = ''
+    }
+    if (clean.kelas && typeof clean.kelas === 'string') {
+      clean.kelas = clean.kelas
+        .replace(/^XII[-_\s]/i, '12-')
+        .replace(/^XI[-_\s]/i, '11-')
+        .replace(/^X[-_\s]/i, '10-')
+    }
+    if (Array.isArray(clean.kelas_diajar)) {
+      clean.kelas_diajar = clean.kelas_diajar.map(c =>
+        c
+          .replace(/^XII[-_\s]/i, '12-')
+          .replace(/^XI[-_\s]/i, '11-')
+          .replace(/^X[-_\s]/i, '10-')
+      )
+    }
+    return clean
   }
 
-  // Fungsi helper pencarian user mock berdasarkan email atau NISN/NIP
+  async function fetchRemoteProfile(userId) {
+    if (!supabase || !userId) return null
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (error || !data || data.is_deleted) {
+      return null
+    }
+    return data
+  }
+
+  async function ensureInitialized() {
+    if (initialized.value) return
+    if (initPromise) return initPromise
+
+    initPromise = (async () => {
+      try {
+        if (isSupabaseConfigured && supabase) {
+          // Pastikan sisa sesi mock lama di localStorage tidak terbawa ke production
+          localStorage.removeItem('presensi_user')
+
+          if (!authListenerRegistered) {
+            authListenerRegistered = true
+            supabase.auth.onAuthStateChange(async (event, session) => {
+              if (event === 'SIGNED_OUT' || !session?.user) {
+                user.value = null
+                localStorage.removeItem('presensi_user')
+                try {
+                  useAttendanceStore().resetRemoteState()
+                } catch (e) {}
+                return
+              }
+
+              if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+                const prof = await fetchRemoteProfile(session.user.id)
+                if (prof) {
+                  user.value = prof
+                } else {
+                  await supabase.auth.signOut()
+                  user.value = null
+                }
+              }
+            })
+          }
+
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user) {
+            const prof = await fetchRemoteProfile(session.user.id)
+            if (prof) {
+              user.value = prof
+            } else {
+              await supabase.auth.signOut()
+              user.value = null
+            }
+          } else {
+            user.value = null
+          }
+        } else {
+          // Mode lokal offline (env Supabase belum diisi)
+          const savedUser = localStorage.getItem('presensi_user')
+          if (savedUser) {
+            try {
+              user.value = sanitizeLocalProfile(JSON.parse(savedUser))
+            } catch (e) {
+              user.value = null
+              localStorage.removeItem('presensi_user')
+            }
+          } else {
+            user.value = null
+          }
+        }
+      } finally {
+        initialized.value = true
+      }
+    })()
+
+    return initPromise
+  }
+
+  function mapAuthErrorMessage(err) {
+    const raw = (err?.message || '').toLowerCase()
+    if (raw.includes('invalid login credentials')) {
+      return 'Email/NISN/NIP atau password salah. Silakan periksa kembali.'
+    }
+    if (raw.includes('banned')) {
+      return 'Akun Anda sedang dinonaktifkan oleh Administrator.'
+    }
+    if (raw.includes('email not confirmed')) {
+      return 'Email akun belum terkonfirmasi. Hubungi Administrator.'
+    }
+    if (raw.includes('too many requests')) {
+      return 'Terlalu banyak percobaan login. Silakan tunggu beberapa saat.'
+    }
+    return err?.message || 'Gagal login. Pastikan Email/NISN dan password sudah benar.'
+  }
+
+  // Pencarian user mock offline berdasarkan email atau NISN/NIP
   function findMockUser(identifier) {
     if (!identifier) return null
     const clean = identifier.trim().toLowerCase()
 
-    // 1. Cek di daftar administrator yang tersimpan di localStorage
     try {
       const storedAdmins = JSON.parse(localStorage.getItem('presensi_admins') || '[]')
-      const a = storedAdmins.find(item => 
+      const a = storedAdmins.find(item =>
         !item.is_deleted && (
           (item.email && item.email.toLowerCase() === clean) ||
           (item.nomor_induk && item.nomor_induk.toLowerCase() === clean)
         )
       )
       if (a) {
-        return {
-          ...a,
-          role: 'admin',
-          password: a.password || 'password123'
-        }
+        return { ...a, role: 'admin', password: a.password || 'password123' }
       }
     } catch (e) {}
 
-    // 2. Cek di daftar siswa yang tersimpan di localStorage
     try {
       const storedStudents = JSON.parse(localStorage.getItem('presensi_students') || '[]')
-      const s = storedStudents.find(item => 
-        (item.email && item.email.toLowerCase() === clean) ||
-        (item.nomor_induk && item.nomor_induk.toLowerCase() === clean)
+      const s = storedStudents.find(item =>
+        !item.is_deleted && (
+          (item.email && item.email.toLowerCase() === clean) ||
+          (item.nomor_induk && item.nomor_induk.toLowerCase() === clean)
+        )
       )
       if (s) {
-        return {
-          ...s,
-          role: 'siswa',
-          password: s.password || 'password123'
-        }
+        return { ...s, role: 'siswa', password: s.password || 'password123' }
       }
     } catch (e) {}
 
-    // 3. Cek di daftar guru yang tersimpan di localStorage
     try {
       const storedTeachers = JSON.parse(localStorage.getItem('presensi_teachers') || '[]')
-      const t = storedTeachers.find(item => 
-        (item.email && item.email.toLowerCase() === clean) ||
-        (item.nomor_induk && item.nomor_induk.toLowerCase() === clean)
+      const t = storedTeachers.find(item =>
+        !item.is_deleted && (
+          (item.email && item.email.toLowerCase() === clean) ||
+          (item.nomor_induk && item.nomor_induk.toLowerCase() === clean)
+        )
       )
       if (t) {
-        return {
-          ...t,
-          role: 'guru',
-          password: t.password || 'password123'
-        }
+        return { ...t, role: 'guru', password: t.password || 'password123' }
       }
     } catch (e) {}
 
-    // 3. Fallback ke daftar mockUsers bawaan
-    const mu = mockUsers.find(u => 
+    const mu = mockUsers.find(u =>
       u.email.toLowerCase() === clean ||
       (u.nomor_induk && u.nomor_induk.toLowerCase() === clean) ||
       (u.alias_emails && u.alias_emails.some(a => a.toLowerCase() === clean))
@@ -190,165 +235,154 @@ export const useAuthStore = defineStore('auth', () => {
       if (mu.role === 'admin') {
         pwd = localStorage.getItem('presensi_admin_password') || pwd
       }
-      return {
-        ...mu,
-        password: pwd
-      }
+      return { ...mu, password: pwd }
     }
     return null
   }
 
   async function login(identifier, password) {
     const cleanId = (identifier || '').trim()
-
-    // JIKA SUPABASE BELUM DIHUBUNGKAN (MOCK MODE AKTIF)
-    if (!isSupabaseConfigured) {
-      const matched = findMockUser(cleanId)
-      if (matched) {
-        const expected = matched.password || 'password123'
-        if (password && password !== expected) {
-          return {
-            success: false,
-            message: 'Password yang Anda masukkan salah. Silakan periksa kembali atau minta reset ke Administrator.'
-          }
-        }
-        user.value = matched
-        localStorage.setItem('presensi_user', JSON.stringify(matched))
-        return { success: true, user: matched }
-      }
-      return { 
-        success: false, 
-        message: 'Akun tidak ditemukan. Gunakan email terdaftar (misal: ahmad@sekolah.sch.id, guru@sekolah.sch.id) atau NISN/NIP.' 
-      }
+    if (!cleanId) {
+      return { success: false, message: 'Email, NISN, atau NIP wajib diisi.' }
+    }
+    if (!password) {
+      return { success: false, message: 'Password wajib diisi.' }
     }
 
-    // JIKA SUPABASE SUDAH AKTIF
+    // MODE OFFLINE LOKAL (Hanya apabila env Supabase belum dikonfigurasi)
+    if (!isSupabaseConfigured || !supabase) {
+      const matched = findMockUser(cleanId)
+      if (!matched) {
+        return {
+          success: false,
+          message: 'Akun tidak ditemukan. Gunakan email terdaftar atau NISN/NIP yang valid.'
+        }
+      }
+      const expected = matched.password || 'password123'
+      if (password !== expected) {
+        return {
+          success: false,
+          message: 'Password yang Anda masukkan salah. Silakan periksa kembali atau hubungi Administrator.'
+        }
+      }
+      user.value = matched
+      localStorage.setItem('presensi_user', JSON.stringify(matched))
+      return { success: true, user: matched }
+    }
+
+    // MODE PRODUCTION (SUPABASE AUTH + RLS)
     try {
       let targetEmail = cleanId
 
-      // Jika user input NISN atau NIP (bukan format email @)
       if (!cleanId.includes('@')) {
-        const { data: prof, error: findErr } = await supabase
-          .from('profiles')
-          .select('email')
-          .ilike('nomor_induk', cleanId)
-          .maybeSingle()
+        const { data: resolvedEmail, error: rpcError } = await supabase.rpc('get_email_by_identifier', {
+          p_identifier: cleanId
+        })
 
-        if (prof && prof.email) {
-          targetEmail = prof.email
-        } else {
-          // Cek fallback di mock user jika ada
-          const localMatch = findMockUser(cleanId)
-          if (localMatch) {
-            targetEmail = localMatch.email
-          } else {
-            return { success: false, message: `NISN/NIP "${cleanId}" tidak terdaftar di database.` }
+        if (rpcError) {
+          return { success: false, message: 'Gagal memverifikasi NISN/NIP dengan server.' }
+        }
+        if (!resolvedEmail) {
+          return {
+            success: false,
+            message: `NISN/NIP "${cleanId}" tidak terdaftar atau sedang dinonaktifkan.`
           }
         }
+        targetEmail = resolvedEmail
       }
 
-      // Login ke Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: targetEmail,
-        password: password
+        email: targetEmail.toLowerCase(),
+        password
       })
 
       if (error) {
-        // Cek jika akun seed dicoba saat DB belum ter-seed
-        const localSeed = findMockUser(cleanId)
-        if (localSeed) {
-          const expected = localSeed.password || 'password123'
-          if (password === expected || password === 'password123' || !password) {
-            user.value = localSeed
-            localStorage.setItem('presensi_user', JSON.stringify(localSeed))
-            return { success: true, user: localSeed, isOfflineSeed: true }
-          } else {
-            return {
-              success: false,
-              message: 'Password salah. Pastikan password Anda sudah benar.'
-            }
-          }
-        }
-        throw error
+        return { success: false, message: mapAuthErrorMessage(error) }
       }
 
-      // Ambil profile lengkap dari tabel profiles
-      const { data: profile, error: profError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single()
+      const profile = await fetchRemoteProfile(data.user.id)
+      if (!profile) {
+        await supabase.auth.signOut()
+        user.value = null
+        return {
+          success: false,
+          message: 'Profil akun tidak ditemukan atau akun telah dinonaktifkan oleh Administrator.'
+        }
+      }
 
-      if (profError) throw profError
+      try {
+        useAttendanceStore().resetRemoteState()
+      } catch (e) {}
 
       user.value = profile
-      localStorage.setItem('presensi_user', JSON.stringify(profile))
+      localStorage.removeItem('presensi_user')
       return { success: true, user: profile }
     } catch (err) {
-      // Fallback ramah jika akun seed dicoba tapi error di Supabase
-      const localSeed = findMockUser(cleanId)
-      if (localSeed) {
-        const expected = localSeed.password || 'password123'
-        if (password === expected || password === 'password123' || !password) {
-          user.value = localSeed
-          localStorage.setItem('presensi_user', JSON.stringify(localSeed))
-          return { success: true, user: localSeed, isOfflineSeed: true }
-        } else {
-          return {
-            success: false,
-            message: 'Password salah. Pastikan password Anda sudah benar atau hubungi Admin.'
-          }
-        }
-      }
-
-      return { 
-        success: false, 
-        message: err.message || 'Gagal login. Pastikan Email/NISN dan password sudah benar.' 
+      return {
+        success: false,
+        message: mapAuthErrorMessage(err)
       }
     }
   }
 
+  async function loginWithDemo(role) {
+    if (!isDemoEnabled) {
+      return { success: false, message: 'Akses demo tidak diaktifkan pada konfigurasi ini.' }
+    }
+    const targetEmail = DEMO_CREDENTIALS[role]
+    if (!targetEmail) {
+      return { success: false, message: 'Role demo tidak dikenali.' }
+    }
+    return await login(targetEmail, 'password123')
+  }
+
   async function logout() {
     if (isSupabaseConfigured && supabase) {
-      await supabase.auth.signOut()
+      try {
+        await supabase.auth.signOut()
+      } catch (e) {}
     }
     user.value = null
     localStorage.removeItem('presensi_user')
+    try {
+      useAttendanceStore().resetRemoteState()
+    } catch (e) {}
   }
 
   function updateUserProfile(newData) {
     if (user.value) {
       user.value = { ...user.value, ...newData }
-      localStorage.setItem('presensi_user', JSON.stringify(user.value))
+      if (!isSupabaseConfigured) {
+        localStorage.setItem('presensi_user', JSON.stringify(user.value))
+      }
     }
   }
 
-  // Pengguna (Siswa/Guru) Mengatur / Mengubah Password Sendiri
   async function changeUserPassword(newPassword, oldPassword = null) {
     if (!newPassword || newPassword.length < 6) {
       return { success: false, message: 'Password baru minimal 6 karakter.' }
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) {
+        return {
+          success: false,
+          message: error.message || 'Gagal memperbarui password pada server autentikasi.'
+        }
+      }
+      return { success: true, message: 'Password akun berhasil diperbarui!' }
     }
 
     if (oldPassword && user.value?.password && oldPassword !== user.value.password && user.value.password !== 'password123') {
       return { success: false, message: 'Password lama tidak cocok.' }
     }
 
-    // Jika Supabase terhubung
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.auth.updateUser({ password: newPassword })
-      } catch (e) {
-        console.warn('Supabase updateUser password notice:', e)
-      }
-    }
-
-    // Update user state aktif
     if (user.value) {
       user.value.password = newPassword
       localStorage.setItem('presensi_user', JSON.stringify(user.value))
     }
 
-    // Sinkronkan ke daftar siswa di localStorage
     try {
       const storedStudents = JSON.parse(localStorage.getItem('presensi_students') || '[]')
       const sIdx = storedStudents.findIndex(s => s.id === user.value?.id || s.nomor_induk === user.value?.nomor_induk)
@@ -358,7 +392,6 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (e) {}
 
-    // Sinkronkan ke daftar guru di localStorage
     try {
       const storedTeachers = JSON.parse(localStorage.getItem('presensi_teachers') || '[]')
       const tIdx = storedTeachers.findIndex(t => t.id === user.value?.id || t.nomor_induk === user.value?.nomor_induk)
@@ -368,7 +401,6 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (e) {}
 
-    // Sinkronkan ke akun admin jika yang login adalah admin
     if (user.value?.role === 'admin') {
       localStorage.setItem('presensi_admin_password', newPassword)
       try {
@@ -381,15 +413,17 @@ export const useAuthStore = defineStore('auth', () => {
       } catch (e) {}
     }
 
-    return { success: true, message: 'Password Administrator berhasil diperbarui!' }
+    return { success: true, message: 'Password akun berhasil diperbarui!' }
   }
 
   return {
     user,
+    initialized,
     isMockMode,
-    mockUsers,
+    isDemoEnabled,
+    ensureInitialized,
     login,
-    loginWithMock,
+    loginWithDemo,
     logout,
     updateUserProfile,
     changeUserPassword

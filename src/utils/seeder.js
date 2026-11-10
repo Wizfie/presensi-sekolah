@@ -3,6 +3,7 @@
 // Format Buku Absensi Siswa: NOMOR | NAMA SISWA | L/P | Tanggal 1 s.d. 31
 
 import { getCurrentAcademicYear } from './academicYear'
+import { getWibDateStr } from './dateTime'
 
 export const defaultClasses = ['12', '11', '10']
 
@@ -241,7 +242,7 @@ export function generateTodayAttendances(studentsList) {
 }
 
 export function generateLeaveRequests() {
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = getWibDateStr()
   return [
     {
       id: 'leave-101',

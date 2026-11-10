@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useAttendanceStore } from '../stores/attendance'
 import LoginView from '../views/LoginView.vue'
 import SiswaDashboard from '../views/SiswaDashboard.vue'
 import GuruDashboard from '../views/GuruDashboard.vue'
@@ -28,6 +29,10 @@ const routes = [
     name: 'admin-dashboard',
     component: AdminDashboard,
     meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/'
   }
 ]
 
@@ -36,18 +41,37 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+function getDashboardRouteName(role) {
+  if (role === 'admin') return 'admin-dashboard'
+  if (role === 'guru') return 'guru-dashboard'
+  return 'siswa-dashboard'
+}
+
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
-  
+  await authStore.ensureInitialized()
+
   if (to.meta.requiresAuth && !authStore.user) {
     next({ name: 'login' })
-  } else if (to.name === 'login' && authStore.user) {
-    if (authStore.user.role === 'admin') next({ name: 'admin-dashboard' })
-    else if (authStore.user.role === 'guru') next({ name: 'guru-dashboard' })
-    else next({ name: 'siswa-dashboard' })
-  } else {
-    next()
+    return
   }
+
+  if (to.name === 'login' && authStore.user) {
+    next({ name: getDashboardRouteName(authStore.user.role) })
+    return
+  }
+
+  if (to.meta.role && authStore.user && to.meta.role !== authStore.user.role) {
+    next({ name: getDashboardRouteName(authStore.user.role) })
+    return
+  }
+
+  if (authStore.user && to.meta.requiresAuth) {
+    const attendanceStore = useAttendanceStore()
+    await attendanceStore.ensureDataLoaded()
+  }
+
+  next()
 })
 
 export default router

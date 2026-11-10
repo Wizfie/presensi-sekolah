@@ -119,9 +119,9 @@
             <!-- Tombol Refresh Lokasi GPS -->
             <button
               type="button"
-              @click="detectLocation"
+              @click="detectLocation(true)"
               :disabled="isLocating"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition cursor-pointer"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition cursor-pointer disabled:opacity-60"
             >
               <span class="material-icons text-sm" :class="{ 'animate-spin': isLocating }">refresh</span>
               <span>{{ isLocating ? 'Mencari GPS...' : 'Perbarui Lokasi' }}</span>
@@ -130,22 +130,41 @@
 
           <!-- Indikator Validasi Radius GPS -->
           <div
-            class="p-4 rounded-xl border flex items-center justify-between transition-all"
-            :class="isWithinRadius ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950' : currentDistance !== null ? 'bg-amber-50/80 border-amber-200 text-amber-950' : 'bg-slate-50 border-slate-200 text-slate-700'"
+            class="p-4 rounded-xl border flex items-center justify-between gap-3 transition-all"
+            :class="locationError
+              ? 'bg-rose-50/80 border-rose-200 text-rose-950'
+              : isWithinRadius
+                ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                : currentDistance !== null
+                  ? 'bg-amber-50/80 border-amber-200 text-amber-950'
+                  : 'bg-slate-50 border-slate-200 text-slate-700'"
           >
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 min-w-0">
               <div
                 class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg shrink-0"
-                :class="isWithinRadius ? 'bg-emerald-100 text-emerald-700' : currentDistance !== null ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-600'"
+                :class="locationError
+                  ? 'bg-rose-100 text-rose-700'
+                  : isWithinRadius
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : currentDistance !== null
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-slate-200 text-slate-600'"
               >
-                <span class="material-icons">{{ isWithinRadius ? 'check_circle' : 'near_me' }}</span>
+                <span class="material-icons">{{ locationError ? 'gps_off' : isWithinRadius ? 'check_circle' : 'near_me' }}</span>
               </div>
-              <div>
+              <div class="min-w-0">
                 <p class="text-xs font-bold">
-                  {{ isWithinRadius ? 'Dalam Radius PKBM Cahaya Mulia' : currentDistance !== null ? 'Di Luar Radius PKBM Cahaya Mulia' : 'Menunggu Deteksi Lokasi GPS...' }}
+                  {{ locationError
+                    ? 'Lokasi GPS Tidak Terdeteksi'
+                    : isWithinRadius
+                      ? 'Dalam Radius PKBM Cahaya Mulia'
+                      : currentDistance !== null
+                        ? 'Di Luar Radius PKBM Cahaya Mulia'
+                        : 'Menunggu Deteksi Lokasi GPS...' }}
                 </p>
-                <p class="text-[11px] text-slate-600 mt-0.5">
-                  <span v-if="currentDistance !== null">
+                <p class="text-[11px] mt-0.5 leading-snug" :class="locationError ? 'text-rose-700' : 'text-slate-600'">
+                  <span v-if="locationError">{{ locationError }}</span>
+                  <span v-else-if="currentDistance !== null">
                     Jarak Anda ke PKBM: <strong>{{ currentDistance }} meter</strong> (Toleransi: {{ attendanceStore.schoolSettings?.radius_meter || 100 }}m)
                   </span>
                   <span v-else>
@@ -156,11 +175,17 @@
             </div>
 
             <span
-              v-if="currentDistance !== null"
-              class="text-xs font-bold px-2.5 py-1 rounded-full uppercase"
+              v-if="currentDistance !== null && !locationError"
+              class="text-xs font-bold px-2.5 py-1 rounded-full uppercase shrink-0"
               :class="isWithinRadius ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-200 text-amber-900'"
             >
               {{ isWithinRadius ? 'Valid' : 'Luar Radius' }}
+            </span>
+            <span
+              v-else-if="locationError"
+              class="text-xs font-bold px-2.5 py-1 rounded-full uppercase bg-rose-200 text-rose-900 shrink-0"
+            >
+              GPS Error
             </span>
           </div>
 
@@ -486,9 +511,10 @@
 
             <button
               type="submit"
-              class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              :disabled="isSubmittingIzin"
+              class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
             >
-              Kirim Pengajuan Izin
+              {{ isSubmittingIzin ? 'Mengirim Pengajuan...' : 'Kirim Pengajuan Izin' }}
             </button>
           </form>
         </Card>
@@ -606,6 +632,7 @@ import QRCode from 'qrcode'
 import confetti from 'canvas-confetti'
 import { useAuthStore } from '../stores/auth'
 import { useAttendanceStore } from '../stores/attendance'
+import { getWibDateStr } from '../utils/dateTime'
 import Navbar from '../components/Navbar.vue'
 import AppSidebar from '../components/AppSidebar.vue'
 import MobileDrawer from '../components/MobileDrawer.vue'
@@ -658,19 +685,19 @@ const currentUser = computed(() => {
   ) || authStore.user || {}
 })
 
-const todayStr = new Date().toISOString().split('T')[0]
+const todayStr = getWibDateStr()
 
 const myTodayAttendance = computed(() => {
-  return attendanceStore.todayAttendances.find(a => 
-    a.user_id === currentUser.value?.id && 
-    (a.tanggal === todayStr || (!a.tanggal && todayStr === new Date().toISOString().split('T')[0]))
+  return attendanceStore.todayAttendances.find(a =>
+    a.user_id === currentUser.value?.id &&
+    (a.tanggal === todayStr || !a.tanggal)
   )
 })
 
 const myAttendanceHistory = computed(() => {
   return attendanceStore.todayAttendances
     .filter(a => a.user_id === currentUser.value?.id)
-    .sort((a, b) => new Date(b.tanggal || todayStr) - new Date(a.tanggal || todayStr))
+    .sort((a, b) => String(b.tanggal || todayStr).localeCompare(String(a.tanggal || todayStr)))
 })
 
 const myMonthlyStats = computed(() => {
@@ -704,6 +731,7 @@ function getStatusIconClass(st) {
 const isLocating = ref(false)
 const userCoords = ref(null)
 const currentDistance = ref(null)
+const locationError = ref('')
 const isSubmitting = ref(false)
 
 const isWithinRadius = computed(() => {
@@ -711,6 +739,23 @@ const isWithinRadius = computed(() => {
   const maxRadius = attendanceStore.schoolSettings?.radius_meter || 100
   return currentDistance.value <= maxRadius
 })
+
+watch(
+  () => [
+    attendanceStore.schoolSettings?.latitude,
+    attendanceStore.schoolSettings?.longitude
+  ],
+  ([lat, lng]) => {
+    if (userCoords.value && lat != null && lng != null) {
+      currentDistance.value = attendanceStore.calculateDistance(
+        lat,
+        lng,
+        userCoords.value.latitude,
+        userCoords.value.longitude
+      )
+    }
+  }
+)
 
 // State Toast Notification (Mobile-Friendly)
 const toast = ref({
@@ -730,57 +775,68 @@ function showToast(message, type = 'success') {
   }, 3500)
 }
 
-function detectLocation() {
+function detectLocation(notifyOnError = false) {
   isLocating.value = true
+  locationError.value = ''
+
   if (!navigator.geolocation) {
-    showToast('Browser tidak mendukung geolokasi GPS.', 'error')
+    const msg = 'Browser atau perangkat ini tidak mendukung layanan geolokasi GPS.'
+    locationError.value = msg
+    userCoords.value = null
+    currentDistance.value = null
     isLocating.value = false
-    return
+    if (notifyOnError) showToast(msg, 'error')
+    return Promise.resolve(null)
   }
 
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      userCoords.value = {
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude
-      }
-      currentDistance.value = attendanceStore.calculateDistance(
-        attendanceStore.schoolSettings.latitude,
-        attendanceStore.schoolSettings.longitude,
-        pos.coords.latitude,
-        pos.coords.longitude
-      )
-      isLocating.value = false
-    },
-    err => {
-      console.warn('Geolocation error:', err)
-      // Fallback simulasi lokasi jika browser di desktop menolak izin
-      userCoords.value = {
-        latitude: attendanceStore.schoolSettings.latitude + 0.0001,
-        longitude: attendanceStore.schoolSettings.longitude + 0.0001
-      }
-      currentDistance.value = attendanceStore.calculateDistance(
-        attendanceStore.schoolSettings.latitude,
-        attendanceStore.schoolSettings.longitude,
-        userCoords.value.latitude,
-        userCoords.value.longitude
-      )
-      isLocating.value = false
-    },
-    { enableHighAccuracy: true, timeout: 10000 }
-  )
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        userCoords.value = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude
+        }
+        currentDistance.value = attendanceStore.calculateDistance(
+          attendanceStore.schoolSettings.latitude,
+          attendanceStore.schoolSettings.longitude,
+          pos.coords.latitude,
+          pos.coords.longitude
+        )
+        locationError.value = ''
+        isLocating.value = false
+        resolve(userCoords.value)
+      },
+      err => {
+        let msg = 'Gagal mendeteksi lokasi GPS. Pastikan GPS dan izin lokasi aktif.'
+        if (err?.code === 1) {
+          msg = 'Izin lokasi GPS ditolak. Aktifkan izin lokasi di browser/HP Anda untuk presensi.'
+        } else if (err?.code === 2) {
+          msg = 'Sinyal lokasi GPS tidak tersedia. Coba pindah ke area terbuka lalu muat ulang lokasi.'
+        } else if (err?.code === 3) {
+          msg = 'Waktu deteksi GPS habis. Silakan tekan Perbarui Lokasi kembali.'
+        }
+        userCoords.value = null
+        currentDistance.value = null
+        locationError.value = msg
+        isLocating.value = false
+        if (notifyOnError) showToast(msg, 'error')
+        resolve(null)
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 15000 }
+    )
+  })
 }
 
-async function submitPresensi(type) {
-  if (!userCoords.value) {
-    detectLocation()
-  }
-
+async function submitPresensi() {
+  if (isSubmitting.value) return
   isSubmitting.value = true
   try {
-    const coords = userCoords.value || {
-      latitude: attendanceStore.schoolSettings.latitude,
-      longitude: attendanceStore.schoolSettings.longitude
+    let coords = userCoords.value
+    if (!coords) {
+      coords = await detectLocation(true)
+    }
+    if (!coords) {
+      return
     }
     const res = await attendanceStore.submitAttendanceGps(currentUser.value, coords)
     if (res.success) {
@@ -816,6 +872,7 @@ watch(activeTab, (tab) => {
 })
 
 // Pengajuan Izin Form & Modal Sukses
+const isSubmittingIzin = ref(false)
 const showIzinSuccessModal = ref(false)
 const izinSuccessData = ref({
   jenis: 'izin',
@@ -829,7 +886,8 @@ const izinForm = ref({
   keterangan: ''
 })
 
-function handleIzinSubmit() {
+async function handleIzinSubmit() {
+  if (isSubmittingIzin.value) return
   if (!izinForm.value.keterangan.trim()) {
     showToast('Mohon isi alasan / keterangan lengkap terlebih dahulu.', 'warning')
     return
@@ -837,31 +895,44 @@ function handleIzinSubmit() {
 
   const submittedJenis = izinForm.value.jenis
   const submittedTanggal = izinForm.value.tanggal
-  const submittedKeterangan = izinForm.value.keterangan
+  const submittedKeterangan = izinForm.value.keterangan.trim()
 
-  attendanceStore.setManualAttendance(
-    currentUser.value,
-    submittedJenis,
-    null,
-    null,
-    null,
-    submittedTanggal,
-    submittedKeterangan
-  )
-
-  izinSuccessData.value = {
-    jenis: submittedJenis,
-    tanggal: submittedTanggal,
-    keterangan: submittedKeterangan
-  }
-
+  isSubmittingIzin.value = true
   try {
-    confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } })
-  } catch (e) {}
+    const res = await attendanceStore.submitLeaveRequest({
+      user_id: currentUser.value?.id,
+      nama_lengkap: currentUser.value?.nama_lengkap,
+      kelas: currentUser.value?.kelas,
+      nomor_induk: currentUser.value?.nomor_induk,
+      tanggal_mulai: submittedTanggal,
+      tanggal_selesai: submittedTanggal,
+      jenis: submittedJenis,
+      keterangan: submittedKeterangan
+    })
 
-  showIzinSuccessModal.value = true
-  showToast(`Pengajuan ${submittedJenis.toUpperCase()} berhasil dikirim!`, 'success')
-  izinForm.value.keterangan = ''
+    if (!res?.success) {
+      showToast(res?.message || 'Gagal mengirim pengajuan izin.', 'error')
+      return
+    }
+
+    izinSuccessData.value = {
+      jenis: submittedJenis,
+      tanggal: submittedTanggal,
+      keterangan: submittedKeterangan
+    }
+
+    try {
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } })
+    } catch (e) {}
+
+    showIzinSuccessModal.value = true
+    showToast(`Pengajuan ${submittedJenis.toUpperCase()} berhasil dikirim!`, 'success')
+    izinForm.value.keterangan = ''
+  } catch (e) {
+    showToast('Terjadi kesalahan saat mengirim pengajuan izin.', 'error')
+  } finally {
+    isSubmittingIzin.value = false
+  }
 }
 
 function closeIzinSuccessModal() {
@@ -904,7 +975,7 @@ function getStatusBadgeClass(st) {
 }
 
 onMounted(() => {
-  detectLocation()
+  detectLocation(false)
   if (activeTab.value === 'kartu') {
     renderQrCode()
   }

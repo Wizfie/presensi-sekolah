@@ -32,39 +32,8 @@
         </div>
       </div>
 
-      <!-- Quick Role Switcher (For Development & Testing) & User Info -->
+      <!-- User Info -->
       <div class="flex items-center gap-2 sm:gap-4">
-        <!-- Switcher Buttons -->
-        <div class="hidden md:flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
-          <button
-            @click="switchRole('siswa')"
-            :class="[
-              'px-2.5 py-1 rounded-md transition-all font-medium',
-              authStore.user?.role === 'siswa' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            ]"
-          >
-            Siswa
-          </button>
-          <button
-            @click="switchRole('guru')"
-            :class="[
-              'px-2.5 py-1 rounded-md transition-all font-medium',
-              authStore.user?.role === 'guru' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            ]"
-          >
-            Guru
-          </button>
-          <button
-            @click="switchRole('admin')"
-            :class="[
-              'px-2.5 py-1 rounded-md transition-all font-medium',
-              authStore.user?.role === 'admin' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            ]"
-          >
-            Admin
-          </button>
-        </div>
-
         <!-- User profile preview -->
         <div v-if="authStore.user" class="flex items-center gap-2.5 pl-2 sm:pl-3 border-l border-slate-200">
           <img
@@ -108,21 +77,12 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useAttendanceStore } from '../stores/attendance'
 import { getInitials } from '../utils/avatar'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const attendanceStore = useAttendanceStore()
 
 defineEmits(['open-drawer'])
-
-async function switchRole(role) {
-  await authStore.loginWithMock(role)
-  if (role === 'siswa') router.push('/siswa')
-  else if (role === 'guru') router.push('/guru')
-  else if (role === 'admin') router.push('/admin')
-}
 
 async function handleLogout() {
   await authStore.logout()

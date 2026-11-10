@@ -111,66 +111,10 @@
                 </button>
               </div>
 
-              <!-- Switch Role (Demo) -->
-              <div class="mx-3 mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  Ganti Akun Demo
-                </p>
-                <div class="grid grid-cols-3 gap-1.5">
-                  <button
-                    v-for="r in ['siswa', 'guru', 'admin']"
-                    :key="r"
-                    type="button"
-                    @click="switchRole(r)"
-                    :class="[
-                      'py-1.5 text-[11px] font-semibold rounded-lg capitalize border transition-all cursor-pointer',
-                      authStore.user?.role === r
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
-                    ]"
-                  >
-                    {{ r }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- Data Seeding & Reset Mode (Dev Only) -->
-              <div class="mx-3 mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-                  <span>Data Mode (Dev)</span>
-                  <span class="material-icons text-xs text-slate-400">tune</span>
-                </p>
-                <div class="flex flex-col gap-1.5">
-                  <button
-                    type="button"
-                    @click="handleResetToSeed"
-                    class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all cursor-pointer text-left"
-                  >
-                    <span class="material-icons text-base text-blue-500">restore</span>
-                    <div class="flex flex-col">
-                      <span class="font-semibold text-[11px]">Reset ke Seeding</span>
-                      <span class="text-[9px] text-slate-400">3 Kelas @ 30 Siswa (90)</span>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    @click="handleClearToBlank"
-                    class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition-all cursor-pointer text-left"
-                  >
-                    <span class="material-icons text-base text-rose-500">layers_clear</span>
-                    <div class="flex flex-col">
-                      <span class="font-semibold text-[11px]">Kosongkan Data</span>
-                      <span class="text-[9px] text-slate-400">Mulai dari Nol (Clean)</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Dokumen Proyek (Demo Mode / PKM) -->
+              <!-- Panduan Sistem -->
               <div class="mx-3 mt-2 mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-                  <span>Dokumen (Demo)</span>
+                  <span>Panduan Sistem</span>
                   <span class="material-icons text-xs text-slate-400">file_download</span>
                 </p>
                 <div class="flex flex-col gap-1.5">
@@ -225,8 +169,6 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useAttendanceStore } from '../stores/attendance'
-import { useUiStore } from '../stores/ui'
 import { getInitials } from '../utils/avatar'
 
 const props = defineProps({
@@ -239,8 +181,6 @@ const emit = defineEmits(['update:open', 'select-tab', 'logout'])
 
 const router = useRouter()
 const authStore = useAuthStore()
-const attendanceStore = useAttendanceStore()
-const uiStore = useUiStore()
 
 function close() {
   emit('update:open', false)
@@ -251,58 +191,11 @@ function handleSelect(key) {
   close()
 }
 
-function switchRole(role) {
-  authStore.loginWithMock(role)
-  close()
-  if (role === 'siswa') router.push('/siswa')
-  else if (role === 'guru') router.push('/guru')
-  else if (role === 'admin') router.push('/admin')
-}
-
-function handleLogout() {
+async function handleLogout() {
   close()
   emit('logout')
-  authStore.logout()
-  router.push('/login')
-}
-
-async function handleResetToSeed() {
-  const confirmed = await uiStore.showConfirm({
-    title: 'Reset ke Seeding Awal?',
-    message:
-      'Data akan dikembalikan ke kondisi bawaan PKBM Cahaya Mulia:\n' +
-      '• 3 Kelas (12, 11, 10)\n' +
-      '• 13 Siswa Kelas 12 (Buku Presensi Fisik)\n' +
-      '• Guru Piket, Tutor & Administrator\n' +
-      '• Presensi & riwayat kehadiran harian',
-    confirmText: 'Ya, Reset Data',
-    cancelText: 'Batal',
-    type: 'warning'
-  })
-  if (confirmed) {
-    attendanceStore.resetAllDataToDefault()
-    close()
-    uiStore.setFlashToast('Data berhasil di-reset ke kondisi seeding awal PKBM Cahaya Mulia!', 'success')
-    window.location.reload()
-  }
-}
-
-async function handleClearToBlank() {
-  const confirmed = await uiStore.showConfirm({
-    title: 'Kosongkan Seluruh Data?',
-    message:
-      'Semua data siswa, guru, kelas, dan absensi akan dikosongkan untuk pengujian dari nol.\n\n' +
-      'Yakin ingin mengosongkan?',
-    confirmText: 'Ya, Kosongkan Semua',
-    cancelText: 'Batal',
-    type: 'danger'
-  })
-  if (confirmed) {
-    attendanceStore.clearAllDataToCleanSlate()
-    close()
-    uiStore.setFlashToast('Data berhasil dikosongkan. Anda dapat mulai menguji dari kondisi nol!', 'info')
-    window.location.reload()
-  }
+  await authStore.logout()
+  router.push('/')
 }
 
 const roleBadgeClasses = computed(() => {

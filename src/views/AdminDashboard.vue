@@ -508,7 +508,7 @@
                       <button
                         type="button"
                         class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition cursor-pointer"
-                        title="Reset Password ke default (password123)"
+                        title="Buat Password Sementara Baru"
                         @click="resetAdminPasswordConfirm(adm)"
                       >
                         <span class="material-icons text-base">lock_reset</span>
@@ -905,24 +905,14 @@
             >
               <form @submit.prevent="handleAdminChangePassword" class="space-y-4">
                 <div>
-                  <div class="flex items-center justify-between mb-1">
-                    <label class="block text-xs font-semibold text-slate-700">Password Baru Admin</label>
-                    <button
-                      type="button"
-                      @click="adminPasswordInput = 'password123'"
-                      class="text-[11px] text-blue-600 hover:text-blue-800 font-medium cursor-pointer inline-flex items-center gap-1"
-                      title="Gunakan password default demo"
-                    >
-                      <span class="material-icons text-xs">vpn_key</span>
-                      <span>Set Default (password123)</span>
-                    </button>
-                  </div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Password Baru Admin</label>
                   <div class="relative">
                     <input
                       v-model="adminPasswordInput"
                       :type="showAdminPass ? 'text' : 'password'"
                       required
-                      placeholder="Masukkan password baru..."
+                      minlength="6"
+                      placeholder="Masukkan password baru (minimal 6 karakter)..."
                       class="w-full h-10 pl-3 pr-16 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                     <button
@@ -934,7 +924,7 @@
                     </button>
                   </div>
                   <p class="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
-                    Minimal 6 karakter. Gunakan tombol <em>Set Default (password123)</em> jika ingin mengembalikan ke sandi standar.
+                    Minimal 6 karakter. Disarankan menggunakan kombinasi huruf besar, huruf kecil, dan angka.
                   </p>
                 </div>
 
@@ -995,43 +985,6 @@
                 </div>
               </div>
             </Card>
-
-            <!-- Zona Pemulihan & Reset Data Demo -->
-            <div class="bg-slate-50/80 rounded-2xl border border-slate-200 p-5 space-y-3">
-              <div class="flex items-center justify-between text-slate-700">
-                <div class="flex items-center gap-2">
-                  <span class="material-icons text-lg text-indigo-600">tune</span>
-                  <h4 class="text-xs font-bold uppercase tracking-wider">Data & Seeding Demo</h4>
-                </div>
-                <span class="text-[10px] font-semibold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-100">
-                  Dev Mode
-                </span>
-              </div>
-              <p class="text-xs text-slate-500 leading-relaxed">
-                Fitur ini juga tersedia secara cepat di <strong>Sidebar Navigasi Kiri</strong> (di bawah pilihan Role). Anda dapat mengembalikan data ke seeding lengkap atau mengosongkan data untuk menguji flow dari awal.
-              </p>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  class="text-blue-600 hover:bg-blue-50 border-blue-200 inline-flex items-center justify-center gap-1.5 text-xs font-semibold cursor-pointer h-9"
-                  @click="handleResetAllData"
-                >
-                  <span class="material-icons text-sm">restore</span>
-                  <span>Reset ke Seeding (90 Siswa)</span>
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  class="text-rose-600 hover:bg-rose-50 border-rose-200 inline-flex items-center justify-center gap-1.5 text-xs font-semibold cursor-pointer h-9"
-                  @click="handleClearDataCleanSlate"
-                >
-                  <span class="material-icons text-sm">layers_clear</span>
-                  <span>Kosongkan Data (Clean)</span>
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -1108,26 +1061,15 @@
 
             <!-- Password Akun Siswa (Tambah / Reset Password Jika Lupa) -->
             <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="block text-xs font-semibold text-slate-700">
-                  {{ modalMode === 'create' ? 'Password Akun Siswa' : 'Ganti / Reset Password Siswa' }}
-                </label>
-                <button
-                  type="button"
-                  @click="studentForm.password = 'password123'"
-                  class="text-[11px] text-blue-600 hover:text-blue-800 font-medium cursor-pointer inline-flex items-center gap-1"
-                  title="Gunakan password default demo"
-                >
-                  <span class="material-icons text-xs">vpn_key</span>
-                  <span>Set Default (password123)</span>
-                </button>
-              </div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">
+                {{ modalMode === 'create' ? 'Password Akun Siswa' : 'Ganti / Reset Password Siswa (Opsional)' }}
+              </label>
               <div class="relative">
                 <input
                   v-model="studentForm.password"
                   :type="showAdminStudentPass ? 'text' : 'password'"
                   :required="modalMode === 'create'"
-                  placeholder="Minimal 6 karakter (default: password123)"
+                  :placeholder="modalMode === 'create' ? 'Minimal 6 karakter' : 'Kosongkan jika tidak ingin mengubah password'"
                   class="w-full h-9 pl-3 pr-16 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
                 <button
@@ -1139,7 +1081,7 @@
                 </button>
               </div>
               <p class="text-[10px] text-slate-400 mt-1">
-                {{ modalMode === 'create' ? 'Password awal login siswa. Siswa dapat menggantinya sendiri setelah login.' : 'Masukkan password baru jika siswa lupa password akun mereka.' }}
+                {{ modalMode === 'create' ? 'Password awal login siswa (minimal 6 karakter). Siswa dapat menggantinya sendiri setelah login.' : 'Isi minimal 6 karakter hanya jika ingin mereset password siswa.' }}
               </p>
             </div>
 
@@ -1340,26 +1282,15 @@
 
             <!-- Password Akun Guru (Tambah / Reset Password Jika Lupa) -->
             <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="block text-xs font-semibold text-slate-700">
-                  {{ teacherModalMode === 'create' ? 'Password Akun Guru' : 'Ganti / Reset Password Guru' }}
-                </label>
-                <button
-                  type="button"
-                  @click="teacherForm.password = 'password123'"
-                  class="text-[11px] text-blue-600 hover:text-blue-800 font-medium cursor-pointer inline-flex items-center gap-1"
-                  title="Gunakan password default demo"
-                >
-                  <span class="material-icons text-xs">vpn_key</span>
-                  <span>Set Default (password123)</span>
-                </button>
-              </div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">
+                {{ teacherModalMode === 'create' ? 'Password Akun Guru' : 'Ganti / Reset Password Guru (Opsional)' }}
+              </label>
               <div class="relative">
                 <input
                   v-model="teacherForm.password"
                   :type="showAdminTeacherPass ? 'text' : 'password'"
                   :required="teacherModalMode === 'create'"
-                  placeholder="Minimal 6 karakter (default: password123)"
+                  :placeholder="teacherModalMode === 'create' ? 'Minimal 6 karakter' : 'Kosongkan jika tidak ingin mengubah password'"
                   class="w-full h-9 pl-3 pr-16 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
                 <button
@@ -1371,7 +1302,7 @@
                 </button>
               </div>
               <p class="text-[10px] text-slate-400 mt-1">
-                {{ teacherModalMode === 'create' ? 'Password awal login pendidik. Guru dapat menggantinya sendiri di tab profil.' : 'Masukkan password baru jika guru lupa password akun mereka.' }}
+                {{ teacherModalMode === 'create' ? 'Password awal login pendidik (minimal 6 karakter). Guru dapat menggantinya sendiri di tab profil.' : 'Isi minimal 6 karakter hanya jika ingin mereset password guru.' }}
               </p>
             </div>
 
@@ -1513,13 +1444,9 @@
 
           <!-- Kredensial Login -->
           <div class="p-3.5 rounded-2xl border border-slate-200 bg-white space-y-2 text-xs">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between gap-2">
               <span class="text-slate-500">Email Akun</span>
-              <span class="font-medium text-slate-800">{{ selectedStudentItem.email || `${selectedStudentItem.nomor_induk}@sekolah.sch.id` }}</span>
-            </div>
-            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
-              <span class="text-slate-500">Kata Sandi Default</span>
-              <span class="font-mono font-medium text-slate-700">{{ selectedStudentItem.password || 'password123' }}</span>
+              <span class="font-medium text-slate-800 truncate">{{ selectedStudentItem.email || `${selectedStudentItem.nomor_induk}@pkbm.sch.id` }}</span>
             </div>
           </div>
         </div>
@@ -1786,18 +1713,29 @@
               />
             </div>
 
-            <div v-if="adminModalMode === 'create'">
+            <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">
-                Password Awal
+                {{ adminModalMode === 'create' ? 'Password Awal' : 'Password Baru (Opsional)' }}
+                <span v-if="adminModalMode === 'create'" class="text-rose-500">*</span>
               </label>
-              <input
-                v-model="adminForm.password"
-                type="text"
-                placeholder="password123 (Default)"
-                class="w-full h-10 px-3 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50"
-              />
+              <div class="relative">
+                <input
+                  v-model="adminForm.password"
+                  :type="showAdminModalPass ? 'text' : 'password'"
+                  :required="adminModalMode === 'create'"
+                  :placeholder="adminModalMode === 'create' ? 'Minimal 6 karakter' : 'Kosongkan jika tidak ingin mengubah password'"
+                  class="w-full h-10 pl-3 pr-16 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50"
+                />
+                <button
+                  type="button"
+                  @click="showAdminModalPass = !showAdminModalPass"
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 text-[11px] font-semibold cursor-pointer"
+                >
+                  {{ showAdminModalPass ? 'Tutup' : 'Lihat' }}
+                </button>
+              </div>
               <p class="text-[10px] text-slate-400 mt-1">
-                Default: <strong>password123</strong>. Admin dapat mengubahnya kapan saja secara mandiri.
+                {{ adminModalMode === 'create' ? 'Minimal 6 karakter. Admin dapat menggantinya sendiri di menu Pengaturan.' : 'Isi minimal 6 karakter hanya jika ingin mereset password administrator ini.' }}
               </p>
             </div>
 
@@ -2008,7 +1946,11 @@ async function handleDeleteFromSheet(type) {
         type: 'warning'
       })
       if (confirmed) {
-        await attendanceStore.deleteStudent(std.id)
+        const res = await attendanceStore.deleteStudent(std.id)
+        if (res?.success === false) {
+          uiStore.showToast(res.message || 'Gagal menonaktifkan siswa.', 'error')
+          return
+        }
         isStudentDetailSheetOpen.value = false
         uiStore.showToast('Data siswa berhasil dinonaktifkan (Soft Delete).', 'success')
       }
@@ -2024,7 +1966,11 @@ async function handleDeleteFromSheet(type) {
         type: 'warning'
       })
       if (confirmed) {
-        attendanceStore.deleteTeacher(t.id)
+        const res = await attendanceStore.deleteTeacher(t.id)
+        if (res?.success === false) {
+          uiStore.showToast(res.message || 'Gagal menonaktifkan guru.', 'error')
+          return
+        }
         isTeacherDetailSheetOpen.value = false
         uiStore.showToast('Data guru piket berhasil dinonaktifkan (Soft Delete).', 'success')
       }
@@ -2041,13 +1987,21 @@ function openTrashModal(type = 'siswa') {
   isTrashModalOpen.value = true
 }
 
-function restoreStudentConfirm(student) {
-  attendanceStore.restoreStudent(student.id)
+async function restoreStudentConfirm(student) {
+  const res = await attendanceStore.restoreStudent(student.id)
+  if (res?.success === false) {
+    uiStore.showToast(res.message || 'Gagal memulihkan siswa.', 'error')
+    return
+  }
   uiStore.showToast(`Data siswa "${student.nama_lengkap}" berhasil dipulihkan!`, 'success')
 }
 
-function restoreTeacherConfirm(teacher) {
-  attendanceStore.restoreTeacher(teacher.id)
+async function restoreTeacherConfirm(teacher) {
+  const res = await attendanceStore.restoreTeacher(teacher.id)
+  if (res?.success === false) {
+    uiStore.showToast(res.message || 'Gagal memulihkan guru.', 'error')
+    return
+  }
   uiStore.showToast(`Data guru piket "${teacher.nama_lengkap}" berhasil dipulihkan!`, 'success')
 }
 
@@ -2189,6 +2143,7 @@ const modalMode = ref('create')
 const editingStudentId = ref(null)
 const showAdminStudentPass = ref(false)
 const showAdminTeacherPass = ref(false)
+const showAdminModalPass = ref(false)
 
 // Modal Tambah Kelas Baru (Format PKBM Cahaya Mulia)
 const isClassModalOpen = ref(false)
@@ -2229,7 +2184,11 @@ async function handleRemoveClass(className) {
     type: 'danger'
   })
   if (confirmed) {
-    attendanceStore.deleteClass(className)
+    const res = await attendanceStore.deleteClass(className)
+    if (res?.success === false) {
+      uiStore.showToast(res.message || 'Gagal menghapus kelas.', 'error')
+      return
+    }
     uiStore.showToast(`Kelas ${className} berhasil dihapus.`, 'success')
   }
 }
@@ -2246,7 +2205,7 @@ function openAddClassModal(context = 'filter') {
   })
 }
 
-function submitCreateClass() {
+async function submitCreateClass() {
   if (!newClassNameInput.value.trim()) {
     classError.value = 'Nama kelas tidak boleh kosong'
     return
@@ -2258,8 +2217,8 @@ function submitCreateClass() {
     return
   }
 
-  const res = attendanceStore.addClass(clean)
-  if (res.success) {
+  const res = await attendanceStore.addClass(clean)
+  if (res?.success) {
     if (classModalContext.value === 'student') {
       studentForm.value.kelas = clean
     } else if (classModalContext.value === 'teacher') {
@@ -2272,7 +2231,7 @@ function submitCreateClass() {
     isClassModalOpen.value = false
     newClassNameInput.value = ''
   } else {
-    classError.value = res.message || 'Gagal menambahkan kelas.'
+    classError.value = res?.message || 'Gagal menambahkan kelas.'
   }
 }
 
@@ -2281,7 +2240,7 @@ const studentForm = ref({
   nomor_induk: '',
   jenis_kelamin: 'L',
   kelas: '12',
-  password: 'password123',
+  password: '',
   foto_profil_url: ''
 })
 
@@ -2294,7 +2253,7 @@ function openCreateStudentModal() {
     nomor_induk: '',
     jenis_kelamin: 'L',
     kelas: attendanceStore.allClasses[0] || '12',
-    password: 'password123',
+    password: '',
     foto_profil_url: ''
   }
   isStudentModalOpen.value = true
@@ -2307,7 +2266,7 @@ function openEditStudentModal(student) {
   studentForm.value = {
     ...student,
     jenis_kelamin: student.jenis_kelamin || 'L',
-    password: student.password || 'password123'
+    password: ''
   }
   isStudentModalOpen.value = true
 }
@@ -2326,10 +2285,14 @@ async function handleAdminStudentPhotoUpload(event) {
   }
 }
 
-function resetStudentPhotoQuotaAdmin() {
+async function resetStudentPhotoQuotaAdmin() {
   if (!editingStudentId.value) return
+  const res = await attendanceStore.resetStudentPhotoQuota(editingStudentId.value)
+  if (res?.success === false) {
+    uiStore.showToast(res.message || 'Gagal mereset kuota foto siswa.', 'error')
+    return
+  }
   studentForm.value.foto_update_count = 0
-  attendanceStore.resetStudentPhotoQuota(editingStudentId.value)
   uiStore.showToast('Batas kuota ganti foto untuk siswa ini telah di-reset menjadi 0/1. Siswa dapat memperbarui fotonya 1x lagi.', 'info', 4500)
 }
 
@@ -2344,25 +2307,47 @@ async function handleAdminTeacherPhotoUpload(event) {
   }
 }
 
-function resetTeacherPhotoQuotaAdmin() {
+async function resetTeacherPhotoQuotaAdmin() {
   if (!editingTeacherId.value) return
+  const res = await attendanceStore.resetTeacherPhotoQuota(editingTeacherId.value)
+  if (res?.success === false) {
+    uiStore.showToast(res.message || 'Gagal mereset kuota foto guru.', 'error')
+    return
+  }
   teacherForm.value.foto_update_count = 0
-  attendanceStore.resetTeacherPhotoQuota(editingTeacherId.value)
   uiStore.showToast('Batas kuota ganti foto untuk guru ini telah di-reset menjadi 0/1. Guru dapat memperbarui fotonya 1x lagi.', 'info', 4500)
 }
 
 async function saveStudentForm() {
-  if (isAddingNewStudentClass.value && customStudentClassInput.value.trim()) {
-    const clean = customStudentClassInput.value.trim().toUpperCase()
-    attendanceStore.addClass(clean)
-    studentForm.value.kelas = clean
+  const rawPass = (studentForm.value.password || '').trim()
+  if (modalMode.value === 'create' && rawPass.length < 6) {
+    uiStore.showToast('Password awal siswa minimal 6 karakter.', 'warning')
+    return
+  }
+  if (modalMode.value === 'edit' && rawPass.length > 0 && rawPass.length < 6) {
+    uiStore.showToast('Password baru siswa minimal 6 karakter (atau kosongkan jika tidak diubah).', 'warning')
+    return
   }
 
   if (modalMode.value === 'create') {
-    await attendanceStore.addStudent(studentForm.value)
+    const res = await attendanceStore.addStudent({
+      ...studentForm.value,
+      password: rawPass
+    })
+    if (!res?.success) {
+      uiStore.showToast(res?.message || 'Gagal menambahkan data siswa.', 'error')
+      return
+    }
     uiStore.showToast(`Siswa ${studentForm.value.nama_lengkap} berhasil ditambahkan!`, 'success')
   } else {
-    await attendanceStore.updateStudent(editingStudentId.value, studentForm.value)
+    const payload = { ...studentForm.value }
+    if (!rawPass) delete payload.password
+    else payload.password = rawPass
+    const res = await attendanceStore.updateStudent(editingStudentId.value, payload)
+    if (!res?.success) {
+      uiStore.showToast(res?.message || 'Gagal memperbarui data siswa.', 'error')
+      return
+    }
     uiStore.showToast(`Data ${studentForm.value.nama_lengkap} berhasil diperbarui!`, 'success')
   }
   isStudentModalOpen.value = false
@@ -2377,7 +2362,11 @@ async function deleteStudentConfirm(student) {
     type: 'warning'
   })
   if (confirmed) {
-    await attendanceStore.deleteStudent(student.id)
+    const res = await attendanceStore.deleteStudent(student.id)
+    if (res?.success === false) {
+      uiStore.showToast(res.message || 'Gagal menonaktifkan siswa.', 'error')
+      return
+    }
     uiStore.showToast('Data siswa berhasil dinonaktifkan (Soft Delete).', 'success')
   }
 }
@@ -2399,6 +2388,7 @@ const teacherForm = ref({
   nama_lengkap: '',
   nomor_induk: '',
   email: '',
+  password: '',
   mata_pelajaran: '',
   kelas_diajar: ['12'],
   foto_profil_url: ''
@@ -2415,7 +2405,7 @@ function openAddTeacherModal() {
     nama_lengkap: '',
     nomor_induk: '',
     email: '',
-    password: 'password123',
+    password: '',
     mata_pelajaran: '',
     kelas_diajar: attendanceStore.allClasses.length ? [attendanceStore.allClasses[0]] : ['12'],
     foto_profil_url: ''
@@ -2429,23 +2419,47 @@ function openEditTeacherModal(teacher) {
   showAdminTeacherPass.value = false
   teacherForm.value = {
     ...teacher,
-    password: teacher.password || 'password123',
+    password: '',
     kelas_diajar: [...(teacher.kelas_diajar || ['12'])]
   }
   isTeacherModalOpen.value = true
 }
 
-function saveTeacherForm() {
+async function saveTeacherForm() {
   if (!teacherForm.value.kelas_diajar.length) {
     uiStore.showToast('Pilih minimal satu kelas yang diajar oleh guru.', 'warning')
     return
   }
 
+  const rawPass = (teacherForm.value.password || '').trim()
+  if (teacherModalMode.value === 'create' && rawPass.length < 6) {
+    uiStore.showToast('Password awal guru minimal 6 karakter.', 'warning')
+    return
+  }
+  if (teacherModalMode.value === 'edit' && rawPass.length > 0 && rawPass.length < 6) {
+    uiStore.showToast('Password baru guru minimal 6 karakter (atau kosongkan jika tidak diubah).', 'warning')
+    return
+  }
+
   if (teacherModalMode.value === 'create') {
-    attendanceStore.addTeacher(teacherForm.value)
+    const res = await attendanceStore.addTeacher({
+      ...teacherForm.value,
+      password: rawPass
+    })
+    if (!res?.success) {
+      uiStore.showToast(res?.message || 'Gagal menambahkan data guru / piket.', 'error')
+      return
+    }
     uiStore.showToast(`Guru / Piket ${teacherForm.value.nama_lengkap} berhasil ditambahkan!`, 'success')
   } else {
-    attendanceStore.updateTeacher(editingTeacherId.value, teacherForm.value)
+    const payload = { ...teacherForm.value }
+    if (!rawPass) delete payload.password
+    else payload.password = rawPass
+    const res = await attendanceStore.updateTeacher(editingTeacherId.value, payload)
+    if (!res?.success) {
+      uiStore.showToast(res?.message || 'Gagal memperbarui data guru / piket.', 'error')
+      return
+    }
     uiStore.showToast(`Data guru / piket ${teacherForm.value.nama_lengkap} berhasil diperbarui!`, 'success')
   }
   isTeacherModalOpen.value = false
@@ -2460,7 +2474,11 @@ async function deleteTeacherConfirm(teacher) {
     type: 'warning'
   })
   if (confirmed) {
-    attendanceStore.deleteTeacher(teacher.id)
+    const res = await attendanceStore.deleteTeacher(teacher.id)
+    if (res?.success === false) {
+      uiStore.showToast(res.message || 'Gagal menonaktifkan guru.', 'error')
+      return
+    }
     uiStore.showToast('Data guru piket berhasil dinonaktifkan (Soft Delete).', 'success')
   }
 }
@@ -2475,7 +2493,7 @@ const adminForm = ref({
   nomor_induk: '',
   email: '',
   jabatan: 'Staf Tata Usaha',
-  password: 'password123'
+  password: ''
 })
 
 const filteredAdmins = computed(() => {
@@ -2495,12 +2513,13 @@ const filteredAdmins = computed(() => {
 function openCreateAdminModal() {
   adminModalMode.value = 'create'
   editingAdminId.value = null
+  showAdminModalPass.value = false
   adminForm.value = {
     nama_lengkap: '',
     nomor_induk: '',
     email: '',
     jabatan: 'Staf Tata Usaha',
-    password: 'password123'
+    password: ''
   }
   isAdminModalOpen.value = true
 }
@@ -2508,6 +2527,7 @@ function openCreateAdminModal() {
 function openEditAdminModal(admin) {
   adminModalMode.value = 'edit'
   editingAdminId.value = admin.id
+  showAdminModalPass.value = false
   adminForm.value = {
     nama_lengkap: admin.nama_lengkap,
     nomor_induk: admin.nomor_induk,
@@ -2518,35 +2538,45 @@ function openEditAdminModal(admin) {
   isAdminModalOpen.value = true
 }
 
-function saveAdminForm() {
+async function saveAdminForm() {
   if (!adminForm.value.nama_lengkap.trim() || !adminForm.value.nomor_induk.trim() || !adminForm.value.email.trim()) {
     uiStore.showToast('Mohon lengkapi Nama Lengkap, Nomor Induk / NIK, dan Email.', 'warning')
     return
   }
 
+  const rawPass = (adminForm.value.password || '').trim()
+  if (adminModalMode.value === 'create' && rawPass.length < 6) {
+    uiStore.showToast('Password awal Administrator minimal 6 karakter.', 'warning')
+    return
+  }
+  if (adminModalMode.value === 'edit' && rawPass.length > 0 && rawPass.length < 6) {
+    uiStore.showToast('Password baru Administrator minimal 6 karakter (atau kosongkan jika tidak diubah).', 'warning')
+    return
+  }
+
   if (adminModalMode.value === 'create') {
-    const res = attendanceStore.addAdmin({
+    const res = await attendanceStore.addAdmin({
       nama_lengkap: adminForm.value.nama_lengkap,
       nomor_induk: adminForm.value.nomor_induk,
       email: adminForm.value.email,
       jabatan: adminForm.value.jabatan,
-      password: adminForm.value.password || 'password123'
+      password: rawPass
     })
-    if (!res.success) {
-      uiStore.showToast(res.message, 'error')
+    if (!res?.success) {
+      uiStore.showToast(res?.message || 'Gagal menambahkan Administrator.', 'error')
       return
     }
-    uiStore.showToast(`Administrator "${adminForm.value.nama_lengkap}" berhasil ditambahkan!\nPassword awal akun: ${adminForm.value.password || 'password123'}`, 'success', 5000)
+    uiStore.showToast(`Administrator "${adminForm.value.nama_lengkap}" berhasil ditambahkan!`, 'success')
   } else {
-    const res = attendanceStore.updateAdmin(editingAdminId.value, {
+    const res = await attendanceStore.updateAdmin(editingAdminId.value, {
       nama_lengkap: adminForm.value.nama_lengkap,
       nomor_induk: adminForm.value.nomor_induk,
       email: adminForm.value.email,
       jabatan: adminForm.value.jabatan,
-      password: adminForm.value.password || undefined
+      password: rawPass || undefined
     })
-    if (!res.success) {
-      uiStore.showToast(res.message, 'error')
+    if (!res?.success) {
+      uiStore.showToast(res?.message || 'Gagal memperbarui data Administrator.', 'error')
       return
     }
     uiStore.showToast('Data Administrator berhasil diperbarui!', 'success')
@@ -2574,30 +2604,44 @@ async function deleteAdminConfirm(admin) {
     type: 'danger'
   })
   if (confirmed) {
-    const res = attendanceStore.deleteAdmin(admin.id, authStore.user?.id)
-    if (res.success) {
+    const res = await attendanceStore.deleteAdmin(admin.id, authStore.user?.id)
+    if (res?.success) {
       uiStore.showToast('Akun Administrator berhasil dihapus.', 'success')
     } else {
-      uiStore.showToast(res.message, 'error')
+      uiStore.showToast(res?.message || 'Gagal menghapus Administrator.', 'error')
     }
   }
 }
 
+function generateTempPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+  let token = 'Pkbm#'
+  for (let i = 0; i < 6; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return token
+}
+
 async function resetAdminPasswordConfirm(admin) {
+  const tempPassword = generateTempPassword()
   const confirmed = await uiStore.showConfirm({
     title: 'Reset Password Administrator?',
     message:
       `Nama: ${admin.nama_lengkap}\n` +
       `ID/NIK: ${admin.nomor_induk}\n` +
       `Email: ${admin.email}\n\n` +
-      `Password akan direset ke password standar: "password123".\nLanjutkan?`,
+      `Password sementara yang akan diterapkan: ${tempPassword}\nPastikan Anda mencatat password sementara ini lalu segera ubah setelah login.`,
     confirmText: 'Ya, Reset Password',
     cancelText: 'Batal',
     type: 'warning'
   })
   if (confirmed) {
-    attendanceStore.setAdminPassword(admin.id, 'password123')
-    uiStore.showToast(`Password Administrator "${admin.nama_lengkap}" berhasil direset ke: password123`, 'success', 5000)
+    const res = await attendanceStore.setAdminPassword(admin.id, tempPassword)
+    if (res?.success === false) {
+      uiStore.showToast(res.message || 'Gagal mereset password Administrator.', 'error')
+      return
+    }
+    uiStore.showToast(`Password sementara Administrator "${admin.nama_lengkap}": ${tempPassword}`, 'success', 7000)
   }
 }
 
@@ -2657,9 +2701,11 @@ async function resetToken(studentId) {
     type: 'danger'
   })
   if (confirmed) {
-    const res = attendanceStore.resetStudentQrToken(studentId)
-    if (res.success) {
+    const res = await attendanceStore.resetStudentQrToken(studentId)
+    if (res?.success) {
       uiStore.showToast('Token berhasil diperbarui. Silakan cetak ulang kartu.', 'success')
+    } else {
+      uiStore.showToast(res?.message || 'Gagal mereset token kartu QR.', 'error')
     }
   }
 }
@@ -2824,8 +2870,12 @@ function fetchCurrentCoords() {
   )
 }
 
-function saveSettings() {
-  attendanceStore.updateSchoolSettings(settingsForm.value)
+async function saveSettings() {
+  const res = await attendanceStore.updateSchoolSettings(settingsForm.value)
+  if (res?.success === false) {
+    uiStore.showToast(res.message || 'Gagal menyimpan pengaturan sekolah.', 'error')
+    return
+  }
   uiStore.showToast('Pengaturan sekolah dan batas radius GPS berhasil disimpan!', 'success')
 }
 
@@ -2855,44 +2905,6 @@ async function handleAdminChangePassword() {
 
   if (res.success) {
     adminPasswordInput.value = ''
-  }
-}
-
-async function handleResetAllData() {
-  const confirmed = await uiStore.showConfirm({
-    title: 'Reset ke Seeding Awal?',
-    message:
-      'Data akan dikembalikan ke kondisi bawaan PKBM Cahaya Mulia:\n' +
-      '• 3 Kelas (12, 11, 10)\n' +
-      '• 13 Siswa Kelas 12 (Buku Presensi Fisik)\n' +
-      '• Guru Piket, Tutor & Administrator\n' +
-      '• Presensi & riwayat kehadiran harian\n\n' +
-      'Lanjutkan?',
-    confirmText: 'Ya, Reset Data',
-    cancelText: 'Batal',
-    type: 'warning'
-  })
-  if (confirmed) {
-    attendanceStore.resetAllDataToDefault()
-    uiStore.setFlashToast('Data berhasil di-reset ke kondisi seeding awal PKBM Cahaya Mulia!', 'success')
-    window.location.reload()
-  }
-}
-
-async function handleClearDataCleanSlate() {
-  const confirmed = await uiStore.showConfirm({
-    title: 'Kosongkan Seluruh Data (Clean Slate)?',
-    message:
-      'Semua data siswa, guru, kelas, dan absensi akan dikosongkan untuk pengujian dari nol.\n\n' +
-      'Yakin ingin mengosongkan?',
-    confirmText: 'Ya, Kosongkan',
-    cancelText: 'Batal',
-    type: 'danger'
-  })
-  if (confirmed) {
-    attendanceStore.clearAllDataToCleanSlate()
-    uiStore.setFlashToast('Data berhasil dikosongkan. Anda dapat mulai menguji dari kondisi nol!', 'info')
-    window.location.reload()
   }
 }
 </script>

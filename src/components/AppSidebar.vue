@@ -64,68 +64,10 @@
         >{{ item.badge }}</span>
       </button>
 
-      <!-- Role Switcher (Dev Only) -->
-      <div class="pt-4 pb-1">
-        <p class="text-[10px] uppercase font-bold tracking-widest text-slate-400 px-3 mb-2">Role (Dev)</p>
-        <div class="flex flex-col gap-1">
-          <button
-            v-for="role in ['siswa', 'guru', 'admin']"
-            :key="role"
-            @click="switchRole(role)"
-            :class="[
-              'w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer',
-              authStore.user?.role === role
-                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
-            ]"
-          >
-            <span class="material-icons text-sm">{{ role === 'siswa' ? 'person' : role === 'guru' ? 'school' : 'admin_panel_settings' }}</span>
-            {{ role.charAt(0).toUpperCase() + role.slice(1) }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Data Seeding & Reset Mode (Dev Only) -->
+      <!-- Dokumentasi & Panduan Sistem -->
       <div class="pt-3 pb-2 border-t border-slate-100 mt-2">
         <p class="text-[10px] uppercase font-bold tracking-widest text-slate-400 px-3 mb-2 flex items-center justify-between">
-          <span>Data Mode (Dev)</span>
-          <span class="material-icons text-xs text-slate-400">tune</span>
-        </p>
-        <div class="flex flex-col gap-1.5 px-1">
-          <!-- Reset ke Seeding Awal (3 Kelas @ 30 Siswa) -->
-          <button
-            type="button"
-            @click="handleResetToSeed"
-            class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-blue-50 hover:text-blue-700 border border-transparent hover:border-blue-200 transition-all cursor-pointer group"
-            title="Reset ulang ke data bawaan lengkap (90 siswa, 4 guru multi-mapel)"
-          >
-            <span class="material-icons text-base text-blue-500 group-hover:rotate-180 transition-transform duration-300">restore</span>
-            <div class="flex flex-col text-left">
-              <span class="font-semibold text-[11px] leading-tight text-slate-700 group-hover:text-blue-700">Reset ke Seeding</span>
-              <span class="text-[9px] text-slate-400 leading-tight">3 Kelas @ 30 Siswa (90)</span>
-            </div>
-          </button>
-
-          <!-- Kosongkan Data (Test dari Nol) -->
-          <button
-            type="button"
-            @click="handleClearToBlank"
-            class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-rose-50 hover:text-rose-700 border border-transparent hover:border-rose-200 transition-all cursor-pointer group"
-            title="Kosongkan seluruh data untuk pengujian dari awal (Clean Slate)"
-          >
-            <span class="material-icons text-base text-rose-500">layers_clear</span>
-            <div class="flex flex-col text-left">
-              <span class="font-semibold text-[11px] leading-tight text-slate-700 group-hover:text-rose-700">Kosongkan Data</span>
-              <span class="text-[9px] text-slate-400 leading-tight">Mulai dari Nol (Clean)</span>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      <!-- Dokumentasi Proyek (Demo Mode / PKM) -->
-      <div class="pt-3 pb-2 border-t border-slate-100 mt-2">
-        <p class="text-[10px] uppercase font-bold tracking-widest text-slate-400 px-3 mb-2 flex items-center justify-between">
-          <span>Dokumen (Demo)</span>
+          <span>Panduan Sistem</span>
           <span class="material-icons text-xs text-slate-400">file_download</span>
         </p>
         <div class="flex flex-col gap-1.5 px-1">
@@ -178,8 +120,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useAttendanceStore } from '../stores/attendance'
-import { useUiStore } from '../stores/ui'
 import { getInitials } from '../utils/avatar'
 
 const props = defineProps({
@@ -191,55 +131,9 @@ const emit = defineEmits(['tab-change'])
 
 const router = useRouter()
 const authStore = useAuthStore()
-const attendanceStore = useAttendanceStore()
-const uiStore = useUiStore()
-
-async function switchRole(role) {
-  await authStore.loginWithMock(role)
-  if (role === 'siswa') router.push('/siswa')
-  else if (role === 'guru') router.push('/guru')
-  else if (role === 'admin') router.push('/admin')
-}
 
 async function handleLogout() {
   await authStore.logout()
   router.push('/')
-}
-
-async function handleResetToSeed() {
-  const confirmed = await uiStore.showConfirm({
-    title: 'Reset ke Seeding Awal?',
-    message:
-      'Data akan dikembalikan ke kondisi bawaan PKBM Cahaya Mulia:\n' +
-      '• 3 Kelas (12, 11, 10)\n' +
-      '• 13 Siswa Kelas 12 (Buku Presensi Fisik)\n' +
-      '• Guru Piket, Tutor & Administrator\n' +
-      '• Presensi & riwayat kehadiran harian',
-    confirmText: 'Ya, Reset Data',
-    cancelText: 'Batal',
-    type: 'warning'
-  })
-  if (confirmed) {
-    attendanceStore.resetAllDataToDefault()
-    uiStore.setFlashToast('Data berhasil di-reset ke kondisi seeding awal PKBM Cahaya Mulia!', 'success')
-    window.location.reload()
-  }
-}
-
-async function handleClearToBlank() {
-  const confirmed = await uiStore.showConfirm({
-    title: 'Kosongkan Seluruh Data?',
-    message:
-      'Semua data siswa, guru, kelas, dan absensi akan dikosongkan untuk pengujian dari nol.\n\n' +
-      'Yakin ingin mengosongkan?',
-    confirmText: 'Ya, Kosongkan Semua',
-    cancelText: 'Batal',
-    type: 'danger'
-  })
-  if (confirmed) {
-    attendanceStore.clearAllDataToCleanSlate()
-    uiStore.setFlashToast('Data berhasil dikosongkan. Anda dapat mulai menguji dari kondisi nol!', 'info')
-    window.location.reload()
-  }
 }
 </script>

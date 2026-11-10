@@ -577,21 +577,37 @@
             <div v-if="lastScannedStudent" class="space-y-4">
               <div
                 class="p-4 rounded-2xl border flex items-center gap-4 transition-all"
-                :class="lastScannedType === 'masuk' ? 'bg-emerald-50 border-emerald-200 text-emerald-950' : 'bg-blue-50 border-blue-200 text-blue-950'"
+                :class="lastScannedType === 'masuk'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+                  : lastScannedType === 'selesai'
+                    ? 'bg-amber-50 border-amber-200 text-amber-950'
+                    : 'bg-blue-50 border-blue-200 text-blue-950'"
               >
                 <div
                   class="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-2xl text-white shadow-xs shrink-0"
-                  :class="lastScannedType === 'masuk' ? 'bg-emerald-600' : 'bg-blue-600'"
+                  :class="lastScannedType === 'masuk'
+                    ? 'bg-emerald-600'
+                    : lastScannedType === 'selesai'
+                      ? 'bg-amber-500'
+                      : 'bg-blue-600'"
                 >
-                  {{ lastScannedType === 'masuk' ? 'IN' : 'OUT' }}
+                  {{ lastScannedType === 'masuk' ? 'IN' : lastScannedType === 'selesai' ? 'OK' : 'OUT' }}
                 </div>
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
                     <span
                       class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full"
-                      :class="lastScannedType === 'masuk' ? 'bg-emerald-200 text-emerald-900' : 'bg-blue-200 text-blue-900'"
+                      :class="lastScannedType === 'masuk'
+                        ? 'bg-emerald-200 text-emerald-900'
+                        : lastScannedType === 'selesai'
+                          ? 'bg-amber-200 text-amber-900'
+                          : 'bg-blue-200 text-blue-900'"
                     >
-                      Presensi {{ lastScannedType === 'masuk' ? 'Masuk' : 'Pulang' }} Berhasil!
+                      {{ lastScannedType === 'masuk'
+                        ? 'Presensi Masuk Berhasil!'
+                        : lastScannedType === 'selesai'
+                          ? 'Presensi Hari Ini Sudah Lengkap'
+                          : 'Presensi Pulang Berhasil!' }}
                     </span>
                     <span class="text-xs font-mono font-bold text-slate-500">{{ lastScannedTime }} WIB</span>
                   </div>
@@ -1149,6 +1165,7 @@
                 <span class="print:inline hidden font-bold text-slate-900">{{ mengetahuiJabatan || 'Ketua PKBM Cahaya Mulia' }}</span>
                 <input
                   v-model="mengetahuiJabatan"
+                  @blur="flushMengetahuiSignatory"
                   type="text"
                   class="no-print font-bold text-slate-900 text-center border-b border-dashed border-slate-300 hover:border-blue-400 focus:border-blue-600 focus:outline-none bg-transparent px-1 py-0.5 text-xs w-60 transition-colors"
                   placeholder="Jabatan (Ketua PKBM Cahaya Mulia)"
@@ -1169,6 +1186,7 @@
                   <span class="text-slate-700 font-bold">(</span>
                   <input
                     v-model="mengetahuiNama"
+                    @blur="flushMengetahuiSignatory"
                     type="text"
                     class="font-bold underline text-slate-900 text-center border-b border-dashed border-slate-300 hover:border-blue-400 focus:border-blue-600 focus:outline-none bg-transparent px-1 text-xs w-60 transition-colors"
                     placeholder="Ketik Nama Mengetahui (Bisa Diedit)"
@@ -1182,6 +1200,7 @@
                   <span v-if="mengetahuiNip" class="print:inline hidden text-[10px] text-slate-600 font-mono">NIP: {{ mengetahuiNip }}</span>
                   <input
                     v-model="mengetahuiNip"
+                    @blur="flushMengetahuiSignatory"
                     type="text"
                     class="no-print text-[10px] text-slate-500 font-mono text-center border-b border-dashed border-transparent hover:border-slate-300 focus:border-blue-600 focus:outline-none bg-transparent px-1 w-44 transition-colors"
                     placeholder="NIP/NIY (Opsional)"
@@ -1440,6 +1459,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Html5Qrcode } from 'html5-qrcode'
 import XLSX from 'xlsx-js-style'
 import { getCalendarYearOptions, getAcademicYearForMonthYear } from '../utils/academicYear'
+import { getWibDateStr, getWibTimeStr, normalizeClockInput } from '../utils/dateTime'
 import { useAuthStore } from '../stores/auth'
 import { useAttendanceStore } from '../stores/attendance'
 import Navbar from '../components/Navbar.vue'
@@ -1511,7 +1531,7 @@ watch(selectedClass, (val) => {
   if (val) localStorage.setItem('presensi_guru_selected_class', val)
 })
 
-const selectedDate = ref(new Date().toISOString().split('T')[0])
+const selectedDate = ref(getWibDateStr())
 
 const classStudents = computed(() => {
   return attendanceStore.students.filter(s => s.kelas === selectedClass.value)
@@ -1543,9 +1563,10 @@ const formattedSelectedDate = computed(() => {
 })
 
 function getStudentAttendance(studentId) {
-  return attendanceStore.todayAttendances.find(a => 
-    a.user_id === studentId && 
-    (a.tanggal === selectedDate.value || (!a.tanggal && selectedDate.value === new Date().toISOString().split('T')[0]))
+  const todayStr = getWibDateStr()
+  return attendanceStore.todayAttendances.find(a =>
+    a.user_id === studentId &&
+    (a.tanggal === selectedDate.value || (!a.tanggal && selectedDate.value === todayStr))
   )
 }
 
@@ -1562,8 +1583,8 @@ const attendanceStats = computed(() => {
   return { hadir, sakit, izin, alpa }
 })
 
-function changeStatus(student, newStatus) {
-  attendanceStore.setManualAttendance(
+async function changeStatus(student, newStatus) {
+  const res = await attendanceStore.setManualAttendance(
     student,
     newStatus,
     currentTeacher.value,
@@ -1571,24 +1592,43 @@ function changeStatus(student, newStatus) {
     null,
     selectedDate.value
   )
+  if (res?.success === false) {
+    showToast(res.message || 'Gagal memperbarui status kehadiran.', 'error')
+  }
 }
 
-function updateJamMasuk(student, val) {
-  const clean = val.trim()
-  attendanceStore.setManualAttendance(
+async function updateJamMasuk(student, val) {
+  const clean = (val || '').trim()
+  if (clean && !normalizeClockInput(clean)) {
+    showToast('Format jam masuk tidak valid. Gunakan HH:MM (contoh: 07:30).', 'warning')
+    return
+  }
+  const currentAtt = getStudentAttendance(student.id)
+  const targetStatus =
+    currentAtt?.status === 'hadir' || currentAtt?.status === 'terlambat'
+      ? currentAtt.status
+      : 'hadir'
+  const res = await attendanceStore.setManualAttendance(
     student,
-    'hadir',
+    targetStatus,
     currentTeacher.value,
     clean || null,
     undefined,
     selectedDate.value
   )
+  if (res?.success === false) {
+    showToast(res.message || 'Gagal memperbarui jam masuk.', 'error')
+  }
 }
 
-function updateJamPulang(student, val) {
-  const clean = val.trim()
+async function updateJamPulang(student, val) {
+  const clean = (val || '').trim()
+  if (clean && !normalizeClockInput(clean)) {
+    showToast('Format jam pulang tidak valid. Gunakan HH:MM (contoh: 14:00).', 'warning')
+    return
+  }
   const currentAtt = getStudentAttendance(student.id)
-  attendanceStore.setManualAttendance(
+  const res = await attendanceStore.setManualAttendance(
     student,
     currentAtt?.status || 'hadir',
     currentTeacher.value,
@@ -1596,10 +1636,13 @@ function updateJamPulang(student, val) {
     clean || null,
     selectedDate.value
   )
+  if (res?.success === false) {
+    showToast(res.message || 'Gagal memperbarui jam pulang.', 'error')
+  }
 }
 
-function handleSingleCheckOut(student) {
-  const nowTime = new Date().toTimeString().split(' ')[0].substring(0, 5)
+async function handleSingleCheckOut(student) {
+  const nowTime = getWibTimeStr().substring(0, 5)
   const currentAtt = getStudentAttendance(student.id)
   
   // Jika status saat ini bukan hadir/terlambat/sakit/izin (misal belum tercatat atau alpa), jadikan 'hadir'
@@ -1610,7 +1653,7 @@ function handleSingleCheckOut(student) {
   
   const jamMasuk = currentAtt?.jam_masuk || (targetStatus === 'hadir' ? '07:30' : null)
 
-  attendanceStore.setManualAttendance(
+  const res = await attendanceStore.setManualAttendance(
     student,
     targetStatus,
     currentTeacher.value,
@@ -1618,13 +1661,17 @@ function handleSingleCheckOut(student) {
     nowTime,
     selectedDate.value
   )
+  if (res?.success === false) {
+    showToast(res.message || 'Gagal mencatat jam pulang.', 'error')
+    return
+  }
   showToast(`Jam pulang ${student.nama_lengkap} dicatat (${nowTime})`, 'success')
 }
 
-function clearJamPulang(student) {
+async function clearJamPulang(student) {
   const currentAtt = getStudentAttendance(student.id)
   if (!currentAtt) return
-  attendanceStore.setManualAttendance(
+  const res = await attendanceStore.setManualAttendance(
     student,
     currentAtt.status || 'hadir',
     currentTeacher.value,
@@ -1632,12 +1679,16 @@ function clearJamPulang(student) {
     null,
     selectedDate.value
   )
+  if (res?.success === false) {
+    showToast(res.message || 'Gagal membatalkan jam pulang.', 'error')
+    return
+  }
   showToast(`Jam pulang ${student.nama_lengkap} dibatalkan`, 'info')
 }
 
-function updateKeterangan(student, val) {
-  const clean = val.trim()
-  attendanceStore.setManualAttendance(
+async function updateKeterangan(student, val) {
+  const clean = (val || '').trim()
+  const res = await attendanceStore.setManualAttendance(
     student,
     getStudentAttendance(student.id)?.status || 'hadir',
     currentTeacher.value,
@@ -1646,6 +1697,9 @@ function updateKeterangan(student, val) {
     selectedDate.value,
     clean || null
   )
+  if (res?.success === false) {
+    showToast(res.message || 'Gagal memperbarui keterangan.', 'error')
+  }
 }
 
 function formatTimeDisplay(t) {
@@ -1678,9 +1732,13 @@ function openBatchPresentModal() {
   showBatchPresentModal.value = true
 }
 
-function confirmBatchAllPresent() {
-  const res = attendanceStore.batchSetAllPresent(selectedClass.value, selectedDate.value, currentTeacher.value)
+async function confirmBatchAllPresent() {
+  const res = await attendanceStore.batchSetAllPresent(selectedClass.value, selectedDate.value, currentTeacher.value)
   showBatchPresentModal.value = false
+  if (!res?.success) {
+    showToast(res?.message || 'Gagal mencatat presensi kolektif.', 'error')
+    return
+  }
   if (res.count > 0) {
     showToast(`Berhasil menandai ${res.count} siswa Kelas ${selectedClass.value} sebagai Hadir!`, 'success')
   } else {
@@ -1693,24 +1751,28 @@ const showBatchCheckoutModal = ref(false)
 const batchCheckoutTime = ref('')
 
 function openBatchCheckoutModal() {
-  batchCheckoutTime.value = new Date().toTimeString().split(' ')[0].substring(0, 5)
+  batchCheckoutTime.value = getWibTimeStr().substring(0, 5)
   showBatchCheckoutModal.value = true
 }
 
 function setPresetCheckoutTime(val) {
   if (val === 'now') {
-    batchCheckoutTime.value = new Date().toTimeString().split(' ')[0].substring(0, 5)
+    batchCheckoutTime.value = getWibTimeStr().substring(0, 5)
   } else {
     batchCheckoutTime.value = val
   }
 }
 
-function confirmBatchAllCheckOut() {
-  const defaultTime = new Date().toTimeString().split(' ')[0].substring(0, 5)
+async function confirmBatchAllCheckOut() {
+  const defaultTime = getWibTimeStr().substring(0, 5)
   const inputTime = batchCheckoutTime.value.trim() || defaultTime
 
-  const res = attendanceStore.batchSetAllCheckOut(selectedClass.value, selectedDate.value, currentTeacher.value, inputTime)
+  const res = await attendanceStore.batchSetAllCheckOut(selectedClass.value, selectedDate.value, currentTeacher.value, inputTime)
   showBatchCheckoutModal.value = false
+  if (!res?.success) {
+    showToast(res?.message || 'Gagal mencatat jam pulang kolektif.', 'error')
+    return
+  }
   if (res.count > 0) {
     showToast(`Berhasil mencatat jam pulang (${inputTime}) untuk ${res.count} siswa Kelas ${selectedClass.value}!`, 'success')
   } else {
@@ -1774,14 +1836,26 @@ async function onScanSuccess(decodedText) {
   scanCooldown = true
 
   const res = await attendanceStore.scanStudentQr(decodedText, currentTeacher.value)
-  if (res.success) {
+  if (res?.success) {
     playBeep()
-    lastScannedStudent.value = res.student || { nama: res.nama, kelas: res.kelas, nomor_induk: res.nomor_induk, jenis_kelamin: res.jenis_kelamin }
+    lastScannedStudent.value = res.student || {
+      nama: res.nama,
+      kelas: res.kelas,
+      nomor_induk: res.nomor_induk,
+      jenis_kelamin: res.jenis_kelamin
+    }
     lastScannedType.value = res.type
-    lastScannedTime.value = res.jam || new Date().toTimeString().split(' ')[0].substring(0, 5)
-    showToast(`Presensi ${res.type === 'in' ? 'Masuk' : 'Pulang'} berhasil: ${lastScannedStudent.value.nama}`, 'success')
+    lastScannedTime.value = formatTimeDisplay(res.jam) || getWibTimeStr().substring(0, 5)
+    if (res.type === 'selesai') {
+      showToast(res.message || `${lastScannedStudent.value.nama} sudah selesai Masuk & Pulang hari ini.`, 'info')
+    } else {
+      showToast(
+        `Presensi ${res.type === 'masuk' ? 'Masuk' : 'Pulang'} berhasil: ${lastScannedStudent.value.nama}`,
+        'success'
+      )
+    }
   } else {
-    showToast(res.message || 'QR Code tidak valid', 'error')
+    showToast(res?.message || 'QR Code tidak valid', 'error')
   }
 
   // Cooldown 2 detik sebelum scan berikutnya
@@ -1792,6 +1866,7 @@ async function onScanSuccess(decodedText) {
 
 onBeforeUnmount(() => {
   stopScanner()
+  if (signatorySaveTimer) clearTimeout(signatorySaveTimer)
 })
 
 // Tab 3: Rekapitulasi Bulanan (Buku Absensi Matriks Sesuai Lembar Manual)
@@ -1872,26 +1947,66 @@ const currentPrintDate = computed(() => {
   })
 })
 
-// State Penandatangan "Mengetahui" (Editable & Tersimpan di localStorage)
-const savedMengetahuiJabatan = localStorage.getItem('presensi_rekap_mengetahui_jabatan')
-const mengetahuiJabatan = ref(savedMengetahuiJabatan !== null ? savedMengetahuiJabatan : 'Ketua PKBM Cahaya Mulia')
+// State Penandatangan "Mengetahui" (Sinkron dengan pengaturan sekolah / database)
+const mengetahuiJabatan = ref(
+  attendanceStore.schoolSettings?.mengetahui_jabatan || 'Ketua PKBM Cahaya Mulia'
+)
+const mengetahuiNama = ref(attendanceStore.schoolSettings?.mengetahui_nama || '')
+const mengetahuiNip = ref(attendanceStore.schoolSettings?.mengetahui_nip || '')
 
-watch(mengetahuiJabatan, (val) => {
-  localStorage.setItem('presensi_rekap_mengetahui_jabatan', val || '')
-})
+let isSyncingSignatory = false
+let signatorySaveTimer = null
 
-const savedMengetahuiNama = localStorage.getItem('presensi_rekap_mengetahui_nama')
-const mengetahuiNama = ref(savedMengetahuiNama || '')
+watch(
+  () => [
+    attendanceStore.schoolSettings?.mengetahui_jabatan,
+    attendanceStore.schoolSettings?.mengetahui_nama,
+    attendanceStore.schoolSettings?.mengetahui_nip
+  ],
+  ([jab, nama, nip]) => {
+    isSyncingSignatory = true
+    if (jab !== undefined && jab !== null) {
+      mengetahuiJabatan.value = jab || 'Ketua PKBM Cahaya Mulia'
+    }
+    if (nama !== undefined && nama !== null) {
+      mengetahuiNama.value = nama
+    }
+    if (nip !== undefined && nip !== null) {
+      mengetahuiNip.value = nip
+    }
+    queueMicrotask(() => {
+      isSyncingSignatory = false
+    })
+  },
+  { immediate: true }
+)
 
-watch(mengetahuiNama, (val) => {
-  localStorage.setItem('presensi_rekap_mengetahui_nama', val || '')
-})
+async function persistMengetahuiSignatory() {
+  const res = await attendanceStore.updateRekapSignatory(
+    mengetahuiJabatan.value || 'Ketua PKBM Cahaya Mulia',
+    mengetahuiNama.value || '',
+    mengetahuiNip.value || ''
+  )
+  if (res?.success === false) {
+    showToast(res.message || 'Gagal menyimpan data penandatangan.', 'error')
+  }
+}
 
-const savedMengetahuiNip = localStorage.getItem('presensi_rekap_mengetahui_nip')
-const mengetahuiNip = ref(savedMengetahuiNip || '')
+function flushMengetahuiSignatory() {
+  if (signatorySaveTimer) {
+    clearTimeout(signatorySaveTimer)
+    signatorySaveTimer = null
+  }
+  persistMengetahuiSignatory()
+}
 
-watch(mengetahuiNip, (val) => {
-  localStorage.setItem('presensi_rekap_mengetahui_nip', val || '')
+watch([mengetahuiJabatan, mengetahuiNama, mengetahuiNip], () => {
+  if (isSyncingSignatory) return
+  if (signatorySaveTimer) clearTimeout(signatorySaveTimer)
+  signatorySaveTimer = setTimeout(() => {
+    signatorySaveTimer = null
+    persistMengetahuiSignatory()
+  }, 700)
 })
 
 // State Mode Tampilan Rekap (Kartu Mobile vs Matriks Tabel)
@@ -2379,12 +2494,12 @@ function openQuickEdit(student, day) {
   editingCell.value = { student, day }
 }
 
-function applyQuickEdit(status) {
+async function applyQuickEdit(status) {
   if (!editingCell.value) return
   const { student, day } = editingCell.value
   const dateStr = `${rekapYear.value}-${String(rekapMonth.value).padStart(2, '0')}-${String(day).padStart(2, '0')}`
   
-  attendanceStore.setManualAttendance(
+  const res = await attendanceStore.setManualAttendance(
     student,
     status,
     currentTeacher.value,
@@ -2393,6 +2508,9 @@ function applyQuickEdit(status) {
     dateStr
   )
   editingCell.value = null
+  if (res?.success === false) {
+    showToast(res.message || 'Gagal memperbarui catatan presensi.', 'error')
+  }
 }
 </script>
 

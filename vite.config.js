@@ -12,7 +12,7 @@ export default defineConfig({
       manifest: {
         name: 'Presensi PKBM Cahaya Mulia',
         short_name: 'PresensiKu',
-        description: 'Sistem Presensi Harian Siswa PKBM Cahaya Mulia (TP 2026/2027)',
+        description: 'Sistem Presensi Harian Siswa PKBM Cahaya Mulia',
         theme_color: '#2563eb',
         background_color: '#f8fafc',
         display: 'standalone',
