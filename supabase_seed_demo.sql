@@ -340,3 +340,4 @@ SELECT status, count(*) AS jumlah_presensi_demo
 FROM public.presensi
 GROUP BY status
 ORDER BY status;
+

@@ -1,4 +1,4 @@
-﻿# 📋 Presensi Sekolah Digital — PKBM Cahaya Mulia
+# 📋 Presensi Sekolah Digital — PKBM Cahaya Mulia
 
 > **Sistem Presensi Sekolah Modern Berbasis Geofencing GPS & Kartu QR Code**
 > Aplikasi Progressive Web App (PWA) untuk mencatat kehadiran siswa dan guru secara real-time, cepat, dan akurat — menggantikan buku absen kertas.

@@ -58,3 +58,4 @@ SELECT
 
 SELECT id, email, nama_lengkap, nomor_induk, role, is_root
 FROM public.profiles;
+
