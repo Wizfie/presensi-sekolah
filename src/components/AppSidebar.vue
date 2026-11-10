@@ -63,45 +63,6 @@
           :class="activeTab === item.key ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-600'"
         >{{ item.badge }}</span>
       </button>
-
-      <!-- Dokumentasi & Panduan Sistem -->
-      <div class="pt-3 pb-2 border-t border-slate-100 mt-2">
-        <p class="text-[10px] uppercase font-bold tracking-widest text-slate-400 px-3 mb-2 flex items-center justify-between">
-          <span>Panduan Sistem</span>
-          <span class="material-icons text-xs text-slate-400">file_download</span>
-        </p>
-        <div class="flex flex-col gap-1.5 px-1">
-          <!-- Download Penjelasan Fitur (.txt) -->
-          <a
-            href="/docs/PENJELASAN_PROJECT_DAN_FITUR.txt"
-            download="PENJELASAN_PROJECT_DAN_FITUR.txt"
-            class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 border border-transparent hover:border-emerald-200 transition-all cursor-pointer group no-underline"
-            title="Download penjelasan sistem & fitur (.txt)"
-          >
-            <span class="material-icons text-base text-emerald-600">article</span>
-            <div class="flex flex-col text-left min-w-0 flex-1">
-              <span class="font-semibold text-[11px] leading-tight text-slate-700 group-hover:text-emerald-700 truncate">Panduan Fitur (.txt)</span>
-              <span class="text-[9px] text-slate-400 leading-tight">Penjelasan Ringkas</span>
-            </div>
-            <span class="material-icons text-xs text-slate-400 group-hover:text-emerald-600">download</span>
-          </a>
-
-          <!-- Download Flowchart (.png) -->
-          <a
-            href="/docs/flowchart_presensi_sekolah.png"
-            download="flowchart_presensi_sekolah.png"
-            class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-blue-50 hover:text-blue-700 border border-transparent hover:border-blue-200 transition-all cursor-pointer group no-underline"
-            title="Download diagram flowchart sistem (.png)"
-          >
-            <span class="material-icons text-base text-blue-600">account_tree</span>
-            <div class="flex flex-col text-left min-w-0 flex-1">
-              <span class="font-semibold text-[11px] leading-tight text-slate-700 group-hover:text-blue-700 truncate">Flowchart (.png)</span>
-              <span class="text-[9px] text-slate-400 leading-tight">Standar Akademik</span>
-            </div>
-            <span class="material-icons text-xs text-slate-400 group-hover:text-blue-600">download</span>
-          </a>
-        </div>
-      </div>
     </nav>
 
     <!-- Bottom: Logout -->

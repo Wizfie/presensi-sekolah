@@ -127,7 +127,8 @@ presensi-sekolah/
 ├── public/
 │   ├── _headers                 # Security & cache headers Cloudflare Pages
 │   ├── _redirects               # SPA fallback routing (/* /index.html 200)
-│   └── docs/                    # Dokumen panduan & flowchart sistem
+│   └── logo.png                 # Logo & ikon PWA aplikasi
+├── docs/                        # Dokumentasi & diagram flowchart PKM
 ├── src/
 │   ├── components/              # Navbar, AppSidebar, MobileDrawer, GlobalNotifications, UI
 │   ├── lib/

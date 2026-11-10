@@ -110,41 +110,6 @@
                   </span>
                 </button>
               </div>
-
-              <!-- Panduan Sistem -->
-              <div class="mx-3 mt-2 mb-3 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-                  <span>Panduan Sistem</span>
-                  <span class="material-icons text-xs text-slate-400">file_download</span>
-                </p>
-                <div class="flex flex-col gap-1.5">
-                  <a
-                    href="/docs/PENJELASAN_PROJECT_DAN_FITUR.txt"
-                    download="PENJELASAN_PROJECT_DAN_FITUR.txt"
-                    class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all cursor-pointer text-left no-underline"
-                  >
-                    <span class="material-icons text-base text-emerald-600">article</span>
-                    <div class="flex flex-col flex-1 min-w-0">
-                      <span class="font-semibold text-[11px] truncate">Panduan Fitur (.txt)</span>
-                      <span class="text-[9px] text-slate-400">Penjelasan Ringkas</span>
-                    </div>
-                    <span class="material-icons text-xs text-slate-400">download</span>
-                  </a>
-
-                  <a
-                    href="/docs/flowchart_presensi_sekolah.png"
-                    download="flowchart_presensi_sekolah.png"
-                    class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all cursor-pointer text-left no-underline"
-                  >
-                    <span class="material-icons text-base text-blue-600">account_tree</span>
-                    <div class="flex flex-col flex-1 min-w-0">
-                      <span class="font-semibold text-[11px] truncate">Flowchart (.png)</span>
-                      <span class="text-[9px] text-slate-400">Standar Akademik</span>
-                    </div>
-                    <span class="material-icons text-xs text-slate-400">download</span>
-                  </a>
-                </div>
-              </div>
             </div>
 
             <!-- Bottom: Logout Button -->
