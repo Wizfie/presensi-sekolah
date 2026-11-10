@@ -1938,6 +1938,7 @@ import QRCode from 'qrcode'
 import L from 'leaflet'
 import { useAttendanceStore } from '../stores/attendance'
 import { useAuthStore } from '../stores/auth'
+import { useUiStore } from '../stores/ui'
 import Navbar from '../components/Navbar.vue'
 import AppSidebar from '../components/AppSidebar.vue'
 import MobileDrawer from '../components/MobileDrawer.vue'
@@ -1954,6 +1955,7 @@ import { getCurrentAcademicYear, getAcademicYearOptions } from '../utils/academi
 
 const authStore = useAuthStore()
 const attendanceStore = useAttendanceStore()
+const uiStore = useUiStore()
 const isDrawerOpen = ref(false)
 
 // Mobile Detail Sheet Siswa (Flutter Style)
@@ -1998,19 +2000,33 @@ async function handleDeleteFromSheet(type) {
   if (type === 'siswa') {
     if (selectedStudentItem.value) {
       const std = selectedStudentItem.value
-      if (confirm(`Pindahkan data siswa "${std.nama_lengkap}" (${std.nomor_induk}) ke status nonaktif (Soft Delete)?\n\nData historis dan riwayat presensi tetap aman.`)) {
+      const confirmed = await uiStore.showConfirm({
+        title: 'Nonaktifkan Data Siswa?',
+        message: `Pindahkan data siswa "${std.nama_lengkap}" (${std.nomor_induk}) ke status nonaktif (Soft Delete)?\n\nData historis dan riwayat presensi tetap aman.`,
+        confirmText: 'Ya, Nonaktifkan',
+        cancelText: 'Batal',
+        type: 'warning'
+      })
+      if (confirmed) {
         await attendanceStore.deleteStudent(std.id)
         isStudentDetailSheetOpen.value = false
-        alert('Data siswa berhasil dinonaktifkan (Soft Delete).')
+        uiStore.showToast('Data siswa berhasil dinonaktifkan (Soft Delete).', 'success')
       }
     }
   } else if (type === 'guru') {
     if (selectedTeacherItem.value) {
       const t = selectedTeacherItem.value
-      if (confirm(`Pindahkan data guru piket "${t.nama_lengkap}" (${t.nomor_induk}) ke status nonaktif (Soft Delete)?\n\nHak akses presensi harian dan scanner QR akan dinonaktifkan.`)) {
+      const confirmed = await uiStore.showConfirm({
+        title: 'Nonaktifkan Data Guru Piket?',
+        message: `Pindahkan data guru piket "${t.nama_lengkap}" (${t.nomor_induk}) ke status nonaktif (Soft Delete)?\n\nHak akses presensi harian dan scanner QR akan dinonaktifkan.`,
+        confirmText: 'Ya, Nonaktifkan',
+        cancelText: 'Batal',
+        type: 'warning'
+      })
+      if (confirmed) {
         attendanceStore.deleteTeacher(t.id)
         isTeacherDetailSheetOpen.value = false
-        alert('Data guru piket berhasil dinonaktifkan (Soft Delete).')
+        uiStore.showToast('Data guru piket berhasil dinonaktifkan (Soft Delete).', 'success')
       }
     }
   }
@@ -2027,12 +2043,12 @@ function openTrashModal(type = 'siswa') {
 
 function restoreStudentConfirm(student) {
   attendanceStore.restoreStudent(student.id)
-  alert(`Data siswa "${student.nama_lengkap}" berhasil dipulihkan!`)
+  uiStore.showToast(`Data siswa "${student.nama_lengkap}" berhasil dipulihkan!`, 'success')
 }
 
 function restoreTeacherConfirm(teacher) {
   attendanceStore.restoreTeacher(teacher.id)
-  alert(`Data guru piket "${teacher.nama_lengkap}" berhasil dipulihkan!`)
+  uiStore.showToast(`Data guru piket "${teacher.nama_lengkap}" berhasil dipulihkan!`, 'success')
 }
 
 const route = useRoute()
@@ -2200,13 +2216,21 @@ function hasStudentsInClass(className) {
   return attendanceStore.students.some(s => s.kelas === className)
 }
 
-function handleRemoveClass(className) {
+async function handleRemoveClass(className) {
   if (hasStudentsInClass(className)) {
-    alert(`Kelas ${className} tidak dapat dihapus karena masih memiliki siswa terdaftar.`)
+    uiStore.showToast(`Kelas ${className} tidak dapat dihapus karena masih memiliki siswa terdaftar.`, 'warning')
     return
   }
-  if (confirm(`Hapus Kelas ${className} dari daftar kelas?`)) {
+  const confirmed = await uiStore.showConfirm({
+    title: 'Hapus Kelas?',
+    message: `Hapus Kelas ${className} dari daftar kelas?`,
+    confirmText: 'Ya, Hapus',
+    cancelText: 'Batal',
+    type: 'danger'
+  })
+  if (confirmed) {
     attendanceStore.deleteClass(className)
+    uiStore.showToast(`Kelas ${className} berhasil dihapus.`, 'success')
   }
 }
 
@@ -2298,7 +2322,7 @@ async function handleAdminStudentPhotoUpload(event) {
     const compressed = await compressImageFile(file, 600, 600, 0.85)
     studentForm.value.foto_profil_url = compressed
   } catch (err) {
-    alert(err.message || 'Gagal memproses gambar.')
+    uiStore.showToast(err.message || 'Gagal memproses gambar.', 'error')
   }
 }
 
@@ -2306,7 +2330,7 @@ function resetStudentPhotoQuotaAdmin() {
   if (!editingStudentId.value) return
   studentForm.value.foto_update_count = 0
   attendanceStore.resetStudentPhotoQuota(editingStudentId.value)
-  alert('Batas kuota ganti foto untuk siswa ini telah di-reset menjadi 0/1. Siswa dapat memperbarui fotonya 1x lagi.')
+  uiStore.showToast('Batas kuota ganti foto untuk siswa ini telah di-reset menjadi 0/1. Siswa dapat memperbarui fotonya 1x lagi.', 'info', 4500)
 }
 
 async function handleAdminTeacherPhotoUpload(event) {
@@ -2316,7 +2340,7 @@ async function handleAdminTeacherPhotoUpload(event) {
     const compressed = await compressImageFile(file, 600, 600, 0.85)
     teacherForm.value.foto_profil_url = compressed
   } catch (err) {
-    alert(err.message || 'Gagal memproses gambar.')
+    uiStore.showToast(err.message || 'Gagal memproses gambar.', 'error')
   }
 }
 
@@ -2324,7 +2348,7 @@ function resetTeacherPhotoQuotaAdmin() {
   if (!editingTeacherId.value) return
   teacherForm.value.foto_update_count = 0
   attendanceStore.resetTeacherPhotoQuota(editingTeacherId.value)
-  alert('Batas kuota ganti foto untuk guru ini telah di-reset menjadi 0/1. Guru dapat memperbarui fotonya 1x lagi.')
+  uiStore.showToast('Batas kuota ganti foto untuk guru ini telah di-reset menjadi 0/1. Guru dapat memperbarui fotonya 1x lagi.', 'info', 4500)
 }
 
 async function saveStudentForm() {
@@ -2336,18 +2360,25 @@ async function saveStudentForm() {
 
   if (modalMode.value === 'create') {
     await attendanceStore.addStudent(studentForm.value)
-    alert(`Siswa ${studentForm.value.nama_lengkap} berhasil ditambahkan!`)
+    uiStore.showToast(`Siswa ${studentForm.value.nama_lengkap} berhasil ditambahkan!`, 'success')
   } else {
     await attendanceStore.updateStudent(editingStudentId.value, studentForm.value)
-    alert(`Data ${studentForm.value.nama_lengkap} berhasil diperbarui!`)
+    uiStore.showToast(`Data ${studentForm.value.nama_lengkap} berhasil diperbarui!`, 'success')
   }
   isStudentModalOpen.value = false
 }
 
 async function deleteStudentConfirm(student) {
-  if (confirm(`Pindahkan data siswa "${student.nama_lengkap}" (${student.nomor_induk}) ke status nonaktif (Soft Delete)?\n\nData historis dan riwayat presensi tetap aman.`)) {
+  const confirmed = await uiStore.showConfirm({
+    title: 'Nonaktifkan Data Siswa?',
+    message: `Pindahkan data siswa "${student.nama_lengkap}" (${student.nomor_induk}) ke status nonaktif (Soft Delete)?\n\nData historis dan riwayat presensi tetap aman.`,
+    confirmText: 'Ya, Nonaktifkan',
+    cancelText: 'Batal',
+    type: 'warning'
+  })
+  if (confirmed) {
     await attendanceStore.deleteStudent(student.id)
-    alert('Data siswa berhasil dinonaktifkan (Soft Delete).')
+    uiStore.showToast('Data siswa berhasil dinonaktifkan (Soft Delete).', 'success')
   }
 }
 
@@ -2406,24 +2437,31 @@ function openEditTeacherModal(teacher) {
 
 function saveTeacherForm() {
   if (!teacherForm.value.kelas_diajar.length) {
-    alert('Pilih minimal satu kelas yang diajar oleh guru.')
+    uiStore.showToast('Pilih minimal satu kelas yang diajar oleh guru.', 'warning')
     return
   }
 
   if (teacherModalMode.value === 'create') {
     attendanceStore.addTeacher(teacherForm.value)
-    alert(`Guru / Piket ${teacherForm.value.nama_lengkap} berhasil ditambahkan!`)
+    uiStore.showToast(`Guru / Piket ${teacherForm.value.nama_lengkap} berhasil ditambahkan!`, 'success')
   } else {
     attendanceStore.updateTeacher(editingTeacherId.value, teacherForm.value)
-    alert(`Data guru / piket ${teacherForm.value.nama_lengkap} berhasil diperbarui!`)
+    uiStore.showToast(`Data guru / piket ${teacherForm.value.nama_lengkap} berhasil diperbarui!`, 'success')
   }
   isTeacherModalOpen.value = false
 }
 
-function deleteTeacherConfirm(teacher) {
-  if (confirm(`Pindahkan data guru piket "${teacher.nama_lengkap}" (${teacher.nomor_induk}) ke status nonaktif (Soft Delete)?\n\nHak akses presensi harian dan scanner QR akan dinonaktifkan.`)) {
+async function deleteTeacherConfirm(teacher) {
+  const confirmed = await uiStore.showConfirm({
+    title: 'Nonaktifkan Data Guru Piket?',
+    message: `Pindahkan data guru piket "${teacher.nama_lengkap}" (${teacher.nomor_induk}) ke status nonaktif (Soft Delete)?\n\nHak akses presensi harian dan scanner QR akan dinonaktifkan.`,
+    confirmText: 'Ya, Nonaktifkan',
+    cancelText: 'Batal',
+    type: 'warning'
+  })
+  if (confirmed) {
     attendanceStore.deleteTeacher(teacher.id)
-    alert('Data guru piket berhasil dinonaktifkan (Soft Delete).')
+    uiStore.showToast('Data guru piket berhasil dinonaktifkan (Soft Delete).', 'success')
   }
 }
 
@@ -2482,7 +2520,7 @@ function openEditAdminModal(admin) {
 
 function saveAdminForm() {
   if (!adminForm.value.nama_lengkap.trim() || !adminForm.value.nomor_induk.trim() || !adminForm.value.email.trim()) {
-    alert('Mohon lengkapi Nama Lengkap, Nomor Induk / NIK, dan Email.')
+    uiStore.showToast('Mohon lengkapi Nama Lengkap, Nomor Induk / NIK, dan Email.', 'warning')
     return
   }
 
@@ -2495,10 +2533,10 @@ function saveAdminForm() {
       password: adminForm.value.password || 'password123'
     })
     if (!res.success) {
-      alert(res.message)
+      uiStore.showToast(res.message, 'error')
       return
     }
-    alert(`Administrator "${adminForm.value.nama_lengkap}" berhasil ditambahkan!\nPassword awal akun: ${adminForm.value.password || 'password123'}`)
+    uiStore.showToast(`Administrator "${adminForm.value.nama_lengkap}" berhasil ditambahkan!\nPassword awal akun: ${adminForm.value.password || 'password123'}`, 'success', 5000)
   } else {
     const res = attendanceStore.updateAdmin(editingAdminId.value, {
       nama_lengkap: adminForm.value.nama_lengkap,
@@ -2508,49 +2546,58 @@ function saveAdminForm() {
       password: adminForm.value.password || undefined
     })
     if (!res.success) {
-      alert(res.message)
+      uiStore.showToast(res.message, 'error')
       return
     }
-    alert('Data Administrator berhasil diperbarui!')
+    uiStore.showToast('Data Administrator berhasil diperbarui!', 'success')
   }
   isAdminModalOpen.value = false
 }
 
-function deleteAdminConfirm(admin) {
+async function deleteAdminConfirm(admin) {
   if (admin.is_root) {
-    alert('Akun Super Administrator Utama (Root) tidak dapat dihapus!')
+    uiStore.showToast('Akun Super Administrator Utama (Root) tidak dapat dihapus!', 'warning')
     return
   }
   if (authStore.user?.id === admin.id || authStore.user?.email === admin.email) {
-    alert('Anda tidak dapat menghapus akun Anda sendiri yang sedang aktif digunakan!')
+    uiStore.showToast('Anda tidak dapat menghapus akun Anda sendiri yang sedang aktif digunakan!', 'warning')
     return
   }
 
-  const confirmed = confirm(
-    `Hapus akun Administrator "${admin.nama_lengkap}" (${admin.nomor_induk})?\n\n` +
-    `Hak akses pengelolaan sistem sekolah akan dinonaktifkan.`
-  )
+  const confirmed = await uiStore.showConfirm({
+    title: 'Hapus Akun Administrator?',
+    message:
+      `Hapus akun Administrator "${admin.nama_lengkap}" (${admin.nomor_induk})?\n\n` +
+      `Hak akses pengelolaan sistem sekolah akan dinonaktifkan.`,
+    confirmText: 'Ya, Hapus',
+    cancelText: 'Batal',
+    type: 'danger'
+  })
   if (confirmed) {
     const res = attendanceStore.deleteAdmin(admin.id, authStore.user?.id)
     if (res.success) {
-      alert('Akun Administrator berhasil dihapus.')
+      uiStore.showToast('Akun Administrator berhasil dihapus.', 'success')
     } else {
-      alert(res.message)
+      uiStore.showToast(res.message, 'error')
     }
   }
 }
 
-function resetAdminPasswordConfirm(admin) {
-  const confirmed = confirm(
-    `Reset Password Akun Administrator?\n\n` +
-    `Nama: ${admin.nama_lengkap}\n` +
-    `ID/NIK: ${admin.nomor_induk}\n` +
-    `Email: ${admin.email}\n\n` +
-    `Password akan direset ke password standar: "password123".\nLanjutkan?`
-  )
+async function resetAdminPasswordConfirm(admin) {
+  const confirmed = await uiStore.showConfirm({
+    title: 'Reset Password Administrator?',
+    message:
+      `Nama: ${admin.nama_lengkap}\n` +
+      `ID/NIK: ${admin.nomor_induk}\n` +
+      `Email: ${admin.email}\n\n` +
+      `Password akan direset ke password standar: "password123".\nLanjutkan?`,
+    confirmText: 'Ya, Reset Password',
+    cancelText: 'Batal',
+    type: 'warning'
+  })
   if (confirmed) {
     attendanceStore.setAdminPassword(admin.id, 'password123')
-    alert(`Password Administrator "${admin.nama_lengkap}" berhasil direset ke: password123`)
+    uiStore.showToast(`Password Administrator "${admin.nama_lengkap}" berhasil direset ke: password123`, 'success', 5000)
   }
 }
 
@@ -2601,11 +2648,18 @@ function renderStudentQr(canvas, token) {
   })
 }
 
-function resetToken(studentId) {
-  if (confirm('Apakah Anda yakin ingin mereset token kartu ini? Kartu fisik lama tidak akan bisa di-scan lagi.')) {
+async function resetToken(studentId) {
+  const confirmed = await uiStore.showConfirm({
+    title: 'Reset Token Kartu QR?',
+    message: 'Apakah Anda yakin ingin mereset token kartu ini? Kartu fisik lama tidak akan bisa di-scan lagi.',
+    confirmText: 'Ya, Reset Token',
+    cancelText: 'Batal',
+    type: 'danger'
+  })
+  if (confirmed) {
     const res = attendanceStore.resetStudentQrToken(studentId)
     if (res.success) {
-      alert('Token berhasil diperbarui. Silakan cetak ulang kartu.')
+      uiStore.showToast('Token berhasil diperbarui. Silakan cetak ulang kartu.', 'success')
     }
   }
 }
@@ -2639,7 +2693,7 @@ function clearSelectedCards() {
 
 function triggerPrint() {
   if (selectedCardIds.value.length === 0) {
-    alert('Silakan pilih minimal 1 kartu siswa yang ingin dicetak.')
+    uiStore.showToast('Silakan pilih minimal 1 kartu siswa yang ingin dicetak.', 'warning')
     return
   }
 
@@ -2750,7 +2804,7 @@ onMounted(() => {
 
 function fetchCurrentCoords() {
   if (!navigator.geolocation) {
-    alert('Geolokasi tidak didukung browser.')
+    uiStore.showToast('Geolokasi tidak didukung browser.', 'error')
     return
   }
   isFetchingCoords.value = true
@@ -2760,11 +2814,11 @@ function fetchCurrentCoords() {
       settingsForm.value.latitude = parseFloat(pos.coords.latitude.toFixed(6))
       settingsForm.value.longitude = parseFloat(pos.coords.longitude.toFixed(6))
       updateAdminMapVisuals()
-      alert('Koordinat berhasil diambil dari GPS perangkat Anda!')
+      uiStore.showToast('Koordinat berhasil diambil dari GPS perangkat Anda!', 'success')
     },
     (err) => {
       isFetchingCoords.value = false
-      alert('Gagal mengambil koordinat: ' + err.message)
+      uiStore.showToast('Gagal mengambil koordinat: ' + err.message, 'error')
     },
     { enableHighAccuracy: true }
   )
@@ -2772,7 +2826,7 @@ function fetchCurrentCoords() {
 
 function saveSettings() {
   attendanceStore.updateSchoolSettings(settingsForm.value)
-  alert('Pengaturan sekolah dan batas radius GPS berhasil disimpan!')
+  uiStore.showToast('Pengaturan sekolah dan batas radius GPS berhasil disimpan!', 'success')
 }
 
 // Logika Ganti Password Mandiri Akun Admin
@@ -2804,32 +2858,40 @@ async function handleAdminChangePassword() {
   }
 }
 
-function handleResetAllData() {
-  const confirmed = window.confirm(
-    'Reset ke Seeding Awal?\n\n' +
-    'Data akan dikembalikan ke kondisi bawaan PKBM Cahaya Mulia:\n' +
-    '• 3 Kelas (12, 11, 10)\n' +
-    '• 13 Siswa Kelas 12 (Buku Presensi Fisik)\n' +
-    '• Guru Piket, Tutor & Administrator\n' +
-    '• Presensi & riwayat kehadiran harian\n\n' +
-    'Lanjutkan?'
-  )
+async function handleResetAllData() {
+  const confirmed = await uiStore.showConfirm({
+    title: 'Reset ke Seeding Awal?',
+    message:
+      'Data akan dikembalikan ke kondisi bawaan PKBM Cahaya Mulia:\n' +
+      '• 3 Kelas (12, 11, 10)\n' +
+      '• 13 Siswa Kelas 12 (Buku Presensi Fisik)\n' +
+      '• Guru Piket, Tutor & Administrator\n' +
+      '• Presensi & riwayat kehadiran harian\n\n' +
+      'Lanjutkan?',
+    confirmText: 'Ya, Reset Data',
+    cancelText: 'Batal',
+    type: 'warning'
+  })
   if (confirmed) {
     attendanceStore.resetAllDataToDefault()
-    alert('Data berhasil di-reset ke kondisi seeding awal PKBM Cahaya Mulia!')
+    uiStore.setFlashToast('Data berhasil di-reset ke kondisi seeding awal PKBM Cahaya Mulia!', 'success')
     window.location.reload()
   }
 }
 
-function handleClearDataCleanSlate() {
-  const confirmed = window.confirm(
-    'Kosongkan Seluruh Data (Clean Slate)?\n\n' +
-    'Semua data siswa, guru, kelas, dan absensi akan dikosongkan untuk pengujian dari nol.\n\n' +
-    'Yakin ingin mengosongkan?'
-  )
+async function handleClearDataCleanSlate() {
+  const confirmed = await uiStore.showConfirm({
+    title: 'Kosongkan Seluruh Data (Clean Slate)?',
+    message:
+      'Semua data siswa, guru, kelas, dan absensi akan dikosongkan untuk pengujian dari nol.\n\n' +
+      'Yakin ingin mengosongkan?',
+    confirmText: 'Ya, Kosongkan',
+    cancelText: 'Batal',
+    type: 'danger'
+  })
   if (confirmed) {
     attendanceStore.clearAllDataToCleanSlate()
-    alert('Data berhasil dikosongkan. Anda dapat mulai menguji dari kondisi nol!')
+    uiStore.setFlashToast('Data berhasil dikosongkan. Anda dapat mulai menguji dari kondisi nol!', 'info')
     window.location.reload()
   }
 }

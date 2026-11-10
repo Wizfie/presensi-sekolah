@@ -226,6 +226,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useAttendanceStore } from '../stores/attendance'
+import { useUiStore } from '../stores/ui'
 import { getInitials } from '../utils/avatar'
 
 const props = defineProps({
@@ -239,6 +240,7 @@ const emit = defineEmits(['update:open', 'select-tab', 'logout'])
 const router = useRouter()
 const authStore = useAuthStore()
 const attendanceStore = useAttendanceStore()
+const uiStore = useUiStore()
 
 function close() {
   emit('update:open', false)
@@ -264,34 +266,41 @@ function handleLogout() {
   router.push('/login')
 }
 
-function handleResetToSeed() {
-  const confirmed = window.confirm(
-    'Reset ke Seeding Awal?\n\n' +
-    'Data akan dikembalikan ke kondisi bawaan PKBM Cahaya Mulia:\n' +
-    '• 3 Kelas (12, 11, 10)\n' +
-    '• 13 Siswa Kelas 12 (Buku Presensi Fisik)\n' +
-    '• Guru Piket, Tutor & Administrator\n' +
-    '• Presensi & riwayat kehadiran harian\n\n' +
-    'Lanjutkan?'
-  )
+async function handleResetToSeed() {
+  const confirmed = await uiStore.showConfirm({
+    title: 'Reset ke Seeding Awal?',
+    message:
+      'Data akan dikembalikan ke kondisi bawaan PKBM Cahaya Mulia:\n' +
+      '• 3 Kelas (12, 11, 10)\n' +
+      '• 13 Siswa Kelas 12 (Buku Presensi Fisik)\n' +
+      '• Guru Piket, Tutor & Administrator\n' +
+      '• Presensi & riwayat kehadiran harian',
+    confirmText: 'Ya, Reset Data',
+    cancelText: 'Batal',
+    type: 'warning'
+  })
   if (confirmed) {
     attendanceStore.resetAllDataToDefault()
     close()
-    alert('Data berhasil di-reset ke kondisi seeding awal PKBM Cahaya Mulia!')
+    uiStore.setFlashToast('Data berhasil di-reset ke kondisi seeding awal PKBM Cahaya Mulia!', 'success')
     window.location.reload()
   }
 }
 
-function handleClearToBlank() {
-  const confirmed = window.confirm(
-    'Kosongkan Seluruh Data (Clean Slate)?\n\n' +
-    'Semua data siswa, guru, kelas, dan absensi akan dikosongkan untuk pengujian dari nol.\n\n' +
-    'Yakin ingin mengosongkan?'
-  )
+async function handleClearToBlank() {
+  const confirmed = await uiStore.showConfirm({
+    title: 'Kosongkan Seluruh Data?',
+    message:
+      'Semua data siswa, guru, kelas, dan absensi akan dikosongkan untuk pengujian dari nol.\n\n' +
+      'Yakin ingin mengosongkan?',
+    confirmText: 'Ya, Kosongkan Semua',
+    cancelText: 'Batal',
+    type: 'danger'
+  })
   if (confirmed) {
     attendanceStore.clearAllDataToCleanSlate()
     close()
-    alert('Data berhasil dikosongkan. Anda dapat mulai menguji dari kondisi nol!')
+    uiStore.setFlashToast('Data berhasil dikosongkan. Anda dapat mulai menguji dari kondisi nol!', 'info')
     window.location.reload()
   }
 }
