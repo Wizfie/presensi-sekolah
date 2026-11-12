@@ -1892,6 +1892,14 @@ watch(rekapYear, (val) => {
   if (val) localStorage.setItem('presensi_guru_rekap_year', String(val))
 })
 
+watch(
+  [rekapYear, rekapMonth],
+  ([y, m]) => {
+    attendanceStore.ensureMonthAttendancesLoaded(y, m)
+  },
+  { immediate: true }
+)
+
 const availableYears = computed(() => {
   const existingYears = []
   if (attendanceStore.todayAttendances) {

@@ -1,0 +1,37 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Jalan setiap Senin & Kamis pukul 02:00 UTC (09:00 WIB), jeda maks 4 hari (< batas auto-pause 7 hari)
+    - cron: '0 2 * * 1,4'
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST RPC (Keep-Alive)
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Secret VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY belum diatur di GitHub Repository -> Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+          BASE_URL="${SUPABASE_URL%/}"
+          HTTP_CODE=$(curl -sS -o /tmp/resp.txt -w "%{http_code}" \
+            -X POST "${BASE_URL}/rest/v1/rpc/get_email_by_identifier" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"p_identifier":"__keepalive__"}')
+
+          echo "Supabase Keep-Alive HTTP status: ${HTTP_CODE}"
+          if [ "$HTTP_CODE" -ne 200 ] && [ "$HTTP_CODE" -ne 204 ]; then
+            echo "::error::Supabase keep-alive gagal dengan status HTTP ${HTTP_CODE}"
+            cat /tmp/resp.txt
+            exit 1
+          fi
+

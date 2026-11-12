@@ -177,8 +177,23 @@ export const useAttendanceStore = defineStore('attendance', () => {
   const isLoading = ref(false)
   const hasLoaded = ref(!isSupabaseConfigured)
   const loadedForUserId = ref(null)
+  const loadedSinceDate = ref(null)
+  const loadedMonths = new Set()
+  const monthFetchPromises = new Map()
   let fetchPromise = null
   let realtimeChannel = null
+
+  const PRESENSI_SELECT_COLUMNS =
+    'id,user_id,tanggal,jam_masuk,jam_pulang,status,metode_presensi,dicatat_oleh,jarak_masuk_meter,jarak_pulang_meter,keterangan,catatan'
+
+  function getRecentWindowStartDate(monthsBack = 2) {
+    const todayStr = getWibDateStr()
+    const [y, m] = todayStr.split('-').map(Number)
+    const d = new Date(y, m - 1 - monthsBack, 1)
+    const yy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    return `${yy}-${mm}-01`
+  }
 
   // Simpan lookup seluruh profil (termasuk non-aktif) untuk resolusi nama pada riwayat presensi
   const allProfilesMap = ref(new Map())
@@ -304,18 +319,22 @@ export const useAttendanceStore = defineStore('attendance', () => {
     }
   }
 
-  async function fetchAllAttendanceRows() {
+  async function fetchAllAttendanceRows(fromDate = null, toDate = null) {
     const allRows = []
     const pageSize = 1000
     let from = 0
 
     while (true) {
-      const { data, error } = await supabase
+      let query = supabase
         .from('presensi')
-        .select('*')
+        .select(PRESENSI_SELECT_COLUMNS)
         .order('tanggal', { ascending: false })
         .order('created_at', { ascending: false })
-        .range(from, from + pageSize - 1)
+
+      if (fromDate) query = query.gte('tanggal', fromDate)
+      if (toDate) query = query.lte('tanggal', toDate)
+
+      const { data, error } = await query.range(from, from + pageSize - 1)
 
       if (error) throw error
       if (!data || data.length === 0) break
@@ -325,6 +344,45 @@ export const useAttendanceStore = defineStore('attendance', () => {
       from += pageSize
     }
     return allRows
+  }
+
+  async function ensureMonthAttendancesLoaded(year, month) {
+    if (!isSupabaseConfigured || !supabase) return
+    const y = Number(year)
+    const m = Number(month)
+    if (!y || !m || m < 1 || m > 12) return
+
+    const mm = String(m).padStart(2, '0')
+    const monthKey = `${y}-${mm}`
+    const monthStart = `${monthKey}-01`
+
+    if (loadedSinceDate.value && monthStart >= loadedSinceDate.value) return
+    if (loadedMonths.has(monthKey)) return
+    if (monthFetchPromises.has(monthKey)) return monthFetchPromises.get(monthKey)
+
+    const lastDay = new Date(y, m, 0).getDate()
+    const monthEnd = `${monthKey}-${String(lastDay).padStart(2, '0')}`
+
+    const p = (async () => {
+      try {
+        await ensureDataLoaded()
+        if (loadedSinceDate.value && monthStart >= loadedSinceDate.value) return
+        if (loadedMonths.has(monthKey)) return
+
+        const rows = await fetchAllAttendanceRows(monthStart, monthEnd)
+        for (const row of rows) {
+          upsertLocalAttendance(mapPresensiRow(row))
+        }
+        loadedMonths.add(monthKey)
+      } catch (err) {
+        console.error('Failed loading month attendance:', monthKey, err)
+      } finally {
+        monthFetchPromises.delete(monthKey)
+      }
+    })()
+
+    monthFetchPromises.set(monthKey, p)
+    return p
   }
 
   function setupRealtimeSubscription() {
@@ -402,6 +460,9 @@ export const useAttendanceStore = defineStore('attendance', () => {
       }
       hasLoaded.value = false
       loadedForUserId.value = null
+      loadedSinceDate.value = null
+      loadedMonths.clear()
+      monthFetchPromises.clear()
       fetchPromise = null
     }
   }
@@ -428,12 +489,13 @@ export const useAttendanceStore = defineStore('attendance', () => {
     isLoading.value = true
     fetchPromise = (async () => {
       try {
+        const recentStartDate = getRecentWindowStartDate(2)
         const [settingsRes, classesRes, profilesRes, attendanceRows, leavesRes] = await Promise.all([
           supabase.from('pengaturan_sekolah').select('*').order('id').limit(1).maybeSingle(),
           supabase.from('classes').select('name').order('name'),
           supabase.from('profiles').select('*').order('nama_lengkap'),
-          fetchAllAttendanceRows(),
-          supabase.from('pengajuan_izin').select('*').order('created_at', { ascending: false }).limit(500)
+          fetchAllAttendanceRows(recentStartDate, null),
+          supabase.from('pengajuan_izin').select('*').order('created_at', { ascending: false }).limit(200)
         ])
 
         if (settingsRes.data) {
@@ -449,6 +511,8 @@ export const useAttendanceStore = defineStore('attendance', () => {
         }
 
         todayAttendances.value = (attendanceRows || []).map(mapPresensiRow).filter(Boolean)
+        loadedSinceDate.value = recentStartDate
+        loadedMonths.clear()
 
         if (leavesRes.data) {
           leaveRequests.value = leavesRes.data.map(mapLeaveRow).filter(Boolean)
@@ -1106,7 +1170,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
         p_jenis_kelamin: studentData.jenis_kelamin || 'L',
         p_role: 'siswa',
         p_kelas: cleanKelas,
-        p_foto_profil_url: studentData.foto_profil_url || ''
+        p_foto_profil_url: ''
       })
 
       if (error || !res?.success) {
@@ -1136,7 +1200,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
       password: studentData.password || 'password123',
       foto_update_count: 0,
       qr_token: 'tok_' + cleanNisn + '_' + Math.random().toString(36).substring(2, 7),
-      foto_profil_url: studentData.foto_profil_url || '',
+      foto_profil_url: '',
       is_deleted: false
     }
     rawStudents.value.push(newStudent)
@@ -1155,9 +1219,8 @@ export const useAttendanceStore = defineStore('attendance', () => {
         p_nomor_induk: studentData.nomor_induk?.trim() || null,
         p_jenis_kelamin: studentData.jenis_kelamin || null,
         p_kelas: cleanKelas || null,
-        p_foto_profil_url: studentData.foto_profil_url ?? null,
-        p_foto_update_count:
-          typeof studentData.foto_update_count === 'number' ? studentData.foto_update_count : null
+        p_foto_profil_url: '',
+        p_foto_update_count: 0
       })
 
       if (error || !res?.success) {
@@ -1307,7 +1370,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
         p_kelas_diajar: kelasDiajar,
         p_mata_pelajaran: teacherData.mata_pelajaran || 'Guru Piket Harian',
         p_jabatan: 'Guru Piket',
-        p_foto_profil_url: teacherData.foto_profil_url || ''
+        p_foto_profil_url: ''
       })
 
       if (error || !res?.success) {
@@ -1340,7 +1403,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
       jam_terlambat_default: teacherData.jam_terlambat_default || '08:00',
       jam_pulang_default: teacherData.jam_pulang_default || '14:00',
       jadwal_kelas: teacherData.jadwal_kelas || {},
-      foto_profil_url: teacherData.foto_profil_url || '',
+      foto_profil_url: '',
       is_deleted: false,
       deleted_at: null
     }
@@ -1361,9 +1424,8 @@ export const useAttendanceStore = defineStore('attendance', () => {
         p_jenis_kelamin: teacherData.jenis_kelamin || null,
         p_kelas_diajar: kelasDiajar,
         p_mata_pelajaran: teacherData.mata_pelajaran ?? null,
-        p_foto_profil_url: teacherData.foto_profil_url ?? null,
-        p_foto_update_count:
-          typeof teacherData.foto_update_count === 'number' ? teacherData.foto_update_count : null
+        p_foto_profil_url: '',
+        p_foto_update_count: 0
       })
 
       if (error || !res?.success) {
@@ -1746,6 +1808,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
     isLoading,
     hasLoaded,
     ensureDataLoaded,
+    ensureMonthAttendancesLoaded,
     initializeData,
     resetRemoteState,
     schoolSettings,

@@ -173,6 +173,9 @@ BEGIN
         NEW.nomor_induk := OLD.nomor_induk;
         NEW.email := OLD.email;
     END IF;
+    -- Kebijakan hemat kuota: jangan simpan gambar profil Base64/URL di tabel profiles
+    NEW.foto_profil_url := '';
+    NEW.foto_update_count := 0;
     NEW.updated_at := now();
     RETURN NEW;
 END;
@@ -654,7 +657,7 @@ BEGIN
         COALESCE(NULLIF(trim(p_jabatan), ''), 'Staf Tata Usaha'),
         false,
         v_qr,
-        COALESCE(p_foto_profil_url, '')
+        ''
     )
     RETURNING * INTO v_profile;
 
@@ -729,8 +732,8 @@ BEGIN
         kelas_diajar = COALESCE(p_kelas_diajar, kelas_diajar),
         mata_pelajaran = COALESCE(p_mata_pelajaran, mata_pelajaran),
         jabatan = COALESCE(p_jabatan, jabatan),
-        foto_profil_url = COALESCE(p_foto_profil_url, foto_profil_url),
-        foto_update_count = COALESCE(p_foto_update_count, foto_update_count),
+        foto_profil_url = '',
+        foto_update_count = 0,
         updated_at = now()
     WHERE id = p_user_id
     RETURNING * INTO v_profile;
@@ -921,6 +924,67 @@ GRANT EXECUTE ON FUNCTION public.admin_update_user(UUID, TEXT, TEXT, TEXT, TEXT,
 GRANT EXECUTE ON FUNCTION public.admin_reset_user_password(UUID, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_set_user_deleted(UUID, BOOLEAN) TO authenticated;
 
+-- ------------------------------------------------------------------------------
+-- 11. KEBIJAKAN HEMAT KUOTA: HAPUS FOTO PROFIL LAMA & AUTO-HAPUS FOTO PRESENSI
+-- ------------------------------------------------------------------------------
+
+-- Pastikan tidak ada sisa gambar profil tersimpan di tabel profiles
+UPDATE public.profiles
+SET foto_profil_url = '',
+    foto_update_count = 0
+WHERE COALESCE(foto_profil_url, '') <> '' OR foto_update_count <> 0;
+
+-- Bersihkan foto presensi (foto_masuk_url, foto_pulang_url) dan bukti izin lama:
+-- - Jika p_retention_days NULL (default): hapus seluruh media sebelum awal bulan berjalan (ganti bulan)
+-- - Jika p_retention_days diisi angka >= 0: hapus media lebih lama dari N hari terakhir
+CREATE OR REPLACE FUNCTION public.cleanup_old_attendance_media(p_retention_days INT DEFAULT NULL)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_today DATE := (now() AT TIME ZONE 'Asia/Jakarta')::date;
+    v_cutoff_date DATE;
+    v_presensi_cleaned INT := 0;
+    v_izin_cleaned INT := 0;
+BEGIN
+    -- Jika dipanggil lewat API client, hanya Admin yang diizinkan (cron/SQL Editor memiliki auth.uid() IS NULL)
+    IF auth.uid() IS NOT NULL AND public.get_my_role() <> 'admin' THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Akses ditolak: Hanya Administrator.');
+    END IF;
+
+    IF p_retention_days IS NULL THEN
+        v_cutoff_date := date_trunc('month', (now() AT TIME ZONE 'Asia/Jakarta'))::date;
+    ELSE
+        v_cutoff_date := v_today - GREATEST(p_retention_days, 0);
+    END IF;
+
+    UPDATE public.presensi
+    SET foto_masuk_url = NULL,
+        foto_pulang_url = NULL
+    WHERE tanggal < v_cutoff_date
+      AND (foto_masuk_url IS NOT NULL OR foto_pulang_url IS NOT NULL);
+    GET DIAGNOSTICS v_presensi_cleaned = ROW_COUNT;
+
+    UPDATE public.pengajuan_izin
+    SET bukti_surat_url = NULL,
+        updated_at = now()
+    WHERE tanggal_selesai < v_cutoff_date
+      AND bukti_surat_url IS NOT NULL;
+    GET DIAGNOSTICS v_izin_cleaned = ROW_COUNT;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'cutoff_date', v_cutoff_date,
+        'presensi_cleaned', v_presensi_cleaned,
+        'izin_cleaned', v_izin_cleaned
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.cleanup_old_attendance_media(INT) TO authenticated;
+
 DO $$
 DECLARE
     v_tbl TEXT;
@@ -938,4 +1002,42 @@ BEGIN
             END IF;
         END LOOP;
     END IF;
+END $$;
+
+-- Jadwalkan auto-cleanup foto presensi & bukti izin setiap pergantian bulan / harian via pg_cron
+-- (Aman dilewati bila ekstensi pg_cron belum diaktifkan di Supabase -> Database -> Extensions)
+DO $$
+DECLARE
+    v_job_id BIGINT;
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_available_extensions WHERE name = 'pg_cron') THEN
+        BEGIN
+            CREATE EXTENSION IF NOT EXISTS pg_cron;
+        EXCEPTION WHEN OTHERS THEN
+            RAISE NOTICE 'Lewati CREATE EXTENSION pg_cron: %', SQLERRM;
+        END;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'cron') THEN
+        SELECT jobid INTO v_job_id
+        FROM cron.job
+        WHERE jobname = 'cleanup-attendance-media-monthly'
+        LIMIT 1;
+
+        IF v_job_id IS NOT NULL THEN
+            PERFORM cron.unschedule(v_job_id);
+        END IF;
+
+        -- Jalan tiap hari pukul 02:00 WIB (19:00 UTC) untuk menghapus foto bulan-bulan sebelumnya + pangkas log cron > 7 hari
+        PERFORM cron.schedule(
+            'cleanup-attendance-media-monthly',
+            '0 19 * * *',
+            $cron$
+            SELECT public.cleanup_old_attendance_media(NULL);
+            DELETE FROM cron.job_run_details WHERE end_time < now() - interval '7 days';
+            $cron$
+        );
+    END IF;
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Penjadwalan pg_cron dilewati (%). Aktifkan pg_cron dari menu Database -> Extensions lalu jalankan ulang bila diperlukan.', SQLERRM;
 END $$;

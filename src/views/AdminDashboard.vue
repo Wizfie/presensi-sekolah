@@ -1085,74 +1085,19 @@
               </p>
             </div>
 
-            <!-- Upload Foto Siswa (PNG / JPG) -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Pas Foto Siswa (PNG / JPG)</label>
-              <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/70">
-                <img
-                  v-if="studentForm.foto_profil_url"
-                  :src="studentForm.foto_profil_url"
-                  alt="Foto Siswa"
-                  class="w-12 h-14 rounded-lg object-cover border border-slate-300 shadow-2xs shrink-0"
-                />
-                <div
-                  v-else
-                  class="w-12 h-14 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-blue-700 shadow-2xs select-none"
-                >
-                  {{ getInitials(studentForm.nama_lengkap || 'Siswa') }}
-                </div>
-                <div class="flex-1 min-w-0 space-y-1">
-                  <input
-                    ref="adminStudentFileInputRef"
-                    type="file"
-                    accept=".png, .jpg, .jpeg, image/png, image/jpeg"
-                    class="hidden"
-                    @change="handleAdminStudentPhotoUpload"
-                  />
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      class="h-8 text-xs bg-white inline-flex items-center gap-1"
-                      @click="adminStudentFileInputRef?.click()"
-                    >
-                      <span class="material-icons text-xs">upload_file</span>
-                      <span>Unggah PNG / JPG</span>
-                    </Button>
-                    <button
-                      v-if="studentForm.foto_profil_url"
-                      type="button"
-                      class="text-[11px] text-rose-600 hover:text-rose-700 cursor-pointer"
-                      @click="studentForm.foto_profil_url = ''"
-                    >
-                      Hapus Foto
-                    </button>
-                  </div>
-                  <p class="text-[10px] text-slate-400">Admin memiliki hak akses tanpa batas untuk mengganti foto siswa.</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Kontrol Kuota Ganti Foto Mandiri Siswa (Hanya di Edit Mode) -->
-            <div v-if="modalMode === 'edit'" class="p-2.5 rounded-xl border border-slate-200 bg-slate-50/80 flex items-center justify-between gap-2 text-xs">
-              <div>
-                <span class="text-slate-500 font-medium">Batas Update Mandiri Siswa: </span>
-                <span :class="studentForm.foto_update_count >= 1 ? 'font-bold text-amber-700' : 'font-bold text-emerald-700'">
-                  {{ studentForm.foto_update_count >= 1 ? '1/1 Terpakai (Terkunci)' : '0/1 (Belum Digunakan)' }}
-                </span>
-              </div>
-              <Button
-                v-if="studentForm.foto_update_count >= 1"
-                type="button"
-                size="sm"
-                variant="outline"
-                class="h-7 text-[11px] text-blue-700 border-blue-300 hover:bg-blue-50 bg-white inline-flex items-center gap-1"
-                @click="resetStudentPhotoQuotaAdmin"
+            <!-- Info Avatar Inisial (Tanpa Simpan Gambar Profil) -->
+            <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/70">
+              <div
+                class="w-11 h-12 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-blue-700 shadow-2xs select-none"
               >
-                <span class="material-icons text-xs">refresh</span>
-                <span>Beri Kuota 1x Lagi</span>
-              </Button>
+                {{ getInitials(studentForm.nama_lengkap || 'Siswa') }}
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-semibold text-slate-700">Avatar Inisial Otomatis</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">
+                  Penyimpanan gambar profil dinonaktifkan agar database dan bandwidth tetap ringan.
+                </p>
+              </div>
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
@@ -1306,74 +1251,19 @@
               </p>
             </div>
 
-            <!-- Upload Foto Guru (PNG / JPG) -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Pas Foto Guru (PNG / JPG)</label>
-              <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/70">
-                <img
-                  v-if="teacherForm.foto_profil_url"
-                  :src="teacherForm.foto_profil_url"
-                  alt="Foto Guru"
-                  class="w-12 h-14 rounded-lg object-cover border border-slate-300 shadow-2xs shrink-0"
-                />
-                <div
-                  v-else
-                  class="w-12 h-14 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-blue-700 shadow-2xs select-none"
-                >
-                  {{ getInitials(teacherForm.nama_lengkap || 'Guru') }}
-                </div>
-                <div class="flex-1 min-w-0 space-y-1">
-                  <input
-                    ref="adminTeacherFileInputRef"
-                    type="file"
-                    accept=".png, .jpg, .jpeg, image/png, image/jpeg"
-                    class="hidden"
-                    @change="handleAdminTeacherPhotoUpload"
-                  />
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      class="h-8 text-xs bg-white inline-flex items-center gap-1"
-                      @click="adminTeacherFileInputRef?.click()"
-                    >
-                      <span class="material-icons text-xs">upload_file</span>
-                      <span>Unggah PNG / JPG</span>
-                    </Button>
-                    <button
-                      v-if="teacherForm.foto_profil_url"
-                      type="button"
-                      class="text-[11px] text-rose-600 hover:text-rose-700 cursor-pointer"
-                      @click="teacherForm.foto_profil_url = ''"
-                    >
-                      Hapus Foto
-                    </button>
-                  </div>
-                  <p class="text-[10px] text-slate-400">Admin memiliki hak akses tanpa batas untuk mengganti foto guru.</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Kontrol Kuota Ganti Foto Mandiri Guru (Hanya di Edit Mode) -->
-            <div v-if="teacherModalMode === 'edit'" class="p-2.5 rounded-xl border border-slate-200 bg-slate-50/80 flex items-center justify-between gap-2 text-xs">
-              <div>
-                <span class="text-slate-500 font-medium">Batas Update Mandiri Guru: </span>
-                <span :class="teacherForm.foto_update_count >= 1 ? 'font-bold text-amber-700' : 'font-bold text-emerald-700'">
-                  {{ teacherForm.foto_update_count >= 1 ? '1/1 Terpakai (Terkunci)' : '0/1 (Belum Digunakan)' }}
-                </span>
-              </div>
-              <Button
-                v-if="teacherForm.foto_update_count >= 1"
-                type="button"
-                size="sm"
-                variant="outline"
-                class="h-7 text-[11px] text-blue-700 border-blue-300 hover:bg-blue-50 bg-white inline-flex items-center gap-1"
-                @click="resetTeacherPhotoQuotaAdmin"
+            <!-- Info Avatar Inisial (Tanpa Simpan Gambar Profil) -->
+            <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/70">
+              <div
+                class="w-11 h-12 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-blue-700 shadow-2xs select-none"
               >
-                <span class="material-icons text-xs">refresh</span>
-                <span>Beri Kuota 1x Lagi</span>
-              </Button>
+                {{ getInitials(teacherForm.nama_lengkap || 'Guru') }}
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-semibold text-slate-700">Avatar Inisial Otomatis</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">
+                  Penyimpanan gambar profil dinonaktifkan agar database dan bandwidth tetap ringan.
+                </p>
+              </div>
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
@@ -1887,7 +1777,6 @@ import Card from '../components/ui/Card.vue'
 import Button from '../components/ui/Button.vue'
 import Badge from '../components/ui/Badge.vue'
 import CustomDropdown from '../components/ui/CustomDropdown.vue'
-import { compressImageFile } from '../utils/imageCompressor'
 import { getInitials } from '../utils/avatar'
 import { getCurrentAcademicYear, getAcademicYearOptions } from '../utils/academicYear'
 
@@ -2266,56 +2155,10 @@ function openEditStudentModal(student) {
   studentForm.value = {
     ...student,
     jenis_kelamin: student.jenis_kelamin || 'L',
-    password: ''
+    password: '',
+    foto_profil_url: ''
   }
   isStudentModalOpen.value = true
-}
-
-const adminStudentFileInputRef = ref(null)
-const adminTeacherFileInputRef = ref(null)
-
-async function handleAdminStudentPhotoUpload(event) {
-  const file = event.target.files?.[0]
-  if (!file) return
-  try {
-    const compressed = await compressImageFile(file, 600, 600, 0.85)
-    studentForm.value.foto_profil_url = compressed
-  } catch (err) {
-    uiStore.showToast(err.message || 'Gagal memproses gambar.', 'error')
-  }
-}
-
-async function resetStudentPhotoQuotaAdmin() {
-  if (!editingStudentId.value) return
-  const res = await attendanceStore.resetStudentPhotoQuota(editingStudentId.value)
-  if (res?.success === false) {
-    uiStore.showToast(res.message || 'Gagal mereset kuota foto siswa.', 'error')
-    return
-  }
-  studentForm.value.foto_update_count = 0
-  uiStore.showToast('Batas kuota ganti foto untuk siswa ini telah di-reset menjadi 0/1. Siswa dapat memperbarui fotonya 1x lagi.', 'info', 4500)
-}
-
-async function handleAdminTeacherPhotoUpload(event) {
-  const file = event.target.files?.[0]
-  if (!file) return
-  try {
-    const compressed = await compressImageFile(file, 600, 600, 0.85)
-    teacherForm.value.foto_profil_url = compressed
-  } catch (err) {
-    uiStore.showToast(err.message || 'Gagal memproses gambar.', 'error')
-  }
-}
-
-async function resetTeacherPhotoQuotaAdmin() {
-  if (!editingTeacherId.value) return
-  const res = await attendanceStore.resetTeacherPhotoQuota(editingTeacherId.value)
-  if (res?.success === false) {
-    uiStore.showToast(res.message || 'Gagal mereset kuota foto guru.', 'error')
-    return
-  }
-  teacherForm.value.foto_update_count = 0
-  uiStore.showToast('Batas kuota ganti foto untuk guru ini telah di-reset menjadi 0/1. Guru dapat memperbarui fotonya 1x lagi.', 'info', 4500)
 }
 
 async function saveStudentForm() {
@@ -2420,6 +2263,7 @@ function openEditTeacherModal(teacher) {
   teacherForm.value = {
     ...teacher,
     password: '',
+    foto_profil_url: '',
     kelas_diajar: [...(teacher.kelas_diajar || ['12'])]
   }
   isTeacherModalOpen.value = true

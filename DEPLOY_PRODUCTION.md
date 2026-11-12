@@ -87,6 +87,27 @@ Kamera QR, GPS, dan PWA **wajib HTTPS**.
 
 ---
 
+## 6. Optimasi Kuota & Anti Auto-Pause (Supabase Free Plan)
+Agar database dan egress Supabase Free tetap awet jangka panjang serta tidak ter-pause saat libur sekolah (>7 hari tanpa login):
+
+1. **Kebijakan Media Hemat Kuota *(Sudah Otomatis di Kode & Schema)*:**
+   - Upload gambar profil dinonaktifkan (`profiles.foto_profil_url` selalu kosong, UI memakai avatar inisial otomatis).
+   - Aplikasi hanya memuat presensi **3 bulan terakhir** saat login awal dan otomatis memuat bulan lebih lama saat dibuka di **Buku Rekap**.
+   - Function `public.cleanup_old_attendance_media(p_retention_days DEFAULT NULL)` tersedia untuk membersihkan `foto_masuk_url`, `foto_pulang_url`, dan `bukti_surat_url` dari bulan-bulan sebelumnya.
+2. **Aktifkan Auto-Hapus Foto Bulanan (`pg_cron`):**
+   - Buka **Supabase Dashboard -> Database -> Extensions** -> aktifkan **`pg_cron`** *(gratis di Free Plan)*.
+   - Jalankan ulang `supabase_schema.sql` (aman/idempoten) di **SQL Editor** untuk mendaftarkan jadwal harian `02:00 WIB` (`cleanup-attendance-media-monthly`) yang otomatis membersihkan media presensi/izin bulan lalu begitu ganti bulan.
+   - Untuk periode khusus secara manual (mis. hanya simpan 7 hari terakhir), jalankan di SQL Editor:
+     `SELECT public.cleanup_old_attendance_media(7);`
+3. **Cron Anti Auto-Pause (GitHub Actions):**
+   - Repo sudah dilengkapi workflow [`.github/workflows/keep-supabase-alive.yml`](.github/workflows/keep-supabase-alive.yml) yang melakukan ping ringan ke Supabase setiap Senin & Kamis pagi.
+   - Buka repo GitHub Anda -> **Settings -> Secrets and variables -> Actions -> New repository secret**, lalu tambahkan:
+     - `VITE_SUPABASE_URL` -> Project URL Supabase
+     - `VITE_SUPABASE_ANON_KEY` -> Publishable / anon public key Supabase
+   - Uji sekali lewat tab **Actions -> Keep Supabase Alive -> Run workflow** dan pastikan statusnya hijau (`HTTP status: 200`).
+
+---
+
 ## Troubleshooting Cepat
 - **Build gagal (`vite build`):** Pastikan `NODE_VERSION=22` terpasang di Environment Variables Cloudflare Pages.
 - **Deploy gagal `code: 100324` (`Invalid _redirects`):** Jangan pakai rule `/* /index.html 200` di `_redirects`. Pastikan `public/_redirects` tidak ada (Cloudflare Workers & Pages sudah menangani SPA routing secara otomatis jika tidak ada `404.html`).
