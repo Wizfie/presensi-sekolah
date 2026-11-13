@@ -723,11 +723,14 @@
           <div class="flex items-center gap-2">
             <button
               type="button"
+              :disabled="isExportingExcel"
               @click="exportMonthlyToExcel"
-              class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
             >
-              <span class="material-icons text-sm">download</span>
-              <span>Export Excel</span>
+              <span class="material-icons text-sm" :class="{ 'animate-spin': isExportingExcel }">
+                {{ isExportingExcel ? 'sync' : 'download' }}
+              </span>
+              <span>{{ isExportingExcel ? 'Menyiapkan...' : 'Export Excel' }}</span>
             </button>
             <button
               type="button"
@@ -2085,7 +2088,10 @@ function getStudentAbsenceList(row) {
   return absences
 }
 
-function printMonthlySheet() {
+const isExportingExcel = ref(false)
+
+async function printMonthlySheet() {
+  await attendanceStore.ensureMonthAttendancesLoaded(rekapYear.value, rekapMonth.value)
   const style = document.createElement('style')
   style.id = 'rekap-landscape-print'
   style.innerHTML = `@page { size: A4 landscape !important; margin: 5mm 6mm !important; }`
@@ -2100,12 +2106,17 @@ function printMonthlySheet() {
 }
 
 // Export Matriks Bulanan ke Excel (.xlsx) dengan Format Cantik Persis Gambar & View Buku Rekap
-function exportMonthlyToExcel() {
-  const schoolName = (attendanceStore.schoolSettings?.nama_sekolah || 'PKBM CAHAYA MULIA').toUpperCase()
-  const tp = rekapAcademicYear.value
-  const mName = monthNames[rekapMonth.value - 1].toUpperCase()
-  const daysCount = daysInSelectedMonth.value
-  const totalCols = daysCount + 8 // NOMOR, NAMA, L/P, [days], H, S, I, A, %
+async function exportMonthlyToExcel() {
+  if (isExportingExcel.value) return
+  isExportingExcel.value = true
+  try {
+    await attendanceStore.ensureMonthAttendancesLoaded(rekapYear.value, rekapMonth.value)
+
+    const schoolName = (attendanceStore.schoolSettings?.nama_sekolah || 'PKBM CAHAYA MULIA').toUpperCase()
+    const tp = rekapAcademicYear.value
+    const mName = monthNames[rekapMonth.value - 1].toUpperCase()
+    const daysCount = daysInSelectedMonth.value
+    const totalCols = daysCount + 8 // NOMOR, NAMA, L/P, [days], H, S, I, A, %
 
   // Styling Primitives
   const borderThin = {
@@ -2493,6 +2504,11 @@ function exportMonthlyToExcel() {
 
   const fileName = `Daftar_Hadir_PKBM_Cahaya_Mulia_Kelas_${rekapClass.value}_${mName}_${rekapYear.value}.xlsx`
   XLSX.writeFile(wb, fileName)
+  } catch (err) {
+    console.error('Gagal export Excel:', err)
+  } finally {
+    isExportingExcel.value = false
+  }
 }
 
 // Quick Edit Modal

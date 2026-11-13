@@ -3,17 +3,19 @@
 Panduan singkat deploy **Presensi PKBM Cahaya Mulia** dari setup awal, sesi demo, hingga live production.
 
 ## File Kunci di Repositori
-- `supabase_schema.sql` — Schema DB, RLS, trigger keamanan, RPC, dan Realtime
+- `supabase_schema.sql` — Schema DB, RLS, trigger keamanan, RPC, Realtime, dan jadwal `pg_cron`
 - `supabase_seed_demo.sql` — Data demo awal (33 siswa, 2 guru, 1 admin, presensi & 1 izin)
 - `supabase_clean_demo.sql` — Pembersihan pasca-demo (sisakan Root Admin `ADM-001`, kelas & GPS)
 - `public/_headers` — Izin kamera/GPS & kontrol cache PWA untuk Cloudflare Pages / Workers
+- `.github/workflows/keep-supabase-alive.yml` — Cron keep-alive agar Supabase Free tidak auto-pause
 - `.env.example` — Template environment frontend
 
 ---
 
 ## 1. Setup Supabase
 1. **Buat Project:** Login [Supabase Dashboard](https://supabase.com/dashboard) -> **New Project** -> pilih region **Southeast Asia (Singapore)**.
-2. **Jalankan Schema:** Buka **SQL Editor -> New Query**, jalankan seluruh isi `supabase_schema.sql` (pastikan *Success*).
+2. **Aktifkan `pg_cron` *(direkomendasikan)*:** Buka **Database -> Extensions**, cari `pg_cron`, lalu geser toggle hingga aktif *(untuk auto-hapus media presensi bulanan)*.
+3. **Jalankan Schema:** Buka **SQL Editor -> New Query**, jalankan seluruh isi `supabase_schema.sql` (pastikan *Success*).
 3. **Isi Data Demo *(untuk demo awal)*:** Jalankan `supabase_seed_demo.sql` di **SQL Editor**.
    - Password semua akun demo: `password123`
    - **Admin Root:** `admin@pkbm.sch.id` (`ADM-001`) | **Guru Piket:** `tutor@pkbm.sch.id` (`198507122010011005`) | **Siswa siap demo:** `ade@pkbm.sch.id` (`20241201`)
@@ -88,23 +90,44 @@ Kamera QR, GPS, dan PWA **wajib HTTPS**.
 ---
 
 ## 6. Optimasi Kuota & Anti Auto-Pause (Supabase Free Plan)
-Agar database dan egress Supabase Free tetap awet jangka panjang serta tidak ter-pause saat libur sekolah (>7 hari tanpa login):
+Agar database dan egress Supabase Free tetap awet jangka panjang serta tidak ter-pause otomatis saat libur sekolah (>7 hari tanpa login):
 
-1. **Kebijakan Media Hemat Kuota *(Sudah Otomatis di Kode & Schema)*:**
-   - Upload gambar profil dinonaktifkan (`profiles.foto_profil_url` selalu kosong, UI memakai avatar inisial otomatis).
-   - Aplikasi hanya memuat presensi **3 bulan terakhir** saat login awal dan otomatis memuat bulan lebih lama saat dibuka di **Buku Rekap**.
-   - Function `public.cleanup_old_attendance_media(p_retention_days DEFAULT NULL)` tersedia untuk membersihkan `foto_masuk_url`, `foto_pulang_url`, dan `bukti_surat_url` dari bulan-bulan sebelumnya.
-2. **Aktifkan Auto-Hapus Foto Bulanan (`pg_cron`):**
-   - Buka **Supabase Dashboard -> Database -> Extensions** -> aktifkan **`pg_cron`** *(gratis di Free Plan)*.
-   - Jalankan ulang `supabase_schema.sql` (aman/idempoten) di **SQL Editor** untuk mendaftarkan jadwal harian `02:00 WIB` (`cleanup-attendance-media-monthly`) yang otomatis membersihkan media presensi/izin bulan lalu begitu ganti bulan.
-   - Untuk periode khusus secara manual (mis. hanya simpan 7 hari terakhir), jalankan di SQL Editor:
-     `SELECT public.cleanup_old_attendance_media(7);`
-3. **Cron Anti Auto-Pause (GitHub Actions):**
-   - Repo sudah dilengkapi workflow [`.github/workflows/keep-supabase-alive.yml`](.github/workflows/keep-supabase-alive.yml) yang melakukan ping ringan ke Supabase setiap Senin & Kamis pagi.
-   - Buka repo GitHub Anda -> **Settings -> Secrets and variables -> Actions -> New repository secret**, lalu tambahkan:
-     - `VITE_SUPABASE_URL` -> Project URL Supabase
-     - `VITE_SUPABASE_ANON_KEY` -> Publishable / anon public key Supabase
-   - Uji sekali lewat tab **Actions -> Keep Supabase Alive -> Run workflow** dan pastikan statusnya hijau (`HTTP status: 200`).
+### 6.1 Kebijakan Media Hemat Kuota *(Otomatis di Kode & Schema)*
+- **Tanpa Gambar Profil:** Form upload foto profil dinonaktifkan (`profiles.foto_profil_url` selalu `''`); seluruh UI & Kartu QR otomatis memakai avatar inisial nama.
+- **Load Riwayat Bertahap:** Saat login awal, aplikasi hanya mengunduh presensi **3 bulan terakhir** tanpa kolom media foto. Bulan yang lebih lama otomatis dimuat *on-demand* ketika Guru membuka bulan tersebut di **Buku Rekap**.
+
+### 6.2 Auto-Hapus Foto Presensi & Bukti Izin (`pg_cron`)
+`pg_cron` berjalan internal di Postgres untuk membersihkan `foto_masuk_url`, `foto_pulang_url` (`presensi`) dan `bukti_surat_url` (`pengajuan_izin`) pada bulan-bulan sebelumnya tanpa menghapus data kehadiran:
+1. Buka **Supabase Dashboard -> Database -> Extensions** -> cari **`pg_cron`** -> aktifkan toggle **Enabled**.
+2. Jalankan (atau jalankan ulang) `supabase_schema.sql` di **SQL Editor** untuk mendaftarkan job harian pukul **02:00 WIB** (`0 19 * * *` UTC).
+3. Verifikasi job terdaftar lewat menu **Integrations -> Cron -> Jobs**, atau jalankan di **SQL Editor**:
+   ```sql
+   SELECT jobid, jobname, schedule, active FROM cron.job;
+   ```
+   Pastikan muncul job **`cleanup-attendance-media-monthly`** dengan `active = true`.
+4. **Pembersihan manual per periode *(opsional)*:**
+   - Hapus media bulan-bulan sebelumnya: `SELECT public.cleanup_old_attendance_media();`
+   - Hapus media lebih lama dari *N* hari (mis. 7 hari): `SELECT public.cleanup_old_attendance_media(7);`
+
+### 6.3 Cron Anti Auto-Pause (`GitHub Actions`)
+`pg_cron` internal Postgres **tidak** mereset timer 7 hari idle Supabase, sehingga tetap butuh ping HTTP dari luar lewat [`.github/workflows/keep-supabase-alive.yml`](.github/workflows/keep-supabase-alive.yml) (jalan otomatis tiap **Senin & Kamis pukul 09:00 WIB**):
+
+> [!IMPORTANT]
+> **Jika deploy memakai repo hasil Fork (Akun GitHub ke-2):**
+> Tambahkan secrets pada **repo fork yang di-deploy** (bukan repo asal), karena GitHub Secrets bersifat per-repository dan tidak ikut tersalin saat fork. **Tidak perlu membuat Environments** — gunakan **Repository secrets**.
+
+1. **Sinkronkan repo fork *(khusus fork)*:** Buka repo fork -> klik **Sync fork -> Update branch** agar `.github/workflows/keep-supabase-alive.yml` masuk ke branch `main`.
+2. **Pastikan izin Actions aktif:** Buka **Settings -> Actions -> General** -> pastikan **Allow all actions and reusable workflows** terpilih.
+3. **Tambahkan 2 Repository Secrets:**
+   - Di halaman **Settings**, lihat sidebar kiri bagian paling bawah di bawah kelompok **Security and quality** -> klik **`Secrets and variables`** -> pilih **`Actions`**.
+   - Pastikan tab **`Secrets`** aktif, lalu pada bagian **Repository secrets** klik **`New repository secret`** untuk menambahkan:
+     - **`VITE_SUPABASE_URL`** -> isi Project URL Supabase (`https://<ref>.supabase.co`)
+     - **`VITE_SUPABASE_ANON_KEY`** -> isi Publishable / anon public key Supabase (`sb_publishable_...` atau `eyJhbGci...`)
+4. **Aktifkan & Uji Workflow:**
+   - Buka tab **Actions** di repo Anda. Jika muncul banner repo fork, klik **"I understand my workflows, go ahead and enable them"**.
+   - Pilih **Keep Supabase Alive** di menu kiri -> klik **Run workflow** -> **Run workflow**.
+   - Pastikan status berakhir **Success** (hijau) dengan log `Supabase Keep-Alive HTTP status: 200`.
+   *(Catatan: GitHub otomatis menjeda workflow `schedule` jika repo tidak memiliki commit baru selama 60 hari berturut-turut — cukup klik tombol re-enable di tab **Actions** bila menerima notifikasi dari GitHub.)*
 
 ---
 
@@ -114,3 +137,4 @@ Agar database dan egress Supabase Free tetap awet jangka panjang serta tidak ter
 - **Tombol demo tidak berubah:** Variabel `VITE_*` dibaca saat build; klik **Retry deployment** lalu refresh cache PWA.
 - **Refresh `/guru`, `/siswa`, `/admin` error 404:** Di Cloudflare Workers pastikan `not_found_handling` = `single-page-application`; di Cloudflare Pages pastikan tidak ada file `404.html` di `dist/`.
 - **Kamera QR / GPS diblokir:** Wajib akses via `https://` dan izinkan akses kamera/lokasi di browser HP.
+- **Workflow `Keep Supabase Alive` gagal (`secret belum diatur`):** Pastikan kedua secret ditaruh di **Settings -> Security and quality -> Secrets and variables -> Actions -> Repository secrets**, bukan di menu **Environments**.
