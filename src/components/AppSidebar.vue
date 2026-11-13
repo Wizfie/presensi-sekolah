@@ -67,16 +67,26 @@
 
     <!-- Bottom: Panduan & Logout -->
     <div class="px-3 py-3 border-t border-slate-100 space-y-0.5">
-      <a
-        href="/panduan-pengguna.pdf"
-        target="_blank"
-        title="Buka Buku Panduan Pengguna (PDF)"
-        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-all duration-150 cursor-pointer"
-      >
-        <span class="material-icons text-[18px] text-slate-400">menu_book</span>
-        <span class="truncate">Panduan Pengguna (PDF)</span>
-        <span class="material-icons text-xs ml-auto text-slate-400">open_in_new</span>
-      </a>
+      <div class="flex items-center gap-1">
+        <a
+          href="/panduan-pengguna.pdf"
+          target="_blank"
+          title="Buka Buku Panduan Pengguna (Tab Baru)"
+          class="flex-1 flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-all duration-150 cursor-pointer min-w-0"
+        >
+          <span class="material-icons text-[18px] text-slate-400">menu_book</span>
+          <span class="truncate">Panduan (PDF)</span>
+          <span class="material-icons text-xs text-slate-400 ml-auto">open_in_new</span>
+        </a>
+        <a
+          href="/panduan-pengguna.pdf"
+          download="Panduan_Pengguna_Presensi_PKBM_Cahaya_Mulia.pdf"
+          title="Unduh PDF ke Perangkat"
+          class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer shrink-0"
+        >
+          <span class="material-icons text-[18px]">file_download</span>
+        </a>
+      </div>
       <button
         @click="handleLogout"
         class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-150 cursor-pointer"

@@ -114,17 +114,27 @@
 
             <!-- Bottom: Panduan & Logout Button -->
             <div class="p-3 border-t border-slate-200 bg-white space-y-2">
-              <a
-                href="/panduan-pengguna.pdf"
-                target="_blank"
-                class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 transition-colors cursor-pointer"
-              >
-                <div class="flex items-center gap-2.5">
-                  <span class="material-icons text-base text-slate-500">menu_book</span>
-                  <span>Panduan Pengguna (PDF)</span>
-                </div>
-                <span class="material-icons text-xs text-slate-400">open_in_new</span>
-              </a>
+              <div class="flex items-center gap-2">
+                <a
+                  href="/panduan-pengguna.pdf"
+                  target="_blank"
+                  class="flex-1 flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 transition-colors cursor-pointer"
+                >
+                  <div class="flex items-center gap-2.5">
+                    <span class="material-icons text-base text-slate-500">menu_book</span>
+                    <span>Panduan (PDF)</span>
+                  </div>
+                  <span class="material-icons text-xs text-slate-400">open_in_new</span>
+                </a>
+                <a
+                  href="/panduan-pengguna.pdf"
+                  download="Panduan_Pengguna_Presensi_PKBM_Cahaya_Mulia.pdf"
+                  title="Unduh PDF"
+                  class="flex items-center justify-center p-2 rounded-xl text-slate-600 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 transition-colors cursor-pointer"
+                >
+                  <span class="material-icons text-base">file_download</span>
+                </a>
+              </div>
               <button
                 type="button"
                 @click="handleLogout"
