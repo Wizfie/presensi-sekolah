@@ -55,7 +55,7 @@ Aplikasi dapat dipasang ke layar beranda HP Anda layaknya aplikasi native dari G
 #### A. Pada Android (Google Chrome):
 1. Buka tautan presensi di Google Chrome.
 2. Tunggu banner otomatis *"Tambahkan PresensiKu ke Layar Utama"* di bagian bawah layar, lalu ketuk **Install**.
-3. Jika banner tidak muncul, ketuk ikon titik tiga (**⋮**) di sudut kanan atas browser &rarr; pilih **Instal aplikasi** atau **Tambahkan ke Layar Utama**.
+3. Jika banner tidak muncul, ketuk ikon titik tiga (**⋮**) di sudut kanan atas browser → pilih **Instal aplikasi** atau **Tambahkan ke Layar Utama**.
 4. Ikon **Presensi PKBM** akan muncul di menu aplikasi HP Anda.
 
 #### B. Pada iPhone / iPad (Safari):
@@ -77,9 +77,9 @@ Aplikasi dapat dipasang ke layar beranda HP Anda layaknya aplikasi native dari G
    - *Tips:* Ketuk ikon **Mata** di sisi kanan kolom password untuk menampilkan atau menyembunyikan teks password yang Anda ketik.
 4. Ketuk tombol **Masuk**.
 5. Sistem akan secara otomatis mengarahkan Anda ke Dashboard sesuai hak akses masing-masing:
-   - Siswa &rarr; Dashboard Siswa (`/siswa`)
-   - Guru &rarr; Dashboard Guru Piket (`/guru`)
-   - Admin &rarr; Dashboard Pengelola (`/admin`)
+   - Siswa → Dashboard Siswa (`/siswa`)
+   - Guru → Dashboard Guru Piket (`/guru`)
+   - Admin → Dashboard Pengelola (`/admin`)
 
 ---
 
@@ -112,7 +112,7 @@ Setelah berhasil masuk, Anda akan melihat halaman **Dashboard Siswa** dengan nav
 Fitur ini digunakan saat Anda sudah berada di lokasi lingkungan PKBM Cahaya Mulia:
 
 1. Buka tab **Presensi**.
-2. Berikan izin lokasi ketika browser menampilkan pesan *"Izinkan situs ini mengakses lokasi perangkat Anda?"* &rarr; pilih **Izinkan (Allow)**.
+2. Berikan izin lokasi ketika browser menampilkan pesan *"Izinkan situs ini mengakses lokasi perangkat Anda?"* → pilih **Izinkan (Allow)**.
 3. Periksa status indikator radius:
    - 🟢 **Dalam Radius Presensi:** Menampilkan jarak Anda ke titik sekolah *(contoh: "32 meter dari sekolah (Radius toleransi: 100m)")*. Tombol presensi siap digunakan.
    - 🔴 **Di Luar Jangkauan:** Anda berada di luar area toleransi sekolah. Tombol presensi otomatis terkunci demi integritas kehadiran.
@@ -172,7 +172,7 @@ Guru Piket dan Tutor bertugas mengawasi kehadiran harian siswa, mengoperasikan s
 
 ### 3.1 Presensi Kelas Harian & Pencatatan Cepat
 
-1. Masuk ke **Dashboard Guru** &rarr; buka tab **Presensi Harian**.
+1. Masuk ke **Dashboard Guru** → buka tab **Presensi Harian**.
 2. Pilih **Kelas** yang ingin diperiksa melalui dropdown filter *(misal: Kelas 10, 11, atau 12)*.
 3. Tanggal otomatis mengarah ke hari ini (WIB), namun Anda dapat memilih tanggal lampau jika ingin mengecek arsip.
 4. **Mengubah Status Siswa Satuan:**
@@ -180,7 +180,7 @@ Guru Piket dan Tutor bertugas mengawasi kehadiran harian siswa, mengoperasikan s
    - Ketuk salah satu tombol untuk mengubah status. Jam masuk akan tercatat otomatis sesuai waktu saat tombol ditekan.
 5. **Fitur Cepat "Tandai Hadir Semua":**
    - Jika satu kelas hadir lengkap, Anda tidak perlu mengeklik satu per satu.
-   - Ketuk tombol **Tandai Hadir Semua** di bagian atas tabel &rarr; konfirmasi pada dialog &rarr; seluruh siswa yang belum absen langsung otomatis berstatus **Hadir**.
+   - Ketuk tombol **Tandai Hadir Semua** di bagian atas tabel → konfirmasi pada dialog → seluruh siswa yang belum absen langsung otomatis berstatus **Hadir**.
 
 ---
 
@@ -280,7 +280,7 @@ Buka menu **Data Siswa**:
    - Jika siswa lulus atau pindah, klik tombol tempat sampah **Nonaktifkan**.
    - Data historis kehadiran siswa di masa lalu **tidak akan hilang** dari arsip laporan bulanan.
 4. **Memulihkan Siswa:**
-   - Klik tombol **Arsip Siswa Nonaktif** &rarr; klik tombol **Pulihkan** jika ada siswa yang kembali aktif.
+   - Klik tombol **Arsip Siswa Nonaktif** → klik tombol **Pulihkan** jika ada siswa yang kembali aktif.
 
 ---
 
@@ -319,7 +319,7 @@ Buka menu **Cetak Kartu ID QR**:
 2. Gunakan centang **Pilih Semua** atau pilih siswa tertentu yang ingin dicetak kartunya.
 3. Kartu dirancang dengan ukuran standar kartu pelajar lengkap dengan logo sekolah, nama, NISN, kelas, dan barcode QR.
 4. Klik tombol biru **Cetak Kartu**.
-5. Dialog print browser akan terbuka &rarr; pilih ukuran kertas **A4** &rarr; cetak pada kertas tebal/karton untuk kemudian dipotong dan dilaminasi.
+5. Dialog print browser akan terbuka → pilih ukuran kertas **A4** → cetak pada kertas tebal/karton untuk kemudian dipotong dan dilaminasi.
 6. **Jika Kartu Fisik Hilang:** Klik tombol merah kecil **Reset Token** di bawah kartu siswa tersebut agar kode QR kartu yang lama otomatis hangus dan tidak dapat disalahgunakan orang lain, lalu cetak kartu yang baru.
 
 ---
@@ -364,7 +364,7 @@ Kepala Sekolah / Ketua PKBM dapat menggunakan sistem ini untuk monitoring kinerj
 ### Q1: Muncul pesan "Gagal mendeteksi lokasi GPS. Pastikan izin lokasi aktif" di HP Siswa?
 **Solusi:**
 1. Pastikan fitur **GPS / Lokasi** di pengaturan HP Android/iPhone Anda sudah dalam keadaan menyala (ON).
-2. Buka pengaturan browser (misal Chrome) &rarr; **Setelan Situs (Site Settings)** &rarr; **Lokasi (Location)** &rarr; ubah status situs presensi menjadi **Izinkan (Allow)**.
+2. Buka pengaturan browser (misal Chrome) → **Setelan Situs (Site Settings)** → **Lokasi (Location)** → ubah status situs presensi menjadi **Izinkan (Allow)**.
 3. Refresh halaman presensi.
 
 ---
@@ -380,7 +380,7 @@ Kepala Sekolah / Ketua PKBM dapat menggunakan sistem ini untuk monitoring kinerj
 ### Q3: Kamera scanner tidak terbuka di HP / Laptop Guru Piket?
 **Solusi:**
 1. Browser mewajibkan koneksi **HTTPS** untuk mengaktifkan kamera. Pastikan tautan web beralamat `https://...` (bukan `http://`).
-2. Pastikan izin kamera telah diberikan di bilah alamat browser (ikon gembok di sebelah kiri URL &rarr; **Izin Kamera &rarr; Izinkan**).
+2. Pastikan izin kamera telah diberikan di bilah alamat browser (ikon gembok di sebelah kiri URL → **Izin Kamera → Izinkan**).
 3. Jika scanner sedang dipakai di tab lain, tutup tab tersebut terlebih dahulu.
 
 ---

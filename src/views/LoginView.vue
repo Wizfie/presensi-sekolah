@@ -157,17 +157,17 @@
       <!-- Footer Info -->
       <div class="text-center mt-6 space-y-2">
         <div class="inline-flex items-center justify-center gap-2.5 text-xs">
-          <a
-            href="/panduan-pengguna.pdf"
-            target="_blank"
-            class="inline-flex items-center gap-1.5 text-slate-500 hover:text-blue-600 font-medium transition-colors"
-            title="Buka dan baca panduan di tab baru browser"
+          <button
+            type="button"
+            @click="showGuideModal = true"
+            class="inline-flex items-center gap-1.5 text-slate-600 hover:text-blue-600 font-semibold transition-colors cursor-pointer"
+            title="Buka dan baca buku panduan langsung di aplikasi"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
             </svg>
             <span>Baca Online</span>
-          </a>
+          </button>
           <span class="text-slate-300">|</span>
           <a
             href="/panduan-pengguna.pdf"
@@ -211,7 +211,7 @@
           </div>
           <div class="flex items-start gap-2">
             <span class="text-blue-600 font-bold">2.</span>
-            <span>Admin akan mereset password akun Anda melalui <strong>Dashboard Admin &rarr; Manajemen Akun</strong>.</span>
+            <span>Admin akan mereset password akun Anda melalui <strong>Dashboard Admin → Manajemen Akun</strong>.</span>
           </div>
           <div class="flex items-start gap-2">
             <span class="text-blue-600 font-bold">3.</span>
@@ -226,6 +226,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Panduan Pengguna Interaktif (PDF) -->
+    <GuideModal v-model="showGuideModal" />
   </div>
 </template>
 
@@ -234,6 +237,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import Button from '../components/ui/Button.vue'
+import GuideModal from '../components/GuideModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -244,6 +248,7 @@ const showPassword = ref(false)
 const loading = ref(false)
 const errorMessage = ref('')
 const showForgotModal = ref(false)
+const showGuideModal = ref(false)
 
 async function handleLogin() {
   loading.value = true

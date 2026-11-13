@@ -68,16 +68,16 @@
     <!-- Bottom: Panduan & Logout -->
     <div class="px-3 py-3 border-t border-slate-100 space-y-0.5">
       <div class="flex items-center gap-1">
-        <a
-          href="/panduan-pengguna.pdf"
-          target="_blank"
-          title="Buka Buku Panduan Pengguna (Tab Baru)"
-          class="flex-1 flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-all duration-150 cursor-pointer min-w-0"
+        <button
+          type="button"
+          @click="showGuideModal = true"
+          title="Buka Buku Panduan Pengguna"
+          class="flex-1 flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-all duration-150 cursor-pointer min-w-0 text-left"
         >
           <span class="material-icons text-[18px] text-slate-400">menu_book</span>
           <span class="truncate">Panduan (PDF)</span>
-          <span class="material-icons text-xs text-slate-400 ml-auto">open_in_new</span>
-        </a>
+          <span class="material-icons text-xs text-slate-400 ml-auto">visibility</span>
+        </button>
         <a
           href="/panduan-pengguna.pdf"
           download="Panduan_Pengguna_Presensi_PKBM_Cahaya_Mulia.pdf"
@@ -95,13 +95,18 @@
         <span>Keluar</span>
       </button>
     </div>
+
+    <!-- Modal Panduan Pengguna -->
+    <GuideModal v-model="showGuideModal" />
   </aside>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getInitials } from '../utils/avatar'
+import GuideModal from './GuideModal.vue'
 
 const props = defineProps({
   activeTab: { type: String, default: '' },
@@ -112,6 +117,7 @@ const emit = defineEmits(['tab-change'])
 
 const router = useRouter()
 const authStore = useAuthStore()
+const showGuideModal = ref(false)
 
 async function handleLogout() {
   await authStore.logout()
