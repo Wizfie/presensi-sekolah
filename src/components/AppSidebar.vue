@@ -67,26 +67,15 @@
 
     <!-- Bottom: Panduan & Logout -->
     <div class="px-3 py-3 border-t border-slate-100 space-y-0.5">
-      <div class="flex items-center gap-1">
-        <button
-          type="button"
-          @click="showGuideModal = true"
-          title="Buka Buku Panduan Pengguna"
-          class="flex-1 flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-all duration-150 cursor-pointer min-w-0 text-left"
-        >
-          <span class="material-icons text-[18px] text-slate-400">menu_book</span>
-          <span class="truncate">Panduan (PDF)</span>
-          <span class="material-icons text-xs text-slate-400 ml-auto">visibility</span>
-        </button>
-        <a
-          href="/panduan-pengguna.pdf"
-          download="Panduan_Pengguna_Presensi_PKBM_Cahaya_Mulia.pdf"
-          title="Unduh PDF ke Perangkat"
-          class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer shrink-0"
-        >
-          <span class="material-icons text-[18px]">file_download</span>
-        </a>
-      </div>
+      <a
+        href="/panduan-pengguna.pdf"
+        download="Panduan_Pengguna_Presensi_PKBM_Cahaya_Mulia.pdf"
+        title="Unduh Panduan Pengguna (PDF)"
+        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-all duration-150 cursor-pointer"
+      >
+        <span class="material-icons text-[18px] text-slate-400">file_download</span>
+        <span class="truncate">Unduh Panduan (PDF)</span>
+      </a>
       <button
         @click="handleLogout"
         class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-150 cursor-pointer"
@@ -95,18 +84,13 @@
         <span>Keluar</span>
       </button>
     </div>
-
-    <!-- Modal Panduan Pengguna -->
-    <GuideModal v-model="showGuideModal" />
   </aside>
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getInitials } from '../utils/avatar'
-import GuideModal from './GuideModal.vue'
 
 const props = defineProps({
   activeTab: { type: String, default: '' },
@@ -117,7 +101,6 @@ const emit = defineEmits(['tab-change'])
 
 const router = useRouter()
 const authStore = useAuthStore()
-const showGuideModal = ref(false)
 
 async function handleLogout() {
   await authStore.logout()

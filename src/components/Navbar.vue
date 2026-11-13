@@ -58,15 +58,15 @@
             </p>
           </div>
           
-          <!-- Panduan Pengguna Button -->
-          <button
-            type="button"
-            @click="showGuideModal = true"
-            title="Buku Panduan Pengguna (PDF)"
+          <!-- Unduh Panduan Pengguna Button -->
+          <a
+            href="/panduan-pengguna.pdf"
+            download="Panduan_Pengguna_Presensi_PKBM_Cahaya_Mulia.pdf"
+            title="Unduh Panduan Pengguna (PDF)"
             class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer flex items-center justify-center"
           >
-            <span class="material-icons text-base">menu_book</span>
-          </button>
+            <span class="material-icons text-base">file_download</span>
+          </a>
 
           <!-- Logout Button -->
           <button
@@ -81,22 +81,16 @@
         </div>
       </div>
     </div>
-
-    <!-- Modal Panduan Pengguna Navbar -->
-    <GuideModal v-model="showGuideModal" />
   </header>
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getInitials } from '../utils/avatar'
-import GuideModal from './GuideModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const showGuideModal = ref(false)
 
 defineEmits(['open-drawer'])
 

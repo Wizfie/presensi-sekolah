@@ -114,27 +114,17 @@
 
             <!-- Bottom: Panduan & Logout Button -->
             <div class="p-3 border-t border-slate-200 bg-white space-y-2">
-              <div class="flex items-center gap-2">
-                <button
-                  type="button"
-                  @click="openGuide"
-                  class="flex-1 flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 transition-colors cursor-pointer text-left"
-                >
-                  <div class="flex items-center gap-2.5">
-                    <span class="material-icons text-base text-slate-500">menu_book</span>
-                    <span>Panduan (PDF)</span>
-                  </div>
-                  <span class="material-icons text-xs text-slate-400">visibility</span>
-                </button>
-                <a
-                  href="/panduan-pengguna.pdf"
-                  download="Panduan_Pengguna_Presensi_PKBM_Cahaya_Mulia.pdf"
-                  title="Unduh PDF"
-                  class="flex items-center justify-center p-2 rounded-xl text-slate-600 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 transition-colors cursor-pointer"
-                >
-                  <span class="material-icons text-base">file_download</span>
-                </a>
-              </div>
+              <a
+                href="/panduan-pengguna.pdf"
+                download="Panduan_Pengguna_Presensi_PKBM_Cahaya_Mulia.pdf"
+                class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 transition-colors cursor-pointer"
+              >
+                <div class="flex items-center gap-2.5">
+                  <span class="material-icons text-base text-blue-600">file_download</span>
+                  <span>Unduh Panduan (PDF)</span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-mono">5.8 MB</span>
+              </a>
               <button
                 type="button"
                 @click="handleLogout"
@@ -148,18 +138,14 @@
         </Transition>
       </div>
     </Transition>
-
-    <!-- Modal Panduan Pengguna Mobile -->
-    <GuideModal v-model="showGuideModal" />
   </Teleport>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getInitials } from '../utils/avatar'
-import GuideModal from './GuideModal.vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -168,15 +154,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:open', 'select-tab', 'logout'])
-
-const router = useRouter()
-const authStore = useAuthStore()
-const showGuideModal = ref(false)
-
-function openGuide() {
-  emit('update:open', false)
-  showGuideModal.value = true
-}
 
 function close() {
   emit('update:open', false)
