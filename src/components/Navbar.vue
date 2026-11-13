@@ -58,6 +58,16 @@
             </p>
           </div>
           
+          <!-- Panduan Pengguna Button -->
+          <a
+            href="/panduan-pengguna.pdf"
+            target="_blank"
+            title="Buku Panduan Pengguna (PDF)"
+            class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer flex items-center justify-center"
+          >
+            <span class="material-icons text-base">menu_book</span>
+          </a>
+
           <!-- Logout Button -->
           <button
             @click="handleLogout"

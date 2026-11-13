@@ -155,8 +155,21 @@
       </div>
 
       <!-- Footer Info -->
-      <div class="text-center mt-6 text-xs text-slate-400">
-        <p>PKM Mahasiswa Universitas Pamulang</p>
+      <div class="text-center mt-6 space-y-2">
+        <a
+          href="/panduan-pengguna.pdf"
+          target="_blank"
+          class="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:underline font-semibold transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+          <span>Unduh Panduan Pengguna (PDF)</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </a>
+        <p class="text-xs text-slate-400">PKM Mahasiswa Universitas Pamulang</p>
       </div>
     </div>
 

@@ -65,11 +65,21 @@
       </button>
     </nav>
 
-    <!-- Bottom: Logout -->
-    <div class="px-3 py-4 border-t border-slate-100">
+    <!-- Bottom: Panduan & Logout -->
+    <div class="px-3 py-3 border-t border-slate-100 space-y-0.5">
+      <a
+        href="/panduan-pengguna.pdf"
+        target="_blank"
+        title="Buka Buku Panduan Pengguna (PDF)"
+        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-all duration-150 cursor-pointer"
+      >
+        <span class="material-icons text-[18px] text-slate-400">menu_book</span>
+        <span class="truncate">Panduan Pengguna (PDF)</span>
+        <span class="material-icons text-xs ml-auto text-slate-400">open_in_new</span>
+      </a>
       <button
         @click="handleLogout"
-        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-150 cursor-pointer"
+        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-150 cursor-pointer"
       >
         <span class="material-icons text-[18px]">logout</span>
         <span>Keluar</span>

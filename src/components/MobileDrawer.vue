@@ -112,12 +112,23 @@
               </div>
             </div>
 
-            <!-- Bottom: Logout Button -->
-            <div class="p-3 border-t border-slate-200 bg-white">
+            <!-- Bottom: Panduan & Logout Button -->
+            <div class="p-3 border-t border-slate-200 bg-white space-y-2">
+              <a
+                href="/panduan-pengguna.pdf"
+                target="_blank"
+                class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 transition-colors cursor-pointer"
+              >
+                <div class="flex items-center gap-2.5">
+                  <span class="material-icons text-base text-slate-500">menu_book</span>
+                  <span>Panduan Pengguna (PDF)</span>
+                </div>
+                <span class="material-icons text-xs text-slate-400">open_in_new</span>
+              </a>
               <button
                 type="button"
                 @click="handleLogout"
-                class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer"
+                class="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer"
               >
                 <span class="material-icons text-base">logout</span>
                 <span>Keluar dari Akun</span>

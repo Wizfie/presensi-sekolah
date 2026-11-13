@@ -109,6 +109,14 @@ npm run preview
 
 ---
 
+## 📖 Buku Panduan Pengguna (User Guide)
+
+Buku panduan operasional lengkap step-by-step untuk seluruh role (**Siswa**, **Guru Piket / Tutor**, **Administrator / Tata Usaha**, dan **Kepala PKBM**), panduan install PWA di Android & iOS, cara scan QR, presensi GPS, hingga export Excel dan troubleshooting tersedia di:
+
+👉 **[docs/PANDUAN_PENGGUNA.md](./docs/PANDUAN_PENGGUNA.md)**
+
+---
+
 ## ☁️ Deploy Production (Cloudflare Pages + Custom Domain)
 
 Panduan lengkap step-by-step deploy ke **Cloudflare Pages**, menghubungkan **Custom Domain** & HTTPS, konfigurasi **Supabase Auth Redirect URL**, **Seeding Demo**, serta **Cleaning Pasca-Demo** tersedia di:
