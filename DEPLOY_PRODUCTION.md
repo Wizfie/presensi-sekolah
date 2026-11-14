@@ -43,7 +43,6 @@ Panduan singkat deploy **Presensi PKBM Cahaya Mulia** dari setup awal, sesi demo
    | `NODE_VERSION` | `22` |
    | `VITE_SUPABASE_URL` | `https://<ref>.supabase.co` |
    | `VITE_SUPABASE_ANON_KEY` | `sb_publishable_...` atau `eyJhbGci...` |
-   | `VITE_ENABLE_DEMO_LOGIN` | `true` *(demo)* / `false` *(live)* |
 
 5. Klik **Save and Deploy**.
 
@@ -52,7 +51,6 @@ Panduan singkat deploy **Presensi PKBM Cahaya Mulia** dari setup awal, sesi demo
    ```env
    VITE_SUPABASE_URL=https://<ref>.supabase.co
    VITE_SUPABASE_ANON_KEY=sb_publishable_your_key_or_anon_jwt
-   VITE_ENABLE_DEMO_LOGIN=true
    ```
 2. Build & upload (Node `v20.19+` / `v22+`):
    ```bash

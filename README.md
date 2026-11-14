@@ -83,12 +83,11 @@ Isi `.env` dengan **Project URL** dan **Publishable / anon public key** dari **S
 ```env
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
 VITE_SUPABASE_ANON_KEY=sb_publishable_your_key_or_anon_jwt
-VITE_ENABLE_DEMO_LOGIN=false
 ```
 
 > ⚠️ **Catatan:**
 > - Jangan pernah commit file `.env` (sudah masuk `.gitignore`) dan **jangan pernah** menaruh `Secret key` (`sb_secret_...`) atau `service_role` key di frontend.
-> - Set `VITE_ENABLE_DEMO_LOGIN=true` hanya saat sesi demo/presentasi untuk menampilkan tombol *"Akses Demo Cepat"* di halaman login.
+> - Login akun dilakukan secara langsung melalui form login menggunakan **NISN / NIP / Email** dan **Password** resmi masing-masing pengguna.
 > - Jika `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` dibiarkan placeholder (`sample-project`), aplikasi otomatis berjalan pada mode preview offline lokal (`localStorage`).
 
 ---
@@ -125,7 +124,7 @@ Panduan lengkap step-by-step deploy ke **Cloudflare Pages**, menghubungkan **Cus
 Ringkasnya:
 - **Build command:** `npm run build`
 - **Build output directory:** `dist`
-- **Environment variables:** `NODE_VERSION=22`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_ENABLE_DEMO_LOGIN` (`true` saat demo, `false` saat live)
+- **Environment variables:** `NODE_VERSION=22`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 
 ---
 

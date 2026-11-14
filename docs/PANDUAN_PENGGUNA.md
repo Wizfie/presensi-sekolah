@@ -17,24 +17,26 @@ Selamat datang di Buku Panduan Pengguna **Sistem Presensi Sekolah Digital PKBM C
    - [2.3 Memeriksa Riwayat Kehadiran Pribadi](#23-memeriksa-riwayat-kehadiran-pribadi)
    - [2.4 Mengajukan Izin atau Sakit Online](#24-mengajukan-izin-atau-sakit-online)
 3. [Panduan untuk Guru Piket & Tutor](#3-panduan-untuk-guru-piket--tutor)
-   - [3.1 Presensi Kelas Harian & Pencatatan Cepat](#31-presensi-kelas-harian--pencatatan-cepat)
+   - [3.1 Presensi Kelas Harian & Fitur "Tandai Hadir Semua"](#31-presensi-kelas-harian--fitur-tandai-hadir-semua)
    - [3.2 Pencatatan Jam Pulang (Satuan & Pulang Semua)](#32-pencatatan-jam-pulang-satuan--pulang-semua)
-   - [3.3 Memindai Kartu Siswa (Kamera Scanner & Input NISN)](#33-memindai-kartu-siswa-kamera-scanner--input-nisn)
-   - [3.4 Buku Rekapitulasi Bulanan (Mode Kartu & Tabel Matriks)](#34-buku-rekapitulasi-bulanan-mode-kartu--tabel-matriks)
+   - [3.3 Memindai Kartu Siswa (Kamera Scanner & Input Cepat NISN)](#33-memindai-kartu-siswa-kamera-scanner--input-cepat-nisn)
+   - [3.4 Buku Rekapitulasi Bulanan (Mode Otomatis Sesuai Layar Perangkat)](#34-buku-rekapitulasi-bulanan-mode-otomatis-sesuai-layar-perangkat)
    - [3.5 Koreksi Cepat Kehadiran Lewat Mini Kalender](#35-koreksi-cepat-kehadiran-lewat-mini-kalender)
    - [3.6 Pengaturan Penandatangan Dokumen "Mengetahui"](#36-pengaturan-penandatangan-dokumen-mengetahui)
    - [3.7 Export Excel (.xlsx) & Cetak Lembar Absensi](#37-export-excel-xlsx--cetak-lembar-absensi)
 4. [Panduan untuk Administrator (Tata Usaha)](#4-panduan-untuk-administrator-tata-usaha)
    - [4.1 Manajemen Akun & Data Siswa (CRUD, Nonaktif, Pulihkan)](#41-manajemen-akun--data-siswa-crud-nonaktif-pulihkan)
    - [4.2 Manajemen Guru Piket / Tutor & Alokasi Kelas](#42-manajemen-guru-piket--tutor--alokasi-kelas)
-   - [4.3 Manajemen Staf Administrator](#43-manajemen-staf-administrator)
-   - [4.4 Reset Password Akun Pengguna](#44-reset-password-akun-pengguna)
-   - [4.5 Cetak Kartu ID QR Fisik (A4 Siap Laminasi)](#45-cetak-kartu-id-qr-fisik-a4-siap-laminasi)
-   - [4.6 Pengaturan Titik GPS Sekolah & Jam Operasional](#46-pengaturan-titik-gps-sekolah--jam-operasional)
+   - [4.3 Manajemen Master Kelas (Tambah, Rename Nama Kelas, & Syarat Hapus)](#43-manajemen-master-kelas-tambah-rename-nama-kelas--syarat-hapus)
+   - [4.4 Manajemen Staf Administrator & Proteksi Akun Root](#44-manajemen-staf-administrator--proteksi-akun-root)
+   - [4.5 Reset Password Akun Pengguna](#45-reset-password-akun-pengguna)
+   - [4.6 Cetak Kartu ID QR Fisik (A4 Siap Laminasi)](#46-cetak-kartu-id-qr-fisik-a4-siap-laminasi)
+   - [4.7 Pengaturan Titik GPS Sekolah & Jam Operasional](#47-pengaturan-titik-gps-sekolah--jam-operasional)
 5. [Panduan untuk Kepala PKBM / Pimpinan](#5-panduan-untuk-kepala-pkbm--pimpinan)
    - [5.1 Monitoring Kehadiran Real-time](#51-monitoring-kehadiran-real-time)
    - [5.2 Verifikasi Laporan & Pengesahan Rekap Bulanan](#52-verifikasi-laporan--pengesahan-rekap-bulanan)
 6. [Tanya Jawab & Pemecahan Masalah (FAQ)](#6-tanya-jawab--pemecahan-masalah-faq)
+7. [Lampiran Kredensial Akun Demo & Pembersihan Database](#7-lampiran-kredensial-akun-demo--pembersihan-database)
 
 ---
 
@@ -70,13 +72,16 @@ Aplikasi dapat dipasang ke layar beranda HP Anda layaknya aplikasi native dari G
 
 1. Buka aplikasi di HP atau laptop Anda.
 2. Masukkan identitas akun pada kolom **Email / NISN / NIP**:
-   - **Siswa:** Masukkan **NISN** Anda *(contoh: `20241201`)* atau alamat email terdaftar.
-   - **Guru Piket / Tutor:** Masukkan **NIP / NIK** atau alamat email resmi guru.
-   - **Administrator:** Masukkan ID Admin *(contoh: `ADM-001`)* atau email administrator.
-3. Masukkan **Password** akun Anda.
-   - *Tips:* Ketuk ikon **Mata** di sisi kanan kolom password untuk menampilkan atau menyembunyikan teks password yang Anda ketik.
+   - **Siswa:** Masukkan **NISN** Anda *(contoh akun demo: `1201`, `1101`, `1001` atau NISN resmi terdaftar)* tanpa perlu mengetikkan alamat email.
+   - **Guru Piket / Tutor:** Masukkan alamat email resmi guru *(contoh akun demo: `guru1@mail.com`, `guru2@mail.com`)* atau NIP Anda.
+   - **Administrator:** Masukkan email administrator (`admin@mail.com`) atau ID Admin (`ADM-001`).
+3. Masukkan **Password** akun Anda:
+   - **Siswa (Akun Demo):** Menggunakan format `pkbm[nisn]`, contoh: NISN `1201` password-nya `pkbm1201`, NISN `1101` password-nya `pkbm1101`, NISN `1001` password-nya `pkbm1001`.
+   - **Guru Piket (Akun Demo):** Guru 1 (`guru1@mail.com`) password-nya `pkbmguru1`, Guru 2 (`guru2@mail.com`) password-nya `pkbmguru2`.
+   - **Administrator (Akun Demo):** Password-nya `pkbmadmin`.
+   - *Tips:* Ketuk ikon **Mata** di sisi kanan kolom password untuk menampilkan atau menyembunyikan karakter teks password yang Anda ketik.
 4. Ketuk tombol **Masuk**.
-5. Sistem akan secara otomatis mengarahkan Anda ke Dashboard sesuai hak akses masing-masing:
+5. Sistem akan memvalidasi akun Anda dan secara otomatis mengarahkan ke Dashboard sesuai hak akses masing-masing:
    - Siswa → Dashboard Siswa (`/siswa`)
    - Guru → Dashboard Guru Piket (`/guru`)
    - Admin → Dashboard Pengelola (`/admin`)
@@ -85,11 +90,11 @@ Aplikasi dapat dipasang ke layar beranda HP Anda layaknya aplikasi native dari G
 
 ### 1.4 Bantuan Akun & Lupa Password
 
-Untuk menjaga keamanan data kehadiran resmi sekolah:
+Untuk menjaga keamanan dan integritas data kehadiran resmi sekolah:
 1. Jika Anda lupa password akun Siswa atau Guru, klik tautan **Lupa password?** di halaman login.
 2. Hubungi **Administrator Sekolah / Tata Usaha** atau Guru Piket dengan menyebutkan Nama Lengkap dan NISN/NIP Anda.
-3. Administrator akan mereset password akun Anda melalui menu manajemen pengguna dan memberikan password sementara baru.
-4. Setelah berhasil login, Anda dapat memperbarui password secara mandiri di menu Profil.
+3. Administrator akan mereset password akun Anda melalui menu manajemen pengguna dan memberikan password baru.
+4. Setelah berhasil login kembali, Anda dapat memperbarui password secara mandiri di menu Profil.
 
 ---
 
@@ -97,7 +102,7 @@ Untuk menjaga keamanan data kehadiran resmi sekolah:
 
 Setelah berhasil masuk, Anda akan melihat halaman **Dashboard Siswa** dengan navigasi bilah bawah: **Presensi**, **Kartu QR**, **Riwayat**, dan **Izin**.
 
-```
+```text
 [ Dashboard Siswa ]
 ├── 📍 Presensi  : Deteksi GPS otomatis & tombol Presensi Masuk / Pulang
 ├── 💳 Kartu QR   : Barcode identitas resmi untuk discan Guru Piket
@@ -109,30 +114,30 @@ Setelah berhasil masuk, Anda akan melihat halaman **Dashboard Siswa** dengan nav
 
 ### 2.1 Presensi Mandiri GPS (Masuk & Pulang)
 
-Fitur ini digunakan saat Anda sudah berada di lokasi lingkungan PKBM Cahaya Mulia:
+Fitur ini digunakan saat Anda sudah berada di lingkungan gedung PKBM Cahaya Mulia:
 
 1. Buka tab **Presensi**.
 2. Berikan izin lokasi ketika browser menampilkan pesan *"Izinkan situs ini mengakses lokasi perangkat Anda?"* → pilih **Izinkan (Allow)**.
 3. Periksa status indikator radius:
-   - 🟢 **Dalam Radius Presensi:** Menampilkan jarak Anda ke titik sekolah *(contoh: "32 meter dari sekolah (Radius toleransi: 100m)")*. Tombol presensi siap digunakan.
+   - 🟢 **Dalam Radius Presensi:** Menampilkan jarak Anda ke titik sekolah *(contoh: "32 meter dari sekolah (Radius toleransi: 100m)")*. Tombol presensi aktif dan siap digunakan.
    - 🔴 **Di Luar Jangkauan:** Anda berada di luar area toleransi sekolah. Tombol presensi otomatis terkunci demi integritas kehadiran.
 4. **Presensi Masuk (Pagi):**
    - Ketuk tombol besar warna biru: **Presensi Masuk (IN)**.
    - Jika hadir sebelum jam batas keterlambatan *(default `08:00 WIB`)*, status tercatat **HADIR**. Jika melewati jam tersebut, status otomatis tercatat **TERLAMBAT**.
-   - Muncul notifikasi konfirmasi jam dan jarak Anda.
+   - Muncul notifikasi konfirmasi jam dan jarak lokasi Anda.
 5. **Presensi Pulang (Siang/Sore):**
    - Saat jam pulang sekolah tiba, buka kembali tab Presensi lalu ketuk **Presensi Pulang (OUT)**.
-   - Jam pulang Anda akan tercatat secara resmi.
+   - Waktu kepulangan Anda akan tercatat secara resmi di server.
 
 ---
 
 ### 2.2 Kartu Siswa Digital (QR Code)
 
-Gunakan fitur ini apabila HP Anda mengalami kendala GPS, sinyal lemah, atau baterai habis:
+Gunakan fitur ini apabila HP Anda mengalami kendala GPS, sinyal internet lemah, atau baterai habis:
 1. Ketuk tab **Kartu QR**.
 2. Di layar akan tampil **Kartu Identitas Digital Siswa** berisi:
    - Logo Resmi PKBM Cahaya Mulia
-   - Nama Lengkap & NISN
+   - Nama Lengkap & NISN Siswa
    - Kelas Aktif & Tahun Pelajaran berjalan
    - Kode QR Dinamis Pribadi
 3. Tunjukkan layar kartu ini ke **Guru Piket** di gerbang/meja piket untuk dipindai menggunakan scanner kamera sekolah.
@@ -170,7 +175,7 @@ Guru Piket dan Tutor bertugas mengawasi kehadiran harian siswa, mengoperasikan s
 
 ---
 
-### 3.1 Presensi Kelas Harian & Pencatatan Cepat
+### 3.1 Presensi Kelas Harian & Fitur "Tandai Hadir Semua"
 
 1. Masuk ke **Dashboard Guru** → buka tab **Presensi Harian**.
 2. Pilih **Kelas** yang ingin diperiksa melalui dropdown filter *(misal: Kelas 10, 11, atau 12)*.
@@ -178,9 +183,11 @@ Guru Piket dan Tutor bertugas mengawasi kehadiran harian siswa, mengoperasikan s
 4. **Mengubah Status Siswa Satuan:**
    - Pada baris nama siswa, tersedia tombol status cepat: **H (Hadir)**, **T (Terlambat)**, **S (Sakit)**, **I (Izin)**, dan **A (Alpa)**.
    - Ketuk salah satu tombol untuk mengubah status. Jam masuk akan tercatat otomatis sesuai waktu saat tombol ditekan.
-5. **Fitur Cepat "Tandai Hadir Semua":**
-   - Jika satu kelas hadir lengkap, Anda tidak perlu mengeklik satu per satu.
-   - Ketuk tombol **Tandai Hadir Semua** di bagian atas tabel → konfirmasi pada dialog → seluruh siswa yang belum absen langsung otomatis berstatus **Hadir**.
+5. **Fitur Cepat "Tandai Hadir Semua" dengan Pilihan Jam:**
+   - Jika satu kelas hadir lengkap, Anda tidak perlu mengeklik satu per satu nama siswa.
+   - Ketuk tombol **Tandai Hadir Semua** di bagian atas tabel.
+   - Dialog konfirmasi akan terbuka dilengkapi **Input Jam Masuk** (secara otomatis terisi waktu saat ini / *time now* sebagai nilai bawaan, misal `07:30`).
+   - Anda dapat menyesuaikan jam masuk jika diperlukan lalu ketuk tombol **Tandai Hadir Semua**. Seluruh siswa yang belum absen langsung serentak tercatat **Hadir** dengan jam masuk tersebut.
 
 ---
 
@@ -190,13 +197,14 @@ Guru Piket dan Tutor bertugas mengawasi kehadiran harian siswa, mengoperasikan s
    - Pada kolom *Jam Pulang*, jika siswa sudah hadir tapi belum pulang, akan tampil tombol biru kecil bertuliskan **Set Pulang**.
    - Saat siswa meninggalkan sekolah, ketuk tombol tersebut. Waktu kepulangan langsung tercatat.
    - Jika salah tekan, arahkan kursor/ketuk jam tersebut lalu pilih opsi reset untuk membatalkan.
-2. **1-Klik "Set Pulang Semua":**
+2. **1-Klik "Set Pulang Semua" dengan Pilihan Jam:**
    - Saat jam kepulangan bersama tiba, ketuk tombol **Set Pulang Semua** di toolbar atas.
-   - Seluruh siswa yang berstatus Hadir atau Terlambat akan serentak memiliki jam kepulangan tanpa mengubah status kehadiran mereka.
+   - Muncul dialog konfirmasi dilengkapi **Input Jam Pulang** (secara default terisi waktu saat ini / *time now*, misal `14:00`).
+   - Anda dapat menyesuaikan jam kepulangan jika diperlukan lalu konfirmasi. Seluruh siswa yang berstatus Hadir atau Terlambat akan serentak memiliki jam kepulangan tanpa mengubah status kehadiran mereka.
 
 ---
 
-### 3.3 Memindai Kartu Siswa (Kamera Scanner & Input NISN)
+### 3.3 Memindai Kartu Siswa (Kamera Scanner & Input Cepat NISN)
 
 1. Buka tab **Scanner QR**.
 2. Izinkan akses kamera pada browser laptop/HP piket.
@@ -205,29 +213,29 @@ Guru Piket dan Tutor bertugas mengawasi kehadiran harian siswa, mengoperasikan s
    - Scan Pertama (Pagi): Otomatis mencatat **Presensi MASUK**.
    - Scan Kedua (Sore): Otomatis mencatat **Presensi PULANG**.
    - Scan Ketiga: Menampilkan notifikasi bahwa siswa sudah menyelesaikan sesi masuk dan pulang hari ini.
-5. Layar scanner akan berkedip hijau disertai bunyi notifikasi sukses serta menampilkan nama, kelas, foto inisial, dan NISN siswa.
-6. **Alternatif Input Cepat:** Jika kamera bermasalah atau barcode kartu kotor/rusak, Anda cukup mengetikkan **NISN Siswa** pada kotak pencarian cepat di bawah kamera lalu tekan **Enter**.
+5. Layar scanner akan berkedip hijau disertai notifikasi sukses serta menampilkan nama, kelas, dan NISN siswa.
+6. **Alternatif Input Cepat NISN:** Jika kamera bermasalah atau barcode kartu kotor/rusak, Anda cukup mengetikkan **NISN Siswa** pada kotak pencarian cepat di bawah kamera lalu tekan **Enter**.
 
 ---
 
-### 3.4 Buku Rekapitulasi Bulanan (Mode Kartu & Tabel Matriks)
+### 3.4 Buku Rekapitulasi Bulanan (Mode Otomatis Sesuai Layar Perangkat)
 
-Buka tab **Buku Rekap** untuk melihat rekapitulasi kehadiran bulanan. Tersedia **2 Mode Tampilan**:
+Buka tab **Buku Rekap** untuk melihat rekapitulasi kehadiran bulanan. Sistem bekerja secara cerdas dan otomatis mendeteksi ukuran layar perangkat yang Anda gunakan (*responsive auto-detect*) tanpa memerlukan tombol pemilihan manual:
 
-#### A. Mode Ringkasan Kartu (Khusus Layar HP / Mobile):
-- Tampilan kartu ringkas per siswa dengan kartu statistik kelas.
-- Dilengkapi **progres bar kehadiran**, total H/S/I/A, dan daftar tanggal siswa tidak masuk sekolah.
+#### A. Pada Layar Smartphone / HP (Otomatis Mode Ringkasan Kartu):
+- Sistem otomatis mengaktifkan tampilan kartu ringkas per siswa dengan kartu statistik kelas di bagian atas.
+- Dilengkapi **progres bar kehadiran**, total H/S/I/A, dan daftar tanggal siswa tidak masuk sekolah yang nyaman dibaca vertikal pada layar sentuh.
 
-#### B. Mode Tabel Matriks (Format Lembar Absen Resmi):
-- Tampilan tabel penuh persis seperti buku absensi kertas manual dari **Tanggal 1 s.d. 31**.
+#### B. Pada Layar Tablet / Laptop / PC (Otomatis Mode Tabel Matriks):
+- Sistem otomatis menampilkan format tabel matriks penuh standar buku absensi lembar fisik resmi dari **Tanggal 1 s.d. 31**.
 - Kolom akhir pekan (Sabtu & Minggu) ditandai dengan arsir warna abu-abu lembut pembeda.
-- Baris paling bawah menghitung **Total Kehadiran Seluruh Siswa per Hari** dan akumulasi persentase kelas.
+- Baris paling bawah menghitung **Total Kehadiran Seluruh Siswa per Hari** dan akumulasi persentase kelas secara presisi.
 
 ---
 
 ### 3.5 Koreksi Cepat Kehadiran Lewat Mini Kalender
 
-Jika ada siswa yang lupa absen atau surat dokter baru diserahkan kemudian:
+Jika ada siswa yang terlambat membawa surat izin/dokter atau ada koreksi data lampau:
 1. Pada tampilan rekap siswa terkait, ketuk tanggal yang ingin diubah pada **Mini Kalender (1–31)**.
 2. Muncul dialog **Koreksi Cepat Status**:
    - Pilih status baru: Hadir, Sakit, Izin, atau Alpa.
@@ -243,7 +251,7 @@ Pada bagian bawah tabel matriks rekapitulasi, terdapat blok tanda tangan resmi:
 
 **Cara Mengubah Identitas Pimpinan:**
 1. Arahkan kursor/ketuk langsung pada teks garis bawah **Jabatan**, **Nama Pejabat**, dan **NIP** di sisi kiri.
-2. Ketik nama pejabat yang berwenang *(contoh: `Drs. H. Mulyadi, M.Pd`)*.
+2. Ketik nama pejabat yang berwenang *(contoh: `Drs. H. Ahmad Fauzi, M.Pd`)*.
 3. Perubahan tersimpan secara otomatis ke database sekolah sehingga saat dicetak atau diekspor ke Excel, nama pimpinan sudah tercantum rapi.
 
 ---
@@ -253,7 +261,7 @@ Pada bagian bawah tabel matriks rekapitulasi, terdapat blok tanda tangan resmi:
 1. Pilih **Kelas**, **Bulan**, dan **Tahun** yang ingin dilaporkan.
 2. **Export ke File Excel (.xlsx):**
    - Ketuk tombol hijau **Export Excel**.
-   - Sistem akan menyiapkan data *(indikator "Menyiapkan..." berputar)* dan langsung mengunduh file `.xlsx` dengan format cantik: tabel bergaris rapi, warna status, persentase, dan kolom tanda tangan pengesahan.
+   - Sistem akan menyiapkan data dan langsung mengunduh file `.xlsx` dengan format cantik: tabel bergaris rapi, warna status, persentase, dan kolom tanda tangan pengesahan resmi.
 3. **Cetak Lembar Absen (Print / PDF):**
    - Ketuk tombol **Cetak Lembar Absen**.
    - Halaman otomatis diformat ke layout **Kertas A4 Horizontal (Landscape)** dengan menyembunyikan tombol navigasi aplikasi.
@@ -263,7 +271,7 @@ Pada bagian bawah tabel matriks rekapitulasi, terdapat blok tanda tangan resmi:
 
 ## 4. Panduan untuk Administrator (Tata Usaha)
 
-Administrator memiliki kendali penuh atas manajemen basis data pengguna, pengaturan GPS sekolah, dan pencetakan massal kartu identitas siswa.
+Administrator memiliki kendali penuh atas manajemen basis data pengguna, manajemen master kelas, pengaturan GPS sekolah, dan pencetakan massal kartu identitas siswa.
 
 ---
 
@@ -294,25 +302,43 @@ Buka menu **Data Guru / Tutor**:
 
 ---
 
-### 4.3 Manajemen Staf Administrator
+### 4.3 Manajemen Master Kelas (Tambah, Rename Nama Kelas, & Syarat Hapus)
 
-Buka menu **Data Administrator**:
-- Tambah atau kelola akun staf Tata Usaha yang diberikan wewenang administratif.
-- **Proteksi Super Admin Root:** Akun utama dengan nomor induk `ADM-001` (`admin@pkbm.sch.id`) memiliki status *Root* dan dilindungi sistem agar tidak dapat dinonaktifkan atau dihapus secara tidak sengaja oleh siapa pun.
+Buka menu atau modal **Kelola Master Kelas** di Dashboard Administrator:
+1. **Daftar Kelas Terdaftar:**
+   - Menampilkan seluruh kelas aktif *(contoh: Kelas `10`, `11`, `12`)* beserta indikator badge jumlah siswa yang sedang terdaftar di kelas tersebut.
+2. **Tambah Kelas Baru:**
+   - Masukkan nama kelas baru pada kolom isian *(contoh: `10`, `11`, `12`, atau nama rombel lainnya)* lalu klik **+ Tambah**.
+   - Nama kelas akan tersimpan ke database dan langsung dapat dipilih saat mendaftarkan siswa baru.
+3. **Ubah Nama Kelas (Rename Safe):**
+   - Klik ikon pensil **Ubah Nama** pada baris kelas yang ingin diubah.
+   - Masukkan nama baru lalu simpan. Sistem akan secara otomatis memperbarui relasi kelas pada profil siswa dan data presensi secara konsisten tanpa menghapus riwayat kehadiran yang ada.
+4. **Hapus Kelas (Proteksi Integritas Data):**
+   - Klik ikon tempat sampah **Hapus** pada kelas yang ingin dibersihkan.
+   - **Syarat Wajib:** Kelas **hanya dapat dihapus apabila jumlah siswa di kelas tersebut sudah kosong (0 siswa)**.
+   - Jika kelas masih memiliki siswa aktif, sistem akan menampilkan dialog peringatan dan **mengunci opsi hapus** (hanya tombol "Tutup"). Hal ini untuk melindungi agar data siswa dan riwayat presensi tidak terhapus secara tidak sengaja. Kosongkan atau pindahkan data siswa terlebih dahulu sebelum menghapus kelas.
 
 ---
 
-### 4.4 Reset Password Akun Pengguna
+### 4.4 Manajemen Staf Administrator & Proteksi Akun Root
+
+Buka menu **Data Administrator**:
+- Tambah atau kelola akun staf Tata Usaha yang diberikan wewenang administratif.
+- **Proteksi Super Admin Root:** Akun utama dengan email `admin@mail.com` dan nomor induk `ADM-001` memiliki status *Root* dan dilindungi sistem agar tidak dapat dinonaktifkan atau dihapus secara tidak sengaja oleh siapa pun. Password default akun ini adalah `pkbmadmin`.
+
+---
+
+### 4.5 Reset Password Akun Pengguna
 
 Jika ada siswa, guru, atau staf yang lupa password:
 1. Buka menu data pengguna terkait (Siswa / Guru / Admin).
 2. Klik tombol **Edit** pada akun pengguna yang meminta reset.
-3. Masukkan password baru pada kolom password *(minimal 6 karakter, contoh: `cahayamulia2026`)*.
+3. Masukkan password baru pada kolom password *(minimal 6 karakter, contoh: `pkbm1201` untuk siswa atau `cahayamulia2026`)*.
 4. Simpan perubahan dan serahkan password baru tersebut kepada yang bersangkutan.
 
 ---
 
-### 4.5 Cetak Kartu ID QR Fisik (A4 Siap Laminasi)
+### 4.6 Cetak Kartu ID QR Fisik (A4 Siap Laminasi)
 
 Buka menu **Cetak Kartu ID QR**:
 1. Filter siswa berdasarkan **Kelas** atau gunakan kotak pencarian nama.
@@ -324,7 +350,7 @@ Buka menu **Cetak Kartu ID QR**:
 
 ---
 
-### 4.6 Pengaturan Titik GPS Sekolah & Jam Operasional
+### 4.7 Pengaturan Titik GPS Sekolah & Jam Operasional
 
 Buka menu **Pengaturan Sekolah & GPS**:
 1. **Nama & Informasi Sekolah:** Atur nama resmi lembaga, alamat lengkap, dan Tahun Pelajaran aktif.
@@ -397,5 +423,41 @@ Sistem telah dirancang secara *hybrid*. Siswa yang tidak membawa HP cukup membaw
 
 ---
 
-*Dokumen ini disusun untuk implementasi Sistem Presensi Sekolah Digital PKBM Cahaya Mulia — Program Pengabdian Kepada Masyarakat (PKM) Universitas Pamulang.*
+## 7. Lampiran Kredensial Akun Demo & Pembersihan Database
 
+Bagi tim evaluator, penguji, atau pengelola yang ingin menguji sistem menggunakan data seeder awal demo (`supabase_seed_demo.sql`), berikut adalah rincian kredensial akun login resmi:
+
+### A. Tabel Kredensial Akun Demo
+
+| No | Peran / Jabatan | Username / Login ID | Email Sistem | Password Default | Keterangan Akun |
+|:---:|---|---|---|---|---|
+| 1 | **Super Admin Root** | `admin@mail.com` atau `ADM-001` | `admin@mail.com` | **`pkbmadmin`** | Administrator Utama PKBM Cahaya Mulia (Akses Penuh) |
+| 2 | **Guru Piket 1** | `guru1@mail.com` atau NIP `198507122010011005` | `guru1@mail.com` | **`pkbmguru1`** | Budi Santoso, S.Pd (Pengampu & Piket Kelas 10, 11, 12) |
+| 3 | **Guru Piket 2** | `guru2@mail.com` atau NIP `199003152015022003` | `guru2@mail.com` | **`pkbmguru2`** | Siti Nurhaliza, M.Pd (Pengampu & Piket Kelas 10, 11, 12) |
+| 4 | **Siswa Kelas 12** | NISN `1201` s/d `1210` | `[nisn]@mail.com` | **`pkbm[nisn]`** *(contoh: `pkbm1201`)* | 10 Siswa (Demo Utama: `1201` / `pkbm1201` - ADE IZA MUKTI) |
+| 5 | **Siswa Kelas 11** | NISN `1101` s/d `1110` | `[nisn]@mail.com` | **`pkbm[nisn]`** *(contoh: `pkbm1101`)* | 10 Siswa (Demo Utama: `1101` / `pkbm1101` - ADITYA RAMADHAN) |
+| 6 | **Siswa Kelas 10** | NISN `1001` s/d `1010` | `[nisn]@mail.com` | **`pkbm[nisn]`** *(contoh: `pkbm1001`)* | 10 Siswa (Demo Utama: `1001` / `pkbm1001` - ARIF RAHMAN) |
+
+> ℹ️ **Catatan Login Siswa:**
+> Siswa cukup memasukkan **NISN** saja (misal `1201`) dan password `pkbm1201`, tanpa perlu mengetikkan domain email.
+
+---
+
+### B. Prosedur Pembersihan Data Pasca-Demo (`supabase_clean_demo.sql`)
+
+Setelah sesi evaluasi atau demonstrasi selesai dan sistem akan diserahkan untuk penggunaan operasional nyata:
+1. Buka **Supabase Dashboard** → masuk ke menu **SQL Editor**.
+2. Buka dan jalankan seluruh isi file **`supabase_clean_demo.sql`**.
+3. Skrip ini akan secara otomatis:
+   - Menghapus seluruh riwayat transaksi presensi dan permohonan izin demo.
+   - Menghapus akun 30 siswa demo dan akun 2 guru demo dari `auth.users` dan tabel profil.
+   - **Mengosongkan master kelas** (`classes`) agar sekolah dapat menambahkan rombel kelas riil sesuai kebutuhan.
+   - **Menyisakan HANYA 1 Akun Super Administrator Root**:
+     - **Email:** `admin@mail.com`
+     - **Password:** `pkbmadmin`
+     - **Nomor Induk:** `ADM-001`
+4. Sistem kini berada dalam kondisi bersih (*fresh operational ready*) dan siap digunakan secara langsung oleh sekolah.
+
+---
+
+*Dokumen ini disusun untuk implementasi Sistem Presensi Sekolah Digital PKBM Cahaya Mulia — Program Pengabdian Kepada Masyarakat (PKM) Universitas Pamulang.*

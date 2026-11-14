@@ -83,75 +83,6 @@
             Masuk
           </Button>
         </form>
-
-        <!-- Akses Demo Cepat (Hanya tampil jika VITE_ENABLE_DEMO_LOGIN=true) -->
-        <template v-if="authStore.isDemoEnabled">
-          <div class="relative my-6">
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-slate-200"></div>
-            </div>
-            <div class="relative flex justify-center text-xs uppercase">
-              <span class="bg-white px-2 text-slate-400 font-medium tracking-wider">Akses Demo Cepat</span>
-            </div>
-          </div>
-
-          <!-- Quick Demo Login Buttons -->
-          <div class="space-y-2">
-            <button
-              type="button"
-              :disabled="loading"
-              @click="quickLogin('siswa')"
-              class="w-full p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between transition-all group text-left cursor-pointer"
-            >
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
-                  S
-                </div>
-                <div>
-                  <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Siswa</p>
-                  <p class="text-[11px] text-slate-500">ADE IZA MUKTI (NISN: 1201 &bull; Password: pkbm1201)</p>
-                </div>
-              </div>
-              <span class="text-xs text-blue-600 font-medium">Buka &rarr;</span>
-            </button>
-
-            <button
-              type="button"
-              :disabled="loading"
-              @click="quickLogin('guru')"
-              class="w-full p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between transition-all group text-left cursor-pointer"
-            >
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
-                  T
-                </div>
-                <div>
-                  <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Guru Piket / Tutor</p>
-                  <p class="text-[11px] text-slate-500">Budi Santoso, S.Pd (guru1@mail.com &bull; Password: pkbmguru1)</p>
-                </div>
-              </div>
-              <span class="text-xs text-blue-600 font-medium">Buka &rarr;</span>
-            </button>
-
-            <button
-              type="button"
-              :disabled="loading"
-              @click="quickLogin('admin')"
-              class="w-full p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between transition-all group text-left cursor-pointer"
-            >
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                  A
-                </div>
-                <div>
-                  <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Pengelola / Admin</p>
-                  <p class="text-[11px] text-slate-500">admin@mail.com &bull; Password: pkbmadmin</p>
-                </div>
-              </div>
-              <span class="text-xs text-blue-600 font-medium">Buka &rarr;</span>
-            </button>
-          </div>
-        </template>
       </div>
 
       <!-- Footer Info -->
@@ -240,18 +171,6 @@ async function handleLogin() {
 
   if (res.success) {
     navigateByRole(res.user.role)
-  } else {
-    errorMessage.value = res.message
-  }
-}
-
-async function quickLogin(role) {
-  loading.value = true
-  errorMessage.value = ''
-  const res = await authStore.loginWithDemo(role)
-  loading.value = false
-  if (res.success) {
-    navigateByRole(res.user?.role || role)
   } else {
     errorMessage.value = res.message
   }
