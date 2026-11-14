@@ -562,7 +562,7 @@
           <!-- Video Scanner Container (Order 2 di mobile agar kamera di bawah hasil scan, Order 1 di md+) -->
           <div class="order-2 md:order-1">
             <Card title="Kamera Pemindai" description="Arahkan QR Code kartu siswa ke dalam kotak pemindai">
-              <div class="relative w-full aspect-square max-w-sm mx-auto bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center border border-slate-800 shadow-md">
+              <div class="relative w-full aspect-square max-w-md mx-auto bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center border border-slate-800 shadow-md">
                 <div id="qr-reader" class="w-full h-full"></div>
 
                 <!-- Floating Jeda Cooldown Badge -->
@@ -2277,9 +2277,24 @@ async function startScanner() {
     if (!html5QrCode) {
       html5QrCode = new Html5Qrcode('qr-reader')
     }
+
+    // Bidik area pemindaian responsif & leluasa (78% dari viewfinder, min 260px)
+    const qrboxFunction = (viewfinderWidth, viewfinderHeight) => {
+      const minEdge = Math.min(viewfinderWidth, viewfinderHeight)
+      const boxSize = Math.max(260, Math.floor(minEdge * 0.78))
+      return {
+        width: boxSize,
+        height: boxSize
+      }
+    }
+
     await html5QrCode.start(
       { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 220, height: 220 } },
+      {
+        fps: 15,
+        qrbox: qrboxFunction,
+        aspectRatio: 1.0
+      },
       onScanSuccess,
       () => {}
     )
@@ -3138,5 +3153,22 @@ function formatDateTimeDisplay(dtStr) {
 <style scoped>
 .print-only {
   display: none;
+}
+
+:deep(#qr-reader) {
+  border: none !important;
+}
+
+:deep(#qr-reader video) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 1rem !important;
+}
+
+:deep(#qr-reader__scan_region) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 </style>
