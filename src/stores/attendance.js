@@ -934,10 +934,10 @@ export const useAttendanceStore = defineStore('attendance', () => {
   }
 
   // Tandai Semua Siswa Hadir Sekaligus dalam 1 Kelas
-  async function batchSetAllPresent(className, targetDate, teacherUser) {
+  async function batchSetAllPresent(className, targetDate = null, teacherUser = null, customInTime = null) {
     const todayStr = getWibDateStr()
     const chosenDate = targetDate || todayStr
-    const effectiveTime = getWibTimeStr().substring(0, 5)
+    const effectiveTime = extractWibTimeHHMMSS(customInTime || getWibTimeStr().substring(0, 5))
     const targetStudents = students.value.filter(s => s.kelas === className)
     const payloads = []
     let updatedCount = 0
@@ -949,7 +949,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
       const rec = idx > -1 ? todayAttendances.value[idx] : null
 
       if (!rec || rec.status === 'alpa' || !rec.jam_masuk) {
-        const jamMasukVal = extractWibTimeHHMMSS(effectiveTime)
+        const jamMasukVal = effectiveTime
         upsertLocalAttendance({
           id: rec?.id || 'att-' + Date.now() + '-' + student.id,
           user_id: student.id,

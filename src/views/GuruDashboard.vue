@@ -1568,7 +1568,7 @@
       </div>
     </div>
 
-    <!-- Modal Konfirmasi Tandai Hadir Semua (Mobile-Friendly) -->
+    <!-- Modal Konfirmasi & Input Jam Masuk Tandai Hadir Semua (Mobile-Friendly) -->
     <div
       v-if="showBatchPresentModal"
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in"
@@ -1581,14 +1581,57 @@
 
         <div class="text-center space-y-1">
           <h4 class="font-extrabold text-slate-900 text-base sm:text-lg">
-            Tandai Hadir Semua Siswa?
+            Tandai Hadir Semua Siswa
           </h4>
-          <p class="text-xs text-slate-500 leading-relaxed">
-            Semua siswa <strong class="text-slate-800">Kelas {{ selectedClass }}</strong> yang belum tercatat pada tanggal <strong class="text-slate-800">{{ selectedDate }}</strong> akan otomatis ditandai sebagai <span class="text-emerald-700 font-bold">Hadir</span> (07:30).
+          <p class="text-xs text-slate-500">
+            Kelas <strong class="text-slate-800">{{ selectedClass }}</strong> • <span class="font-mono text-slate-700">{{ selectedDate }}</span>
           </p>
         </div>
 
-        <div class="grid grid-cols-2 gap-2.5 pt-2">
+        <!-- Input Time & Presets -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+          <label class="block text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+            Tentukan Jam Masuk:
+          </label>
+          <div class="flex items-center justify-center">
+            <input
+              type="time"
+              v-model="batchPresentTime"
+              class="text-3xl font-black font-mono text-center text-slate-900 bg-white border-2 border-emerald-200 focus:border-emerald-600 rounded-2xl px-4 py-2 shadow-xs focus:outline-none cursor-pointer"
+            />
+          </div>
+
+          <!-- Quick Presets -->
+          <div class="flex items-center justify-center gap-1.5 pt-1">
+            <button
+              type="button"
+              @click="setPresetPresentTime('now')"
+              class="px-2.5 py-1 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg text-[11px] font-bold text-slate-700 hover:text-emerald-700 transition cursor-pointer"
+            >
+              Sekarang
+            </button>
+            <button
+              type="button"
+              @click="setPresetPresentTime('07:30')"
+              class="px-2.5 py-1 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg text-[11px] font-bold text-slate-700 hover:text-emerald-700 transition cursor-pointer font-mono"
+            >
+              07:30
+            </button>
+            <button
+              type="button"
+              @click="setPresetPresentTime('08:00')"
+              class="px-2.5 py-1 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg text-[11px] font-bold text-slate-700 hover:text-emerald-700 transition cursor-pointer font-mono"
+            >
+              08:00
+            </button>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-slate-500 text-center leading-relaxed">
+          Semua siswa yang belum diabsen akan otomatis dicatat sebagai <span class="text-emerald-700 font-bold">Hadir</span>.
+        </p>
+
+        <div class="grid grid-cols-2 gap-2.5 pt-1">
           <button
             type="button"
             @click="showBatchPresentModal = false"
@@ -1602,7 +1645,7 @@
             class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
           >
             <span class="material-icons text-sm">check</span>
-            <span>Ya, Tandai Hadir</span>
+            <span>Terapkan Hadir</span>
           </button>
         </div>
       </div>
@@ -2105,22 +2148,35 @@ function showToast(message, type = 'success') {
   }, 3500)
 }
 
-// Modal State: Tandai Hadir Semua
+// Modal State: Tandai Hadir Semua (Dengan Input Jam Masuk & Default Waktu Sekarang)
 const showBatchPresentModal = ref(false)
+const batchPresentTime = ref('')
 
 function openBatchPresentModal() {
+  batchPresentTime.value = getWibTimeStr().substring(0, 5)
   showBatchPresentModal.value = true
 }
 
+function setPresetPresentTime(val) {
+  if (val === 'now') {
+    batchPresentTime.value = getWibTimeStr().substring(0, 5)
+  } else {
+    batchPresentTime.value = val
+  }
+}
+
 async function confirmBatchAllPresent() {
-  const res = await attendanceStore.batchSetAllPresent(selectedClass.value, selectedDate.value, currentTeacher.value)
+  const defaultTime = getWibTimeStr().substring(0, 5)
+  const inputTime = batchPresentTime.value.trim() || defaultTime
+
+  const res = await attendanceStore.batchSetAllPresent(selectedClass.value, selectedDate.value, currentTeacher.value, inputTime)
   showBatchPresentModal.value = false
   if (!res?.success) {
     showToast(res?.message || 'Gagal mencatat presensi kolektif.', 'error')
     return
   }
   if (res.count > 0) {
-    showToast(`Berhasil menandai ${res.count} siswa Kelas ${selectedClass.value} sebagai Hadir!`, 'success')
+    showToast(`Berhasil menandai ${res.count} siswa Kelas ${selectedClass.value} sebagai Hadir (${inputTime})!`, 'success')
   } else {
     showToast(`Semua siswa Kelas ${selectedClass.value} sudah tercatat kehadirannya hari ini.`, 'info')
   }
