@@ -739,32 +739,6 @@
                 <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
               </select>
             </div>
-
-            <!-- Switcher Mode Tampilan: Kartu (Mobile) vs Tabel Matriks (Fisik) -->
-            <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
-              <button
-                type="button"
-                @click="rekapViewMode = 'cards'"
-                :class="rekapViewMode === 'cards' ? 'bg-white text-blue-700 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900 font-semibold'"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition cursor-pointer"
-                title="Tampilan ringkas kartu per siswa, sangat nyaman di HP"
-              >
-                <span class="material-icons text-sm">view_agenda</span>
-                <span>Ringkasan Kartu</span>
-                <span class="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded-full font-bold">HP</span>
-              </button>
-              <button
-                type="button"
-                @click="rekapViewMode = 'matrix'"
-                :class="rekapViewMode === 'matrix' ? 'bg-white text-blue-700 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900 font-semibold'"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition cursor-pointer"
-                title="Tabel matriks lengkap 31 hari format buku cetak fisik"
-              >
-                <span class="material-icons text-sm">table_chart</span>
-                <span>Tabel Matriks</span>
-                <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded-full font-bold">Fisik</span>
-              </button>
-            </div>
           </div>
 
           <!-- Tombol Export Excel & Cetak Landscape -->
@@ -792,9 +766,9 @@
         </div>
 
         <!-- ============================================================== -->
-        <!-- ALTERNATIF 1: TAMPILAN RINGKASAN KARTU SISWA (KHUSUS MOBILE / CEPAT) -->
+        <!-- TAMPILAN 1: RINGKASAN KARTU SISWA (OTOMATIS TAMPIL DI HP / MOBILE) -->
         <!-- ============================================================== -->
-        <div v-show="rekapViewMode === 'cards'" class="no-print space-y-4">
+        <div class="no-print block md:hidden space-y-4">
           <!-- Overview Statistik Kehadiran Kelas Bulan Ini -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <div class="p-3 bg-white rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3">
@@ -854,14 +828,6 @@
             </div>
             <div class="flex items-center justify-between sm:justify-end gap-2 text-xs text-slate-600 px-1">
               <span>Menampilkan: <strong>{{ filteredMatrixData.length }}</strong> siswa</span>
-              <button
-                type="button"
-                @click="rekapViewMode = 'matrix'"
-                class="md:hidden text-blue-600 font-bold hover:underline flex items-center gap-1 text-[11px]"
-              >
-                <span>Lihat Format Tabel Matriks</span>
-                <span class="material-icons text-xs">arrow_forward</span>
-              </button>
             </div>
           </div>
 
@@ -1034,12 +1000,11 @@
         </div>
 
         <!-- ============================================================== -->
-        <!-- LEMBAR DAFTAR HADIR SISWA (TAMPILAN MATRIKS PERSIS GAMBAR) -->
+        <!-- TAMPILAN 2: LEMBAR DAFTAR HADIR MATRIKS (OTOMATIS DI DESKTOP & CETAK) -->
         <!-- ============================================================== -->
         <div
           id="printable-monthly-sheet"
-          class="print-container bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4"
-          :class="{ 'hidden print:block': rekapViewMode === 'cards' }"
+          class="print-container bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4 hidden md:block print:block"
         >
           <!-- Kop Header Lembar Absensi (Persis Gambar) -->
           <div class="flex items-center justify-center gap-3 sm:gap-4 pb-2 border-b border-slate-900">
@@ -1061,30 +1026,6 @@
           <div class="flex items-center justify-between text-xs font-bold text-slate-900 pt-1">
             <span>Kelas: <strong class="text-sm font-black">{{ rekapClass }}</strong></span>
             <span>Bulan: <strong class="text-sm font-black">{{ monthNames[rekapMonth - 1] }} {{ rekapYear }}</strong></span>
-          </div>
-
-          <!-- Petunjuk Geser Layar & Tips Rotasi untuk Mobile -->
-          <div class="no-print md:hidden flex flex-col gap-1.5 text-[11px] text-blue-900 bg-blue-50 px-3 py-2 rounded-xl border border-blue-200">
-            <div class="flex items-center justify-between font-medium">
-              <span class="flex items-center gap-1.5">
-                <span class="material-icons text-sm text-blue-600">swipe</span>
-                Geser tabel ke samping untuk melihat tgl 1 s.d. 31 (Nama Siswa tetap terkunci di kiri)
-              </span>
-              <span class="font-bold">➡️</span>
-            </div>
-            <div class="flex items-center justify-between text-[10px] text-blue-700 pt-1 border-t border-blue-200/60">
-              <span class="flex items-center gap-1">
-                <span class="material-icons text-xs">screen_rotation</span>
-                Putar ponsel ke mendatar (Landscape) untuk layar lebih lega
-              </span>
-              <button
-                type="button"
-                @click="rekapViewMode = 'cards'"
-                class="font-bold underline text-blue-800 hover:text-blue-950 cursor-pointer"
-              >
-                Beralih ke Ringkasan Kartu
-              </button>
-            </div>
           </div>
 
           <!-- Matriks Tabel Tanggal 1 s.d. 31 -->
@@ -2534,15 +2475,6 @@ watch([mengetahuiJabatan, mengetahuiNama, mengetahuiNip], () => {
     signatorySaveTimer = null
     persistMengetahuiSignatory()
   }, 700)
-})
-
-// State Mode Tampilan Rekap (Kartu Mobile vs Matriks Tabel)
-const savedRekapViewMode = localStorage.getItem('presensi_guru_rekap_view_mode')
-const isMobileInitial = typeof window !== 'undefined' && window.innerWidth < 768
-const rekapViewMode = ref(savedRekapViewMode || (isMobileInitial ? 'cards' : 'matrix'))
-
-watch(rekapViewMode, (val) => {
-  if (val) localStorage.setItem('presensi_guru_rekap_view_mode', val)
 })
 
 // Search query untuk mode kartu siswa di mobile
