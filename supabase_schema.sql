@@ -399,13 +399,13 @@ BEGIN
             );
         END IF;
 
-        -- Cegah double-scan pulang jika baru saja masuk dalam waktu kurang dari 2 menit
-        IF v_presensi_exist.jam_masuk IS NOT NULL AND (v_jakarta_now - (v_presensi_exist.jam_masuk AT TIME ZONE 'Asia/Jakarta')) < interval '2 minutes' THEN
+        -- Cegah double-scan pulang jika baru saja masuk dalam waktu kurang dari 1 menit
+        IF v_presensi_exist.jam_masuk IS NOT NULL AND (v_jakarta_now - (v_presensi_exist.jam_masuk AT TIME ZONE 'Asia/Jakarta')) < interval '1 minute' THEN
             RETURN jsonb_build_object(
                 'success', false,
                 'isDoubleScan', true,
                 'nama', v_siswa.nama_lengkap,
-                'message', v_siswa.nama_lengkap || ' baru saja presensi Masuk. Harap tunggu minimal 2 menit sebelum mencatat presensi Pulang untuk mencegah double-scan.'
+                'message', v_siswa.nama_lengkap || ' baru saja presensi Masuk. Harap tunggu minimal 1 menit sebelum mencatat presensi Pulang untuk mencegah double-scan.'
             );
         END IF;
 

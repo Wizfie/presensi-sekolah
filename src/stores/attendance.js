@@ -946,24 +946,39 @@ export const useAttendanceStore = defineStore('attendance', () => {
       }
 
       // Perlindungan Anti Double-Scan:
-      // Cegah jam_pulang tercatat otomatis jika jam_masuk baru saja dicatat kurang dari 2 menit yang lalu
-      const jamMasukStr = todayAttendances.value[existingIndex].jam_masuk
+      // Cegah jam_pulang tercatat otomatis jika jam_masuk baru saja dicatat kurang dari 1 menit yang lalu
+      const currentAtt = todayAttendances.value[existingIndex]
+      const jamMasukStr = currentAtt.jam_masuk
       if (jamMasukStr) {
-        const [jmH, jmM, jmS] = jamMasukStr.split(':').map(Number)
-        const jamMasukTime = new Date(now)
-        jamMasukTime.setHours(jmH || 0, jmM || 0, jmS || 0, 0)
-        const diffSeconds = Math.round((now.getTime() - jamMasukTime.getTime()) / 1000)
+        let jamMasukTimestamp = null
+        if (currentAtt.created_at) {
+          const t = new Date(currentAtt.created_at).getTime()
+          if (!isNaN(t)) jamMasukTimestamp = t
+        }
+        if (!jamMasukTimestamp) {
+          const cleanTime = String(jamMasukStr).replace(/^.*T/, '').replace(/Z.*$/, '')
+          const parts = cleanTime.split(':').map(Number)
+          if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            const jmDate = new Date(now)
+            jmDate.setHours(parts[0], parts[1], parts[2] || 0, 0)
+            jamMasukTimestamp = jmDate.getTime()
+          }
+        }
 
-        // Jika selisih waktu antara jam masuk dan sekarang kurang dari 120 detik (2 menit)
-        if (diffSeconds >= 0 && diffSeconds < 120) {
-          return {
-            success: false,
-            isDoubleScan: true,
-            nama: student.nama_lengkap,
-            kelas: student.kelas,
-            nomor_induk: student.nomor_induk,
-            jam_masuk: jamMasukStr,
-            message: `${student.nama_lengkap} baru saja presensi Masuk (${jamMasukStr}). Presensi Pulang belum dapat dicatat (jeda minimal 2 menit) untuk mencegah double-scan.`
+        if (jamMasukTimestamp) {
+          const diffSeconds = Math.round((now.getTime() - jamMasukTimestamp) / 1000)
+          // Jika presensi masuk baru saja dicatat kurang dari 60 detik (1 menit)
+          if (diffSeconds >= 0 && diffSeconds < 60) {
+            const sisaDetik = Math.max(1, 60 - diffSeconds)
+            return {
+              success: false,
+              isDoubleScan: true,
+              nama: student.nama_lengkap,
+              kelas: student.kelas,
+              nomor_induk: student.nomor_induk,
+              jam_masuk: String(jamMasukStr).substring(0, 5),
+              message: `${student.nama_lengkap} baru saja presensi Masuk (${String(jamMasukStr).substring(0, 5)}). Presensi Pulang dapat dicatat setelah jeda 1 menit (sisa ${sisaDetik} detik).`
+            }
           }
         }
       }

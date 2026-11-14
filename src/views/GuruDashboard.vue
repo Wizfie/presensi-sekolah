@@ -2304,12 +2304,17 @@ async function startScanner() {
   }
 }
 
+let lastScannedToken = ''
+let lastScannedTokenTimestamp = 0
+
 async function stopScanner() {
   if (cooldownTimer) {
     clearInterval(cooldownTimer)
     cooldownTimer = null
   }
   cooldownSeconds.value = 0
+  lastScannedToken = ''
+  lastScannedTokenTimestamp = 0
 
   if (html5QrCode && isScanning.value) {
     try {
@@ -2320,13 +2325,28 @@ async function stopScanner() {
 }
 
 async function onScanSuccess(decodedText) {
+  const cleanCode = (decodedText || '').trim()
+  if (!cleanCode) return
   if (cooldownSeconds.value > 0) return
 
-  // Beri jeda pemindaian 3 detik untuk mencegah scan ganda beruntun
-  startCooldown(3)
+  const nowMs = Date.now()
 
-  const res = await attendanceStore.scanStudentQr(decodedText, currentTeacher.value)
+  // Perlindungan Cerdas: Jika barcode yang tertangkap kamera sama persis dengan kartu yang
+  // baru saja dipindai dalam 10 detik terakhir (misal siswa belum sempat menurunkan kartu),
+  // abaikan secara senyap agar tidak memicu scan ulang ganda / beep berulang.
+  // Namun jika kartu berbeda yang dipindai, proses seketika tanpa jeda 10 detik!
+  if (cleanCode === lastScannedToken && (nowMs - lastScannedTokenTimestamp) < 10000) {
+    return
+  }
+
+  // Beri jeda pemindaian umum 2 detik untuk transisi kamera dan pergantian siswa
+  startCooldown(2)
+
+  const res = await attendanceStore.scanStudentQr(cleanCode, currentTeacher.value)
   if (res?.success) {
+    lastScannedToken = cleanCode
+    lastScannedTokenTimestamp = nowMs
+
     playBeep()
     lastScannedStudent.value = res.student || {
       nama: res.nama,
@@ -2345,6 +2365,8 @@ async function onScanSuccess(decodedText) {
       )
     }
   } else if (res?.isDoubleScan) {
+    lastScannedToken = cleanCode
+    lastScannedTokenTimestamp = nowMs
     playWarningBeep()
     showToast(res.message, 'warning')
   } else {
