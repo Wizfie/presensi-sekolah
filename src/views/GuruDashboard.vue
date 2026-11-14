@@ -545,106 +545,142 @@
           </div>
         </div>
 
-        <!-- Scanner Area -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Video Scanner Container -->
-          <Card title="Kamera Pemindai" description="Arahkan QR Code kartu siswa ke dalam kotak pemindai">
-            <div class="relative w-full aspect-square max-w-sm mx-auto bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center border border-slate-800 shadow-md">
-              <div id="qr-reader" class="w-full h-full"></div>
+        <!-- Scanner Area (Mobile: Hasil Scan di Atas Kamera; Desktop: Berdampingan) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <!-- Video Scanner Container (Order 2 di mobile agar kamera di bawah hasil scan, Order 1 di md+) -->
+          <div class="order-2 md:order-1">
+            <Card title="Kamera Pemindai" description="Arahkan QR Code kartu siswa ke dalam kotak pemindai">
+              <div class="relative w-full aspect-square max-w-sm mx-auto bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center border border-slate-800 shadow-md">
+                <div id="qr-reader" class="w-full h-full"></div>
 
-              <!-- Idle placeholder when camera is OFF -->
-              <div v-if="!isScanning" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white bg-slate-900">
-                <div class="w-16 h-16 rounded-2xl bg-blue-600/30 text-blue-400 flex items-center justify-center mb-3">
-                  <span class="material-icons text-3xl">qr_code_scanner</span>
-                </div>
-                <h4 class="font-bold text-sm">Kamera Sedang Nonaktif</h4>
-                <p class="text-xs text-slate-400 mt-1 max-w-xs">
-                  Klik tombol "Nyalakan Kamera" untuk mulai memindai kartu presensi siswa.
-                </p>
-                <button
-                  type="button"
-                  @click="startScanner"
-                  class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-xs"
-                >
-                  Nyalakan Kamera Sekarang
-                </button>
-              </div>
-            </div>
-          </Card>
-
-          <!-- Live Scan Result Card -->
-          <Card title="Hasil Pemindaian Terakhir" description="Data kehadiran siswa yang baru saja dipindai">
-            <div v-if="lastScannedStudent" class="space-y-4">
-              <div
-                class="p-4 rounded-2xl border flex items-center gap-4 transition-all"
-                :class="lastScannedType === 'masuk'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
-                  : lastScannedType === 'selesai'
-                    ? 'bg-amber-50 border-amber-200 text-amber-950'
-                    : 'bg-blue-50 border-blue-200 text-blue-950'"
-              >
+                <!-- Floating Jeda Cooldown Badge -->
                 <div
-                  class="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-2xl text-white shadow-xs shrink-0"
-                  :class="lastScannedType === 'masuk'
-                    ? 'bg-emerald-600'
-                    : lastScannedType === 'selesai'
-                      ? 'bg-amber-500'
-                      : 'bg-blue-600'"
+                  v-if="isScanning && cooldownSeconds > 0"
+                  class="absolute top-3 inset-x-3 z-10 py-2 px-3.5 rounded-xl bg-slate-900/90 backdrop-blur-md border border-amber-500/50 text-white text-xs font-semibold flex items-center justify-between shadow-xl"
                 >
-                  {{ lastScannedType === 'masuk' ? 'IN' : lastScannedType === 'selesai' ? 'OK' : 'OUT' }}
-                </div>
-                <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
-                    <span
-                      class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full"
-                      :class="lastScannedType === 'masuk'
-                        ? 'bg-emerald-200 text-emerald-900'
-                        : lastScannedType === 'selesai'
-                          ? 'bg-amber-200 text-amber-900'
-                          : 'bg-blue-200 text-blue-900'"
-                    >
-                      {{ lastScannedType === 'masuk'
-                        ? 'Presensi Masuk Berhasil!'
-                        : lastScannedType === 'selesai'
-                          ? 'Presensi Hari Ini Sudah Lengkap'
-                          : 'Presensi Pulang Berhasil!' }}
-                    </span>
-                    <span class="text-xs font-mono font-bold text-slate-500">{{ lastScannedTime }} WIB</span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                    <span class="text-amber-200">Jeda Pemindaian (Ganti Siswa)</span>
                   </div>
-                  <h4 class="font-extrabold text-base sm:text-lg text-slate-900 mt-0.5 truncate">
-                    {{ lastScannedStudent.nama }}
-                  </h4>
-                  <p class="text-xs text-slate-600 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span>Kelas: <strong>{{ lastScannedStudent.kelas }}</strong></span>
-                    <span class="text-slate-300">&bull;</span>
-                    <span>NISN: <span class="font-mono">{{ lastScannedStudent.nomor_induk }}</span></span>
-                    <span class="text-slate-300">&bull;</span>
-                    <span
-                      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold"
-                      :class="lastScannedStudent.jenis_kelamin === 'P' ? 'bg-pink-100 text-pink-800' : 'bg-blue-100 text-blue-800'"
-                    >
-                      {{ lastScannedStudent.jenis_kelamin === 'P' ? '♀ Perempuan' : '♂ Laki-laki' }}
-                    </span>
+                  <span class="bg-amber-500 text-slate-950 font-mono font-black text-xs px-2.5 py-0.5 rounded-md shadow-xs">
+                    {{ cooldownSeconds }}s
+                  </span>
+                </div>
+
+                <!-- Idle placeholder when camera is OFF -->
+                <div v-if="!isScanning" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white bg-slate-900">
+                  <div class="w-16 h-16 rounded-2xl bg-blue-600/30 text-blue-400 flex items-center justify-center mb-3">
+                    <span class="material-icons text-3xl">qr_code_scanner</span>
+                  </div>
+                  <h4 class="font-bold text-sm">Kamera Sedang Nonaktif</h4>
+                  <p class="text-xs text-slate-400 mt-1 max-w-xs">
+                    Klik tombol "Nyalakan Kamera" untuk mulai memindai kartu presensi siswa.
                   </p>
+                  <button
+                    type="button"
+                    @click="startScanner"
+                    class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-xs"
+                  >
+                    Nyalakan Kamera Sekarang
+                  </button>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <!-- Live Scan Result Card (Order 1 di mobile agar langsung terlihat di atas kamera, Order 2 di md+) -->
+          <div class="order-1 md:order-2">
+            <Card title="Hasil Pemindaian Terakhir" description="Data kehadiran siswa yang baru saja dipindai">
+              <div v-if="lastScannedStudent" class="space-y-4">
+                <div
+                  class="p-4 rounded-2xl border flex items-center gap-3.5 sm:gap-4 transition-all shadow-xs"
+                  :class="lastScannedType === 'masuk'
+                    ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950 ring-1 ring-emerald-200'
+                    : lastScannedType === 'selesai'
+                      ? 'bg-amber-50/90 border-amber-300 text-amber-950 ring-1 ring-amber-200'
+                      : 'bg-blue-50/90 border-blue-300 text-blue-950 ring-1 ring-blue-200'"
+                >
+                  <div
+                    class="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center font-bold text-xl sm:text-2xl text-white shadow-xs shrink-0"
+                    :class="lastScannedType === 'masuk'
+                      ? 'bg-emerald-600'
+                      : lastScannedType === 'selesai'
+                        ? 'bg-amber-500'
+                        : 'bg-blue-600'"
+                  >
+                    {{ lastScannedType === 'masuk' ? 'IN' : lastScannedType === 'selesai' ? 'OK' : 'OUT' }}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span
+                        class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full"
+                        :class="lastScannedType === 'masuk'
+                          ? 'bg-emerald-200 text-emerald-900'
+                          : lastScannedType === 'selesai'
+                            ? 'bg-amber-200 text-amber-900'
+                            : 'bg-blue-200 text-blue-900'"
+                      >
+                        {{ lastScannedType === 'masuk'
+                          ? 'Presensi Masuk Berhasil!'
+                          : lastScannedType === 'selesai'
+                            ? 'Presensi Hari Ini Sudah Lengkap'
+                            : 'Presensi Pulang Berhasil!' }}
+                      </span>
+                      <span class="text-xs font-mono font-bold text-slate-500">{{ lastScannedTime }} WIB</span>
+                    </div>
+                    <h4 class="font-extrabold text-base sm:text-lg text-slate-900 mt-1 truncate">
+                      {{ lastScannedStudent.nama }}
+                    </h4>
+                    <p class="text-xs text-slate-600 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span>Kelas: <strong>{{ lastScannedStudent.kelas }}</strong></span>
+                      <span class="text-slate-300">&bull;</span>
+                      <span>NISN: <span class="font-mono">{{ lastScannedStudent.nomor_induk }}</span></span>
+                      <span class="text-slate-300">&bull;</span>
+                      <span
+                        class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold"
+                        :class="lastScannedStudent.jenis_kelamin === 'P' ? 'bg-pink-100 text-pink-800' : 'bg-blue-100 text-blue-800'"
+                      >
+                        {{ lastScannedStudent.jenis_kelamin === 'P' ? '♀ Perempuan' : '♂ Laki-laki' }}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Status / Cooldown Notice -->
+                <div
+                  v-if="cooldownSeconds > 0"
+                  class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center justify-between shadow-2xs"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="material-icons text-amber-600 text-base animate-spin">hourglass_empty</span>
+                    <span class="font-semibold">Jeda pemindaian: Tunggu pergantian kartu siswa...</span>
+                  </div>
+                  <span class="font-mono font-extrabold text-xs bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md">
+                    {{ cooldownSeconds }}s
+                  </span>
+                </div>
+                <div
+                  v-else
+                  class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2 shadow-2xs"
+                >
+                  <span class="material-icons text-emerald-600 text-base">check_circle</span>
+                  <span class="font-medium">Kamera siap memindai siswa berikutnya secara berurutan.</span>
                 </div>
               </div>
 
-              <!-- Quick Instruction -->
-              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center gap-2.5">
-                <span class="material-icons text-emerald-600 text-lg">check_circle</span>
-                <span>Kamera siap memindai siswa berikutnya secara berurutan.</span>
+              <!-- Empty placeholder -->
+              <div
+                v-else
+                class="py-4 md:h-64 flex flex-col items-center justify-center text-center p-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50"
+              >
+                <span class="material-icons text-3xl text-slate-300 mb-1">qr_code_2</span>
+                <p class="text-xs font-bold text-slate-600">Belum ada pemindaian kartu</p>
+                <p class="text-[11px] text-slate-400 mt-0.5 max-w-xs">
+                  Arahkan QR Code kartu siswa ke kamera di bawah untuk mencatat kehadiran IN atau OUT secara instan.
+                </p>
               </div>
-            </div>
-
-            <!-- Empty placeholder -->
-            <div v-else class="h-64 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-slate-200 rounded-2xl">
-              <span class="material-icons text-4xl text-slate-300 mb-2">qr_code_2</span>
-              <p class="text-xs font-bold text-slate-600">Belum ada pemindaian kartu</p>
-              <p class="text-[11px] text-slate-400 mt-0.5 max-w-xs">
-                Arahkan kartu siswa ke kamera untuk mencatat kehadiran IN atau OUT secara instan.
-              </p>
-            </div>
-          </Card>
+            </Card>
+          </div>
         </div>
       </div>
 
@@ -1789,7 +1825,8 @@ let html5QrCode = null
 const lastScannedStudent = ref(null)
 const lastScannedType = ref('')
 const lastScannedTime = ref('')
-let scanCooldown = false
+const cooldownSeconds = ref(0)
+let cooldownTimer = null
 
 function playBeep() {
   try {
@@ -1807,8 +1844,38 @@ function playBeep() {
   } catch (e) {}
 }
 
+function playWarningBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.type = 'triangle'
+    osc.frequency.setValueAtTime(440, ctx.currentTime) // 440Hz lower warning beep
+    gain.gain.setValueAtTime(0.18, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25)
+    osc.start()
+    osc.stop(ctx.currentTime + 0.25)
+  } catch (e) {}
+}
+
+function startCooldown(seconds = 3) {
+  if (cooldownTimer) clearInterval(cooldownTimer)
+  cooldownSeconds.value = seconds
+  cooldownTimer = setInterval(() => {
+    cooldownSeconds.value--
+    if (cooldownSeconds.value <= 0) {
+      clearInterval(cooldownTimer)
+      cooldownTimer = null
+      cooldownSeconds.value = 0
+    }
+  }, 1000)
+}
+
 async function startScanner() {
   isScanning.value = true
+  cooldownSeconds.value = 0
   try {
     if (!html5QrCode) {
       html5QrCode = new Html5Qrcode('qr-reader')
@@ -1826,6 +1893,12 @@ async function startScanner() {
 }
 
 async function stopScanner() {
+  if (cooldownTimer) {
+    clearInterval(cooldownTimer)
+    cooldownTimer = null
+  }
+  cooldownSeconds.value = 0
+
   if (html5QrCode && isScanning.value) {
     try {
       await html5QrCode.stop()
@@ -1835,8 +1908,10 @@ async function stopScanner() {
 }
 
 async function onScanSuccess(decodedText) {
-  if (scanCooldown) return
-  scanCooldown = true
+  if (cooldownSeconds.value > 0) return
+
+  // Beri jeda pemindaian 3 detik untuk mencegah scan ganda beruntun
+  startCooldown(3)
 
   const res = await attendanceStore.scanStudentQr(decodedText, currentTeacher.value)
   if (res?.success) {
@@ -1857,18 +1932,17 @@ async function onScanSuccess(decodedText) {
         'success'
       )
     }
+  } else if (res?.isDoubleScan) {
+    playWarningBeep()
+    showToast(res.message, 'warning')
   } else {
     showToast(res?.message || 'QR Code tidak valid', 'error')
   }
-
-  // Cooldown 2 detik sebelum scan berikutnya
-  setTimeout(() => {
-    scanCooldown = false
-  }, 2000)
 }
 
 onBeforeUnmount(() => {
   stopScanner()
+  if (cooldownTimer) clearInterval(cooldownTimer)
   if (signatorySaveTimer) clearTimeout(signatorySaveTimer)
 })
 

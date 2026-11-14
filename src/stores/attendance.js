@@ -719,7 +719,11 @@ export const useAttendanceStore = defineStore('attendance', () => {
         return { success: false, message: error.message || 'Gagal memproses scan QR ke server.' }
       }
       if (!res?.success) {
-        return { success: false, message: res?.message || 'QR Code atau NISN tidak terdaftar.' }
+        return {
+          success: false,
+          isDoubleScan: res?.isDoubleScan || false,
+          message: res?.message || 'QR Code atau NISN tidak terdaftar.'
+        }
       }
 
       if (res.record) {
@@ -788,6 +792,29 @@ export const useAttendanceStore = defineStore('attendance', () => {
           status: todayAttendances.value[existingIndex].status,
           jam: todayAttendances.value[existingIndex].jam_pulang,
           message: `${student.nama_lengkap} sudah menyelesaikan presensi Masuk (${todayAttendances.value[existingIndex].jam_masuk}) dan Pulang (${todayAttendances.value[existingIndex].jam_pulang}).`
+        }
+      }
+
+      // Perlindungan Anti Double-Scan:
+      // Cegah jam_pulang tercatat otomatis jika jam_masuk baru saja dicatat kurang dari 2 menit yang lalu
+      const jamMasukStr = todayAttendances.value[existingIndex].jam_masuk
+      if (jamMasukStr) {
+        const [jmH, jmM, jmS] = jamMasukStr.split(':').map(Number)
+        const jamMasukTime = new Date(now)
+        jamMasukTime.setHours(jmH || 0, jmM || 0, jmS || 0, 0)
+        const diffSeconds = Math.round((now.getTime() - jamMasukTime.getTime()) / 1000)
+
+        // Jika selisih waktu antara jam masuk dan sekarang kurang dari 120 detik (2 menit)
+        if (diffSeconds >= 0 && diffSeconds < 120) {
+          return {
+            success: false,
+            isDoubleScan: true,
+            nama: student.nama_lengkap,
+            kelas: student.kelas,
+            nomor_induk: student.nomor_induk,
+            jam_masuk: jamMasukStr,
+            message: `${student.nama_lengkap} baru saja presensi Masuk (${jamMasukStr}). Presensi Pulang belum dapat dicatat (jeda minimal 2 menit) untuk mencegah double-scan.`
+          }
         }
       }
 
