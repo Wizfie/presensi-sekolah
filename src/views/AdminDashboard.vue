@@ -1591,7 +1591,7 @@
 
       <!-- MODAL TAMBAH KELAS / ROMBEL BARU (FORMAT PKBM CAHAYA MULIA) -->
       <div v-if="isClassModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 sm:p-6 animate-in fade-in zoom-in-95 duration-150">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-5 sm:p-6 animate-in fade-in zoom-in-95 duration-150">
           <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <div class="flex items-center gap-2.5">
               <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shrink-0">
@@ -1636,33 +1636,38 @@
             </div>
 
             <!-- Daftar Kelas yang Saat Ini Terdaftar (Bisa Edit / Rename & Hapus) -->
-            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
               <div class="flex items-center justify-between text-[11px]">
                 <span class="font-bold text-slate-700">Daftar Kelas Terdaftar:</span>
                 <span class="font-mono text-slate-500 font-bold">{{ attendanceStore.allClasses.length }} kelas</span>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
+              <div class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
                 <div
                   v-for="c in attendanceStore.allClasses"
                   :key="c"
-                  class="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 shadow-2xs hover:border-blue-200 transition-colors"
+                  class="flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs hover:border-blue-300 transition-colors"
                 >
-                  <div class="min-w-0 flex items-center gap-1.5">
-                    <span class="material-icons text-blue-600 text-sm shrink-0">school</span>
-                    <span class="text-xs font-bold text-slate-800 truncate">Kelas {{ c }}</span>
-                    <span class="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 shrink-0">
-                      {{ getStudentCountInClass(c) }} siswa
-                    </span>
+                  <div class="min-w-0 flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                      <span class="material-icons text-base">school</span>
+                    </div>
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="text-sm font-bold text-slate-900 whitespace-nowrap">Kelas {{ c }}</span>
+                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200/60 shrink-0">
+                        {{ getStudentCountInClass(c) }} siswa
+                      </span>
+                    </div>
                   </div>
-                  <div class="flex items-center gap-1 shrink-0">
+                  <div class="flex items-center gap-1.5 shrink-0 ml-2">
                     <!-- Tombol Edit / Ubah Nama Kelas -->
                     <button
                       type="button"
                       @click="openRenameClass(c)"
-                      class="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-colors cursor-pointer"
+                      class="h-7 px-2.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                       title="Ubah nama kelas (Siswa & guru akan disinkronkan otomatis)"
                     >
                       <span class="material-icons text-[14px]">edit</span>
+                      <span class="text-[11px] font-bold">Ubah</span>
                     </button>
 
                     <!-- Tombol Hapus Kelas (hanya jika 0 siswa) -->
@@ -1678,7 +1683,7 @@
                     <span
                       v-else
                       class="w-7 h-7 flex items-center justify-center text-slate-300"
-                      title="Kelas terisi siswa aktif (Gunakan tombol Edit jika ingin mengubah nama)"
+                      title="Kelas terisi siswa aktif (Gunakan tombol Ubah jika ingin mengubah nama)"
                     >
                       <span class="material-icons text-[14px]">lock</span>
                     </span>
