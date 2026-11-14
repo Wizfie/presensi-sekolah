@@ -897,69 +897,6 @@
                 </div>
               </form>
             </Card>
-
-            <!-- Keamanan & Ganti Password Akun Admin -->
-            <Card
-              title="Keamanan & Ganti Password Admin"
-              description="Perbarui kata sandi akun Administrator Anda untuk melindungi hak akses konfigurasi sekolah"
-            >
-              <form @submit.prevent="handleAdminChangePassword" class="space-y-4">
-                <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">Password Baru Admin</label>
-                  <div class="relative">
-                    <input
-                      v-model="adminPasswordInput"
-                      :type="showAdminPass ? 'text' : 'password'"
-                      required
-                      minlength="6"
-                      placeholder="Masukkan password baru (minimal 6 karakter)..."
-                      class="w-full h-10 pl-3 pr-16 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      @click="showAdminPass = !showAdminPass"
-                      class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 text-xs font-semibold cursor-pointer"
-                    >
-                      {{ showAdminPass ? 'Tutup' : 'Lihat' }}
-                    </button>
-                  </div>
-                  <p class="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
-                    Minimal 6 karakter. Disarankan menggunakan kombinasi huruf besar, huruf kecil, dan angka.
-                  </p>
-                </div>
-
-                <!-- Notifikasi Feedback -->
-                <div
-                  v-if="adminPasswordFeedback.message"
-                  :class="[
-                    'p-3 rounded-xl text-xs flex items-center justify-between',
-                    adminPasswordFeedback.success
-                      ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
-                      : 'bg-rose-50 border border-rose-200 text-rose-800'
-                  ]"
-                >
-                  <span class="flex items-center gap-1.5 font-medium">
-                    <span class="material-icons text-sm">{{ adminPasswordFeedback.success ? 'check_circle' : 'error_outline' }}</span>
-                    <span>{{ adminPasswordFeedback.message }}</span>
-                  </span>
-                  <button type="button" @click="adminPasswordFeedback.message = ''" class="font-bold text-sm leading-none ml-2 cursor-pointer">
-                    &times;
-                  </button>
-                </div>
-
-                <div>
-                  <Button
-                    type="submit"
-                    variant="default"
-                    class="h-10 text-xs font-semibold inline-flex items-center gap-1.5"
-                    :loading="isAdminSavingPass"
-                  >
-                    <span class="material-icons text-xs">lock_reset</span>
-                    <span>Perbarui Password Admin</span>
-                  </Button>
-                </div>
-              </form>
-            </Card>
           </div>
 
           <!-- Kolom Peta & Zona Bahaya (5 Kolom) -->
@@ -2721,34 +2658,5 @@ async function saveSettings() {
     return
   }
   uiStore.showToast('Pengaturan sekolah dan batas radius GPS berhasil disimpan!', 'success')
-}
-
-// Logika Ganti Password Mandiri Akun Admin
-const adminPasswordInput = ref('')
-const showAdminPass = ref(false)
-const isAdminSavingPass = ref(false)
-const adminPasswordFeedback = ref({ success: false, message: '' })
-
-async function handleAdminChangePassword() {
-  if (!adminPasswordInput.value || adminPasswordInput.value.length < 6) {
-    adminPasswordFeedback.value = {
-      success: false,
-      message: 'Password baru minimal 6 karakter.'
-    }
-    return
-  }
-
-  isAdminSavingPass.value = true
-  const res = await authStore.changeUserPassword(adminPasswordInput.value)
-  isAdminSavingPass.value = false
-
-  adminPasswordFeedback.value = {
-    success: res.success,
-    message: res.message || 'Password Administrator berhasil diperbarui!'
-  }
-
-  if (res.success) {
-    adminPasswordInput.value = ''
-  }
 }
 </script>
