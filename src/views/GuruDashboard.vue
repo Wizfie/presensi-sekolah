@@ -1201,13 +1201,13 @@
               
               <!-- Jabatan Mengetahui (Editable di Layar, Plain Text saat Print) -->
               <div class="mt-0.5">
-                <span class="print:inline hidden font-bold text-slate-900">{{ mengetahuiJabatan || 'Ketua PKBM Cahaya Mulia' }}</span>
+                <span class="print:inline hidden font-bold text-slate-900">{{ mengetahuiJabatan || 'Kepala PKBM Cahaya Mulia' }}</span>
                 <input
                   v-model="mengetahuiJabatan"
                   @blur="flushMengetahuiSignatory"
                   type="text"
                   class="no-print font-bold text-slate-900 text-center border-b border-dashed border-slate-300 hover:border-blue-400 focus:border-blue-600 focus:outline-none bg-transparent px-1 py-0.5 text-xs w-60 transition-colors"
-                  placeholder="Jabatan (Ketua PKBM Cahaya Mulia)"
+                  placeholder="Jabatan (Kepala PKBM Cahaya Mulia)"
                   title="Klik untuk mengubah jabatan penandatangan"
                 />
               </div>
@@ -1251,13 +1251,48 @@
 
             <!-- Kolom Kanan: Guru / Piket -->
             <div class="flex flex-col items-center">
-              <p class="text-slate-600">Pamulang, {{ currentPrintDate }}</p>
+              <p class="text-slate-600">Kota Tangerang, {{ currentPrintDate }}</p>
               <p class="font-bold text-slate-900 mt-0.5">Guru / Piket</p>
               <div class="h-16 flex items-center justify-center">
                 <span class="no-print text-[10px] text-slate-300 italic select-none">(Ruang Tanda Tangan)</span>
               </div>
-              <p class="font-bold underline text-slate-900">( {{ currentTeacher?.nama_lengkap || authStore.user?.nama_lengkap || '............................................' }} )</p>
-              <p class="text-[10px] text-slate-500 font-mono mt-0.5">NIP: {{ currentTeacher?.nomor_induk || authStore.user?.nomor_induk || '-' }}</p>
+              
+              <!-- Nama Guru / Piket (Editable di Layar, Plain Text saat Print, Default dari User Login) -->
+              <div class="w-full">
+                <span class="print:inline hidden font-bold underline text-slate-900">
+                  ({{ (guruPiketNama || defaultGuruName) ? ` ${guruPiketNama || defaultGuruName} ` : ' ............................................ ' }})
+                </span>
+                <div class="no-print flex items-center justify-center gap-1">
+                  <span class="text-slate-700 font-bold">(</span>
+                  <input
+                    v-model="guruPiketNama"
+                    @blur="handleGuruNamaBlur"
+                    type="text"
+                    class="font-bold underline text-slate-900 text-center border-b border-dashed border-slate-300 hover:border-blue-400 focus:border-blue-600 focus:outline-none bg-transparent px-1 text-xs w-60 transition-colors"
+                    :placeholder="defaultGuruName || 'Ketik Nama Guru/Piket'"
+                    title="Klik untuk mengubah nama penandatangan (Default: user login)"
+                  />
+                  <span class="text-slate-700 font-bold">)</span>
+                </div>
+
+                <!-- NIP Guru / Piket (Editable di Layar, Plain Text saat Print) -->
+                <div class="mt-0.5">
+                  <span class="print:inline hidden text-[10px] text-slate-600 font-mono">
+                    NIP: {{ guruPiketNip || defaultGuruNip || '-' }}
+                  </span>
+                  <div class="no-print flex items-center justify-center gap-1">
+                    <span class="text-[10px] text-slate-500 font-mono">NIP:</span>
+                    <input
+                      v-model="guruPiketNip"
+                      @blur="handleGuruNipBlur"
+                      type="text"
+                      class="text-[10px] text-slate-500 font-mono text-center border-b border-dashed border-transparent hover:border-slate-300 focus:border-blue-600 focus:outline-none bg-transparent px-1 w-44 transition-colors"
+                      :placeholder="defaultGuruNip || '-'"
+                      title="Klik untuk mengubah NIP penandatangan (Default: user login)"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2032,12 +2067,63 @@ const currentPrintDate = computed(() => {
   })
 })
 
-// State Penandatangan "Mengetahui" (Sinkron dengan pengaturan sekolah / database)
-const mengetahuiJabatan = ref(
-  attendanceStore.schoolSettings?.mengetahui_jabatan || 'Ketua PKBM Cahaya Mulia'
-)
+// State Penandatangan "Mengetahui" (Kepala PKBM Cahaya Mulia - Sinkron dengan database)
+const rawMengetahuiJabatan = attendanceStore.schoolSettings?.mengetahui_jabatan
+const initialMengetahuiJabatan = (!rawMengetahuiJabatan || rawMengetahuiJabatan === 'Ketua PKBM Cahaya Mulia')
+  ? 'Kepala PKBM Cahaya Mulia'
+  : rawMengetahuiJabatan
+
+const mengetahuiJabatan = ref(initialMengetahuiJabatan)
 const mengetahuiNama = ref(attendanceStore.schoolSettings?.mengetahui_nama || '')
 const mengetahuiNip = ref(attendanceStore.schoolSettings?.mengetahui_nip || '')
+
+// State Penandatangan "Guru / Piket" (Editable dengan default dari user yang sedang login)
+const defaultGuruName = computed(() => currentTeacher.value?.nama_lengkap || authStore.user?.nama_lengkap || '')
+const defaultGuruNip = computed(() => currentTeacher.value?.nomor_induk || authStore.user?.nomor_induk || '')
+
+const savedGuruNama = localStorage.getItem('presensi_rekap_guru_nama')
+const savedGuruNip = localStorage.getItem('presensi_rekap_guru_nip')
+
+const guruPiketNama = ref(savedGuruNama !== null ? savedGuruNama : defaultGuruName.value)
+const guruPiketNip = ref(savedGuruNip !== null ? savedGuruNip : defaultGuruNip.value)
+
+watch(defaultGuruName, (newVal) => {
+  if (localStorage.getItem('presensi_rekap_guru_nama') === null && newVal) {
+    guruPiketNama.value = newVal
+  }
+}, { immediate: true })
+
+watch(defaultGuruNip, (newVal) => {
+  if (localStorage.getItem('presensi_rekap_guru_nip') === null && newVal) {
+    guruPiketNip.value = newVal
+  }
+}, { immediate: true })
+
+watch(guruPiketNama, (val) => {
+  if (val !== undefined && val !== null) {
+    localStorage.setItem('presensi_rekap_guru_nama', val)
+  }
+})
+
+watch(guruPiketNip, (val) => {
+  if (val !== undefined && val !== null) {
+    localStorage.setItem('presensi_rekap_guru_nip', val)
+  }
+})
+
+function handleGuruNamaBlur() {
+  if (!guruPiketNama.value || !guruPiketNama.value.trim()) {
+    guruPiketNama.value = defaultGuruName.value
+    localStorage.removeItem('presensi_rekap_guru_nama')
+  }
+}
+
+function handleGuruNipBlur() {
+  if (!guruPiketNip.value || !guruPiketNip.value.trim()) {
+    guruPiketNip.value = defaultGuruNip.value
+    localStorage.removeItem('presensi_rekap_guru_nip')
+  }
+}
 
 let isSyncingSignatory = false
 let signatorySaveTimer = null
@@ -2051,7 +2137,7 @@ watch(
   ([jab, nama, nip]) => {
     isSyncingSignatory = true
     if (jab !== undefined && jab !== null) {
-      mengetahuiJabatan.value = jab || 'Ketua PKBM Cahaya Mulia'
+      mengetahuiJabatan.value = (jab === 'Ketua PKBM Cahaya Mulia' ? 'Kepala PKBM Cahaya Mulia' : jab) || 'Kepala PKBM Cahaya Mulia'
     }
     if (nama !== undefined && nama !== null) {
       mengetahuiNama.value = nama
@@ -2068,7 +2154,7 @@ watch(
 
 async function persistMengetahuiSignatory() {
   const res = await attendanceStore.updateRekapSignatory(
-    mengetahuiJabatan.value || 'Ketua PKBM Cahaya Mulia',
+    mengetahuiJabatan.value || 'Kepala PKBM Cahaya Mulia',
     mengetahuiNama.value || '',
     mengetahuiNip.value || ''
   )
@@ -2280,16 +2366,16 @@ async function exportMonthlyToExcel() {
   const rightStartCol = Math.max(leftEndCol + 2, totalCols - 10)
   const rightEndCol = totalCols - 1
 
-  const teacherName = currentTeacher.value?.nama_lengkap || authStore.user?.nama_lengkap || '............................................'
-  const teacherNip = currentTeacher.value?.nomor_induk || authStore.user?.nomor_induk || '-'
+  const teacherName = guruPiketNama.value || defaultGuruName.value || '............................................'
+  const teacherNip = guruPiketNip.value || defaultGuruNip.value || '-'
 
   const sigRow1 = new Array(totalCols).fill('')
   sigRow1[leftStartCol] = 'Mengetahui,'
-  sigRow1[rightStartCol] = `Pamulang, ${currentPrintDate.value}`
+  sigRow1[rightStartCol] = `Kota Tangerang, ${currentPrintDate.value}`
   aoa.push(sigRow1)
 
   const sigRow2 = new Array(totalCols).fill('')
-  sigRow2[leftStartCol] = mengetahuiJabatan.value || 'Ketua PKBM Cahaya Mulia'
+  sigRow2[leftStartCol] = mengetahuiJabatan.value || 'Kepala PKBM Cahaya Mulia'
   sigRow2[rightStartCol] = 'Guru / Piket'
   aoa.push(sigRow2)
 

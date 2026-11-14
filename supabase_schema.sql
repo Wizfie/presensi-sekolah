@@ -74,13 +74,13 @@ CREATE TABLE IF NOT EXISTS public.pengaturan_sekolah (
     jam_masuk TIME NOT NULL DEFAULT '07:30:00',
     jam_terlambat TIME NOT NULL DEFAULT '08:00:00',
     jam_pulang TIME NOT NULL DEFAULT '14:00:00',
-    mengetahui_jabatan TEXT DEFAULT 'Ketua PKBM Cahaya Mulia',
+    mengetahui_jabatan TEXT DEFAULT 'Kepala PKBM Cahaya Mulia',
     mengetahui_nama TEXT DEFAULT '',
     mengetahui_nip TEXT DEFAULT '',
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-ALTER TABLE public.pengaturan_sekolah ADD COLUMN IF NOT EXISTS mengetahui_jabatan TEXT DEFAULT 'Ketua PKBM Cahaya Mulia';
+ALTER TABLE public.pengaturan_sekolah ADD COLUMN IF NOT EXISTS mengetahui_jabatan TEXT DEFAULT 'Kepala PKBM Cahaya Mulia';
 ALTER TABLE public.pengaturan_sekolah ADD COLUMN IF NOT EXISTS mengetahui_nama TEXT DEFAULT '';
 ALTER TABLE public.pengaturan_sekolah ADD COLUMN IF NOT EXISTS mengetahui_nip TEXT DEFAULT '';
 
@@ -536,7 +536,7 @@ BEGIN
 
     UPDATE public.pengaturan_sekolah
     SET
-        mengetahui_jabatan = COALESCE(p_jabatan, 'Ketua PKBM Cahaya Mulia'),
+        mengetahui_jabatan = COALESCE(p_jabatan, 'Kepala PKBM Cahaya Mulia'),
         mengetahui_nama = COALESCE(p_nama, ''),
         mengetahui_nip = COALESCE(p_nip, ''),
         updated_at = now()

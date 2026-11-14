@@ -141,13 +141,13 @@ export const useAttendanceStore = defineStore('attendance', () => {
   const initialSchoolSettings = isSupabaseConfigured
     ? {
         ...defaultSchoolSettings,
-        mengetahui_jabatan: 'Ketua PKBM Cahaya Mulia',
+        mengetahui_jabatan: 'Kepala PKBM Cahaya Mulia',
         mengetahui_nama: '',
         mengetahui_nip: ''
       }
     : loadStorage('presensi_school_settings', {
         ...defaultSchoolSettings,
-        mengetahui_jabatan: 'Ketua PKBM Cahaya Mulia',
+        mengetahui_jabatan: 'Kepala PKBM Cahaya Mulia',
         mengetahui_nama: '',
         mengetahui_nip: ''
       })
@@ -155,6 +155,14 @@ export const useAttendanceStore = defineStore('attendance', () => {
   const schoolSettings = ref(initialSchoolSettings)
   if (!schoolSettings.value.tahun_pelajaran) {
     schoolSettings.value.tahun_pelajaran = getCurrentAcademicYear()
+  }
+
+  // Migrasi otomatis jika masih tersimpan jabatan lama 'Ketua PKBM Cahaya Mulia'
+  if (!schoolSettings.value.mengetahui_jabatan || schoolSettings.value.mengetahui_jabatan === 'Ketua PKBM Cahaya Mulia') {
+    schoolSettings.value.mengetahui_jabatan = 'Kepala PKBM Cahaya Mulia'
+    if (!isSupabaseConfigured) {
+      saveStorage('presensi_school_settings', schoolSettings.value)
+    }
   }
 
   const activeAcademicYear = computed(() => {
@@ -226,7 +234,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
       jam_masuk: (row.jam_masuk || '07:30:00').substring(0, 5),
       jam_terlambat: (row.jam_terlambat || '08:00:00').substring(0, 5),
       jam_pulang: (row.jam_pulang || '14:00:00').substring(0, 5),
-      mengetahui_jabatan: row.mengetahui_jabatan ?? 'Ketua PKBM Cahaya Mulia',
+      mengetahui_jabatan: (row.mengetahui_jabatan === 'Ketua PKBM Cahaya Mulia' ? 'Kepala PKBM Cahaya Mulia' : row.mengetahui_jabatan) ?? 'Kepala PKBM Cahaya Mulia',
       mengetahui_nama: row.mengetahui_nama ?? '',
       mengetahui_nip: row.mengetahui_nip ?? ''
     }
@@ -454,7 +462,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
       allProfilesMap.value = new Map()
       schoolSettings.value = {
         ...defaultSchoolSettings,
-        mengetahui_jabatan: 'Ketua PKBM Cahaya Mulia',
+        mengetahui_jabatan: 'Kepala PKBM Cahaya Mulia',
         mengetahui_nama: '',
         mengetahui_nip: ''
       }
@@ -1136,7 +1144,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
     if (isSupabaseConfigured && supabase) {
       const { data: res, error } = await supabase.rpc('update_rekap_signatory', {
-        p_jabatan: jabatan || 'Ketua PKBM Cahaya Mulia',
+        p_jabatan: jabatan || 'Kepala PKBM Cahaya Mulia',
         p_nama: nama || '',
         p_nip: nip || ''
       })
