@@ -126,11 +126,6 @@
                 </span>
               </div>
             </div>
-
-            <p class="text-[11px] text-slate-400 leading-relaxed bg-amber-50/60 p-2.5 rounded-lg border border-amber-200/60 text-amber-800 flex items-start gap-1.5">
-              <span class="material-icons text-sm text-amber-600 shrink-0 mt-0.5">info</span>
-              <span>Data profil di atas bersifat tetap (*read-only*) dan dikelola langsung oleh Administrator Tata Usaha. Jika ada kesalahan data, silakan melapor ke pihak sekolah.</span>
-            </p>
           </div>
 
           <hr class="border-slate-100" />
