@@ -80,9 +80,6 @@
               <h3 class="text-lg font-bold text-slate-900 font-mono mt-0.5">
                 {{ myTodayAttendance?.jam_masuk ? `${formatTime(myTodayAttendance.jam_masuk)} WIB` : 'Belum Masuk' }}
               </h3>
-              <p class="text-[11px] text-slate-400">
-                {{ myTodayAttendance?.jam_masuk ? 'Tercatat hadir tepat waktu' : 'Jadwal masuk: 07:30 WIB' }}
-              </p>
             </div>
           </div>
 
@@ -96,9 +93,6 @@
               <h3 class="text-lg font-bold text-slate-900 font-mono mt-0.5">
                 {{ myTodayAttendance?.jam_pulang ? `${formatTime(myTodayAttendance.jam_pulang)} WIB` : 'Belum Pulang' }}
               </h3>
-              <p class="text-[11px] text-slate-400">
-                {{ myTodayAttendance?.jam_pulang ? 'Presensi hari ini selesai' : 'Jadwal pulang: 14:00 WIB' }}
-              </p>
             </div>
           </div>
         </div>
