@@ -1161,10 +1161,13 @@ export const useAttendanceStore = defineStore('attendance', () => {
       return { success: false, message: 'Nama lengkap dan NISN wajib diisi.' }
     }
 
+    const defaultStudentPass = `pkbm${cleanNisn}`
+    const finalStudentPass = (studentData.password || '').trim() || defaultStudentPass
+
     if (isSupabaseConfigured && supabase) {
       const { data: res, error } = await supabase.rpc('admin_create_user', {
         p_email: cleanEmail,
-        p_password: studentData.password || 'password123',
+        p_password: finalStudentPass,
         p_nama_lengkap: cleanName,
         p_nomor_induk: cleanNisn,
         p_jenis_kelamin: studentData.jenis_kelamin || 'L',
@@ -1197,7 +1200,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
       jenis_kelamin: studentData.jenis_kelamin || 'L',
       nomor_induk: cleanNisn,
       kelas: cleanKelas,
-      password: studentData.password || 'password123',
+      password: finalStudentPass,
       foto_update_count: 0,
       qr_token: 'tok_' + cleanNisn + '_' + Math.random().toString(36).substring(2, 7),
       foto_profil_url: '',
@@ -1357,11 +1360,13 @@ export const useAttendanceStore = defineStore('attendance', () => {
     const cleanNip = (teacherData.nomor_induk || '').trim()
     const cleanEmail = (teacherData.email || `guru.${Date.now()}@pkbm.sch.id`).trim().toLowerCase()
     const kelasDiajar = teacherData.kelas_diajar?.length ? [...teacherData.kelas_diajar] : ['12']
+    const defaultTeacherPass = `pkbm${cleanNip}`
+    const finalTeacherPass = (teacherData.password || '').trim() || defaultTeacherPass
 
     if (isSupabaseConfigured && supabase) {
       const { data: res, error } = await supabase.rpc('admin_create_user', {
         p_email: cleanEmail,
-        p_password: teacherData.password || 'password123',
+        p_password: finalTeacherPass,
         p_nama_lengkap: cleanName,
         p_nomor_induk: cleanNip,
         p_jenis_kelamin: teacherData.jenis_kelamin || 'L',
@@ -1395,7 +1400,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
       email: cleanEmail,
       nama_lengkap: cleanName,
       nomor_induk: cleanNip,
-      password: teacherData.password || 'password123',
+      password: finalTeacherPass,
       foto_update_count: 0,
       mata_pelajaran: teacherData.mata_pelajaran || 'Guru Piket Harian',
       kelas_diajar: kelasDiajar,
@@ -1590,39 +1595,41 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return { success: false }
   }
 
-  async function setStudentPassword(id, newPassword = 'password123') {
+  async function setStudentPassword(id, newPassword = null) {
+    const student = rawStudents.value.find(s => s.id === id)
+    const effectivePass = (newPassword || '').trim() || (student?.nomor_induk ? `pkbm${student.nomor_induk}` : 'pkbm123456')
     if (isSupabaseConfigured && supabase) {
       const { data: res, error } = await supabase.rpc('admin_reset_user_password', {
         p_user_id: id,
-        p_new_password: newPassword
+        p_new_password: effectivePass
       })
       if (error || !res?.success) {
         return { success: false, message: error?.message || res?.message }
       }
       return { success: true }
     }
-    const student = rawStudents.value.find(s => s.id === id)
     if (student) {
-      student.password = newPassword
+      student.password = effectivePass
       return { success: true, student }
     }
     return { success: false }
   }
 
-  async function setTeacherPassword(id, newPassword = 'password123') {
+  async function setTeacherPassword(id, newPassword = null) {
+    const teacher = rawTeachers.value.find(t => t.id === id)
+    const effectivePass = (newPassword || '').trim() || (teacher?.nomor_induk ? `pkbm${teacher.nomor_induk}` : 'pkbm123456')
     if (isSupabaseConfigured && supabase) {
       const { data: res, error } = await supabase.rpc('admin_reset_user_password', {
         p_user_id: id,
-        p_new_password: newPassword
+        p_new_password: effectivePass
       })
       if (error || !res?.success) {
         return { success: false, message: error?.message || res?.message }
       }
       return { success: true }
     }
-    const teacher = rawTeachers.value.find(t => t.id === id)
     if (teacher) {
-      teacher.password = newPassword
+      teacher.password = effectivePass
       return { success: true, teacher }
     }
     return { success: false }
@@ -1638,10 +1645,13 @@ export const useAttendanceStore = defineStore('attendance', () => {
     if (!cleanNip) return { success: false, message: 'Nomor Induk / NIK Administrator wajib diisi!' }
     if (!cleanEmail) return { success: false, message: 'Email Administrator wajib diisi!' }
 
+    const defaultAdminPass = `pkbm${cleanNip}`
+    const finalAdminPass = (adminData.password || '').trim() || defaultAdminPass
+
     if (isSupabaseConfigured && supabase) {
       const { data: res, error } = await supabase.rpc('admin_create_user', {
         p_email: cleanEmail,
-        p_password: adminData.password || 'password123',
+        p_password: finalAdminPass,
         p_nama_lengkap: cleanName,
         p_nomor_induk: cleanNip,
         p_jenis_kelamin: 'L',
@@ -1676,7 +1686,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
       email: cleanEmail,
       role: 'admin',
       jabatan: (adminData.jabatan || 'Staf Tata Usaha').trim(),
-      password: adminData.password || 'password123',
+      password: finalAdminPass,
       is_root: false,
       foto_profil_url: '',
       created_at: new Date().toISOString()
@@ -1781,11 +1791,13 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return { success: false }
   }
 
-  async function setAdminPassword(id, newPassword = 'password123') {
+  async function setAdminPassword(id, newPassword = null) {
+    const admin = rawAdmins.value.find(a => a.id === id)
+    const effectivePass = (newPassword || '').trim() || (admin?.nomor_induk ? `pkbm${admin.nomor_induk}` : 'pkbm123456')
     if (isSupabaseConfigured && supabase) {
       const { data: res, error } = await supabase.rpc('admin_reset_user_password', {
         p_user_id: id,
-        p_new_password: newPassword
+        p_new_password: effectivePass
       })
       if (error || !res?.success) {
         return {
@@ -1796,9 +1808,8 @@ export const useAttendanceStore = defineStore('attendance', () => {
       return { success: true }
     }
 
-    const admin = rawAdmins.value.find(a => a.id === id)
     if (admin) {
-      admin.password = newPassword
+      admin.password = effectivePass
       return { success: true, admin }
     }
     return { success: false }

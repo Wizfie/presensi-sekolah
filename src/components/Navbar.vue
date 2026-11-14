@@ -36,19 +36,30 @@
       <div class="flex items-center gap-2 sm:gap-4">
         <!-- User profile preview -->
         <div v-if="authStore.user" class="flex items-center gap-2.5 pl-2 sm:pl-3 border-l border-slate-200">
-          <img
-            v-if="authStore.user.foto_profil_url"
-            :src="authStore.user.foto_profil_url"
-            alt="Avatar"
-            class="w-8 h-8 rounded-full object-cover border border-slate-200 ring-2 ring-blue-50"
-          />
-          <div
-            v-else
-            class="w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 border border-blue-700 shadow-2xs select-none"
-            :title="authStore.user.nama_lengkap"
+          <button
+            type="button"
+            @click="showProfileModal = true"
+            title="Klik foto untuk melihat profil & ganti password"
+            class="relative rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-transform active:scale-95 cursor-pointer group shrink-0"
           >
-            {{ getInitials(authStore.user.nama_lengkap) }}
-          </div>
+            <img
+              v-if="authStore.user.foto_profil_url"
+              :src="authStore.user.foto_profil_url"
+              alt="Avatar"
+              class="w-8 h-8 rounded-full object-cover border border-slate-200 ring-2 ring-blue-50 group-hover:ring-blue-400 transition-all"
+            />
+            <div
+              v-else
+              class="w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 border border-blue-700 shadow-2xs select-none group-hover:bg-blue-700 transition-colors"
+              :title="authStore.user.nama_lengkap"
+            >
+              {{ getInitials(authStore.user.nama_lengkap) }}
+            </div>
+            <span
+              class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"
+              title="Online"
+            ></span>
+          </button>
           <div class="hidden lg:block text-left">
             <p class="text-xs font-semibold text-slate-800 leading-none truncate max-w-[130px]">
               {{ authStore.user.nama_lengkap }}
@@ -81,16 +92,22 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Profil & Ganti Password Mandiri -->
+    <UserProfileModal v-model="showProfileModal" />
   </header>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getInitials } from '../utils/avatar'
+import UserProfileModal from './UserProfileModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const showProfileModal = ref(false)
 
 defineEmits(['open-drawer'])
 

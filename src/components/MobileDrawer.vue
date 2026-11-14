@@ -39,15 +39,20 @@
 
               <!-- User Profile Header Block -->
               <div class="p-4 bg-slate-50 border-b border-slate-200/80 flex items-center gap-3">
-                <div class="relative shrink-0">
+                <button
+                  type="button"
+                  @click="openProfile"
+                  title="Klik untuk melihat profil & ganti password"
+                  class="relative shrink-0 cursor-pointer focus:outline-none transition-transform active:scale-95 group text-left"
+                >
                   <img
                     v-if="authStore.user?.foto_profil_url"
                     :src="authStore.user.foto_profil_url"
-                    class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-2xs"
+                    class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-2xs group-hover:ring-2 group-hover:ring-blue-400"
                   />
                   <div
                     v-else
-                    class="w-12 h-12 rounded-full bg-blue-600 text-white font-bold text-base flex items-center justify-center border-2 border-white shadow-2xs"
+                    class="w-12 h-12 rounded-full bg-blue-600 text-white font-bold text-base flex items-center justify-center border-2 border-white shadow-2xs group-hover:bg-blue-700 select-none"
                   >
                     {{ getInitials(authStore.user?.nama_lengkap || 'User') }}
                   </div>
@@ -55,7 +60,7 @@
                     class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white"
                     title="Online"
                   ></span>
-                </div>
+                </button>
                 <div class="min-w-0 flex-1">
                   <h3 class="text-xs font-bold text-slate-900 truncate">
                     {{ authStore.user?.nama_lengkap }}
@@ -138,14 +143,18 @@
         </Transition>
       </div>
     </Transition>
+
+    <!-- Modal Profil & Ganti Password Mandiri (Mobile) -->
+    <UserProfileModal v-model="showProfileModal" />
   </Teleport>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getInitials } from '../utils/avatar'
+import UserProfileModal from './UserProfileModal.vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -154,6 +163,15 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:open', 'select-tab', 'logout'])
+
+const router = useRouter()
+const authStore = useAuthStore()
+const showProfileModal = ref(false)
+
+function openProfile() {
+  close()
+  showProfileModal.value = true
+}
 
 function close() {
   emit('update:open', false)

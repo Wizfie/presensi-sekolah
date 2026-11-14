@@ -996,17 +996,21 @@
               </div>
             </div>
 
-            <!-- Password Akun Siswa (Tambah / Reset Password Jika Lupa) -->
+            <!-- Password Akun Siswa (Default Otomatis: pkbm[NISN]) -->
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">
-                {{ modalMode === 'create' ? 'Password Akun Siswa' : 'Ganti / Reset Password Siswa (Opsional)' }}
-              </label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-semibold text-slate-700">
+                  {{ modalMode === 'create' ? 'Password Akun Siswa' : 'Ganti / Reset Password Siswa (Opsional)' }}
+                </label>
+                <span v-if="modalMode === 'create'" class="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                  Default: pkbm{{ studentForm.nomor_induk || '[NISN]' }}
+                </span>
+              </div>
               <div class="relative">
                 <input
                   v-model="studentForm.password"
                   :type="showAdminStudentPass ? 'text' : 'password'"
-                  :required="modalMode === 'create'"
-                  :placeholder="modalMode === 'create' ? 'Minimal 6 karakter' : 'Kosongkan jika tidak ingin mengubah password'"
+                  :placeholder="modalMode === 'create' ? `Otomatis: pkbm${studentForm.nomor_induk || '[NISN]'} jika dikosongkan` : 'Kosongkan jika tidak ingin mengubah password'"
                   class="w-full h-9 pl-3 pr-16 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
                 <button
@@ -1018,7 +1022,7 @@
                 </button>
               </div>
               <p class="text-[10px] text-slate-400 mt-1">
-                {{ modalMode === 'create' ? 'Password awal login siswa (minimal 6 karakter). Siswa dapat menggantinya sendiri setelah login.' : 'Isi minimal 6 karakter hanya jika ingin mereset password siswa.' }}
+                {{ modalMode === 'create' ? `Bisa dikosongkan (default otomatis: pkbm${studentForm.nomor_induk || '[NISN]'}). Siswa dapat menggantinya sendiri setelah login.` : 'Isi minimal 6 karakter hanya jika ingin mereset password siswa.' }}
               </p>
             </div>
 
@@ -1162,17 +1166,21 @@
               <p class="text-[11px] text-slate-400 mt-1">Guru piket / tutor hanya akan dapat melihat data siswa dan rekapitulasi di kelas yang dicentang.</p>
             </div>
 
-            <!-- Password Akun Guru (Tambah / Reset Password Jika Lupa) -->
+            <!-- Password Akun Guru (Default Otomatis: pkbm[NIP/NIK]) -->
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">
-                {{ teacherModalMode === 'create' ? 'Password Akun Guru' : 'Ganti / Reset Password Guru (Opsional)' }}
-              </label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-semibold text-slate-700">
+                  {{ teacherModalMode === 'create' ? 'Password Akun Guru' : 'Ganti / Reset Password Guru (Opsional)' }}
+                </label>
+                <span v-if="teacherModalMode === 'create'" class="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                  Default: pkbm{{ teacherForm.nomor_induk || '[NIP]' }}
+                </span>
+              </div>
               <div class="relative">
                 <input
                   v-model="teacherForm.password"
                   :type="showAdminTeacherPass ? 'text' : 'password'"
-                  :required="teacherModalMode === 'create'"
-                  :placeholder="teacherModalMode === 'create' ? 'Minimal 6 karakter' : 'Kosongkan jika tidak ingin mengubah password'"
+                  :placeholder="teacherModalMode === 'create' ? `Otomatis: pkbm${teacherForm.nomor_induk || '[NIP]'} jika dikosongkan` : 'Kosongkan jika tidak ingin mengubah password'"
                   class="w-full h-9 pl-3 pr-16 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
                 <button
@@ -1184,7 +1192,7 @@
                 </button>
               </div>
               <p class="text-[10px] text-slate-400 mt-1">
-                {{ teacherModalMode === 'create' ? 'Password awal login pendidik (minimal 6 karakter). Guru dapat menggantinya sendiri di tab profil.' : 'Isi minimal 6 karakter hanya jika ingin mereset password guru.' }}
+                {{ teacherModalMode === 'create' ? `Bisa dikosongkan (default otomatis: pkbm${teacherForm.nomor_induk || '[NIP]'}). Guru dapat menggantinya sendiri di profil.` : 'Isi minimal 6 karakter hanya jika ingin mereset password guru.' }}
               </p>
             </div>
 
@@ -1541,16 +1549,19 @@
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">
-                {{ adminModalMode === 'create' ? 'Password Awal' : 'Password Baru (Opsional)' }}
-                <span v-if="adminModalMode === 'create'" class="text-rose-500">*</span>
-              </label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-semibold text-slate-700">
+                  {{ adminModalMode === 'create' ? 'Password Awal' : 'Password Baru (Opsional)' }}
+                </label>
+                <span v-if="adminModalMode === 'create'" class="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
+                  Default: pkbm{{ adminForm.nomor_induk || '[ID]' }}
+                </span>
+              </div>
               <div class="relative">
                 <input
                   v-model="adminForm.password"
                   :type="showAdminModalPass ? 'text' : 'password'"
-                  :required="adminModalMode === 'create'"
-                  :placeholder="adminModalMode === 'create' ? 'Minimal 6 karakter' : 'Kosongkan jika tidak ingin mengubah password'"
+                  :placeholder="adminModalMode === 'create' ? `Otomatis: pkbm${adminForm.nomor_induk || '[ID]'} jika dikosongkan` : 'Kosongkan jika tidak ingin mengubah password'"
                   class="w-full h-10 pl-3 pr-16 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50"
                 />
                 <button
@@ -1562,7 +1573,7 @@
                 </button>
               </div>
               <p class="text-[10px] text-slate-400 mt-1">
-                {{ adminModalMode === 'create' ? 'Minimal 6 karakter. Admin dapat menggantinya sendiri di menu Pengaturan.' : 'Isi minimal 6 karakter hanya jika ingin mereset password administrator ini.' }}
+                {{ adminModalMode === 'create' ? `Bisa dikosongkan (default otomatis: pkbm${adminForm.nomor_induk || '[ID]'}). Admin dapat menggantinya sendiri di profil.` : 'Isi minimal 6 karakter hanya jika ingin mereset password administrator ini.' }}
               </p>
             </div>
 
@@ -2099,9 +2110,12 @@ function openEditStudentModal(student) {
 }
 
 async function saveStudentForm() {
-  const rawPass = (studentForm.value.password || '').trim()
+  const cleanNisn = (studentForm.value.nomor_induk || '').trim()
+  const defaultPass = `pkbm${cleanNisn}`
+  const rawPass = (studentForm.value.password || '').trim() || (modalMode.value === 'create' ? defaultPass : '')
+
   if (modalMode.value === 'create' && rawPass.length < 6) {
-    uiStore.showToast('Password awal siswa minimal 6 karakter.', 'warning')
+    uiStore.showToast('NISN atau password awal siswa minimal 6 karakter.', 'warning')
     return
   }
   if (modalMode.value === 'edit' && rawPass.length > 0 && rawPass.length < 6) {
@@ -2212,9 +2226,12 @@ async function saveTeacherForm() {
     return
   }
 
-  const rawPass = (teacherForm.value.password || '').trim()
+  const cleanNip = (teacherForm.value.nomor_induk || '').trim()
+  const defaultPass = `pkbm${cleanNip}`
+  const rawPass = (teacherForm.value.password || '').trim() || (teacherModalMode.value === 'create' ? defaultPass : '')
+
   if (teacherModalMode.value === 'create' && rawPass.length < 6) {
-    uiStore.showToast('Password awal guru minimal 6 karakter.', 'warning')
+    uiStore.showToast('NIP/NIK atau password awal guru minimal 6 karakter.', 'warning')
     return
   }
   if (teacherModalMode.value === 'edit' && rawPass.length > 0 && rawPass.length < 6) {
@@ -2325,9 +2342,12 @@ async function saveAdminForm() {
     return
   }
 
-  const rawPass = (adminForm.value.password || '').trim()
+  const cleanNip = (adminForm.value.nomor_induk || '').trim()
+  const defaultPass = `pkbm${cleanNip}`
+  const rawPass = (adminForm.value.password || '').trim() || (adminModalMode.value === 'create' ? defaultPass : '')
+
   if (adminModalMode.value === 'create' && rawPass.length < 6) {
-    uiStore.showToast('Password awal Administrator minimal 6 karakter.', 'warning')
+    uiStore.showToast('ID/NIK atau password awal Administrator minimal 6 karakter.', 'warning')
     return
   }
   if (adminModalMode.value === 'edit' && rawPass.length > 0 && rawPass.length < 6) {
@@ -2394,24 +2414,15 @@ async function deleteAdminConfirm(admin) {
   }
 }
 
-function generateTempPassword() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
-  let token = 'Pkbm#'
-  for (let i = 0; i < 6; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return token
-}
-
 async function resetAdminPasswordConfirm(admin) {
-  const tempPassword = generateTempPassword()
+  const tempPassword = `pkbm${(admin.nomor_induk || '').trim()}`
   const confirmed = await uiStore.showConfirm({
     title: 'Reset Password Administrator?',
     message:
       `Nama: ${admin.nama_lengkap}\n` +
       `ID/NIK: ${admin.nomor_induk}\n` +
       `Email: ${admin.email}\n\n` +
-      `Password sementara yang akan diterapkan: ${tempPassword}\nPastikan Anda mencatat password sementara ini lalu segera ubah setelah login.`,
+      `Password default yang akan diterapkan: ${tempPassword}\nPastikan Anda mencatat password ini lalu segera ubah setelah login.`,
     confirmText: 'Ya, Reset Password',
     cancelText: 'Batal',
     type: 'warning'
@@ -2422,7 +2433,7 @@ async function resetAdminPasswordConfirm(admin) {
       uiStore.showToast(res.message || 'Gagal mereset password Administrator.', 'error')
       return
     }
-    uiStore.showToast(`Password sementara Administrator "${admin.nama_lengkap}": ${tempPassword}`, 'success', 7000)
+    uiStore.showToast(`Password Administrator "${admin.nama_lengkap}": ${tempPassword}`, 'success', 7000)
   }
 }
 
