@@ -143,10 +143,10 @@
         </Transition>
       </div>
     </Transition>
-
-    <!-- Modal Profil & Ganti Password Mandiri (Mobile) -->
-    <UserProfileModal v-model="showProfileModal" />
   </Teleport>
+
+  <!-- Modal Profil & Ganti Password Mandiri (Mobile) -->
+  <UserProfileModal v-model="showProfileModal" />
 </template>
 
 <script setup>

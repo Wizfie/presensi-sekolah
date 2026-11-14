@@ -19,18 +19,31 @@
     <!-- User Profile Block -->
     <div class="px-4 py-4 border-b border-slate-100">
       <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-        <img
-          v-if="authStore.user?.foto_profil_url"
-          :src="authStore.user.foto_profil_url"
-          alt="Avatar"
-          class="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0"
-        />
-        <div
-          v-else
-          class="w-9 h-9 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 select-none"
+        <!-- Avatar Button (Clickable: open profile & change password) -->
+        <button
+          type="button"
+          @click="showProfileModal = true"
+          title="Klik foto untuk melihat profil & ganti kata sandi"
+          class="relative shrink-0 cursor-pointer focus:outline-none transition-transform active:scale-95 group text-left"
         >
-          {{ getInitials(authStore.user?.nama_lengkap) }}
-        </div>
+          <img
+            v-if="authStore.user?.foto_profil_url"
+            :src="authStore.user.foto_profil_url"
+            alt="Avatar"
+            class="w-9 h-9 rounded-xl object-cover border border-slate-200 group-hover:ring-2 group-hover:ring-blue-500 transition-all"
+          />
+          <div
+            v-else
+            class="w-9 h-9 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center justify-center select-none group-hover:bg-blue-700 group-hover:ring-2 group-hover:ring-blue-500 transition-all shadow-xs"
+          >
+            {{ getInitials(authStore.user?.nama_lengkap) }}
+          </div>
+          <span
+            class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white"
+            title="Online"
+          ></span>
+        </button>
+
         <div class="min-w-0">
           <p class="text-xs font-semibold text-slate-800 truncate leading-tight">{{ authStore.user?.nama_lengkap }}</p>
           <p class="text-[11px] text-slate-400 mt-0.5 truncate">{{ authStore.user?.nomor_induk }}</p>
@@ -84,13 +97,18 @@
         <span>Keluar</span>
       </button>
     </div>
+
+    <!-- Modal Profil & Ganti Password Mandiri (Desktop) -->
+    <UserProfileModal v-model="showProfileModal" />
   </aside>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getInitials } from '../utils/avatar'
+import UserProfileModal from './UserProfileModal.vue'
 
 const props = defineProps({
   activeTab: { type: String, default: '' },
@@ -101,6 +119,7 @@ const emit = defineEmits(['tab-change'])
 
 const router = useRouter()
 const authStore = useAuthStore()
+const showProfileModal = ref(false)
 
 async function handleLogout() {
   await authStore.logout()
