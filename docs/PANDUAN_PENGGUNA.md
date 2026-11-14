@@ -15,7 +15,7 @@ Selamat datang di Buku Panduan Pengguna **Sistem Presensi Sekolah Digital PKBM C
    - [2.1 Presensi Mandiri GPS (Masuk & Pulang)](#21-presensi-mandiri-gps-masuk--pulang)
    - [2.2 Kartu Siswa Digital (QR Code)](#22-kartu-siswa-digital-qr-code)
    - [2.3 Memeriksa Riwayat Kehadiran Pribadi](#23-memeriksa-riwayat-kehadiran-pribadi)
-   - [2.4 Mengajukan Izin atau Sakit Online](#24-mengajukan-izin-atau-sakit-online)
+   - [2.4 Mengajukan Izin atau Sakit Online (dengan Bukti Surat)](#24-mengajukan-izin-atau-sakit-online-dengan-bukti-surat)
 3. [Panduan untuk Guru Piket & Tutor](#3-panduan-untuk-guru-piket--tutor)
    - [3.1 Presensi Kelas Harian & Fitur "Tandai Hadir Semua"](#31-presensi-kelas-harian--fitur-tandai-hadir-semua)
    - [3.2 Pencatatan Jam Pulang (Satuan & Pulang Semua)](#32-pencatatan-jam-pulang-satuan--pulang-semua)
@@ -24,6 +24,7 @@ Selamat datang di Buku Panduan Pengguna **Sistem Presensi Sekolah Digital PKBM C
    - [3.5 Koreksi Cepat Kehadiran Lewat Mini Kalender](#35-koreksi-cepat-kehadiran-lewat-mini-kalender)
    - [3.6 Pengaturan Penandatangan Dokumen "Mengetahui"](#36-pengaturan-penandatangan-dokumen-mengetahui)
    - [3.7 Export Excel (.xlsx) & Cetak Lembar Absensi](#37-export-excel-xlsx--cetak-lembar-absensi)
+   - [3.8 Verifikasi Pengajuan Izin & Bukti Surat Siswa](#38-verifikasi-pengajuan-izin--bukti-surat-siswa)
 4. [Panduan untuk Administrator (Tata Usaha)](#4-panduan-untuk-administrator-tata-usaha)
    - [4.1 Manajemen Akun & Data Siswa (CRUD, Nonaktif, Pulihkan)](#41-manajemen-akun--data-siswa-crud-nonaktif-pulihkan)
    - [4.2 Manajemen Guru Piket / Tutor & Alokasi Kelas](#42-manajemen-guru-piket--tutor--alokasi-kelas)
@@ -155,17 +156,29 @@ Gunakan fitur ini apabila HP Anda mengalami kendala GPS, sinyal internet lemah, 
 
 ---
 
-### 2.4 Mengajukan Izin atau Sakit Online
+### 2.4 Mengajukan Izin atau Sakit Online (dengan Bukti Surat)
 
 Jika Anda berhalangan hadir ke sekolah:
-1. Ketuk tab **Izin**.
-2. Pilih jenis pengajuan:
-   - **Izin Keperluan:** Jika memiliki agenda keluarga, keperluan dinas, dsb.
-   - **Sakit:** Jika kondisi badan kurang sehat.
-3. Tentukan **Tanggal** Anda berhalangan hadir.
-4. Tuliskan **Alasan / Keterangan** secara jelas dan sopan pada kolom yang disediakan.
-5. Ketuk tombol **Kirim Pengajuan Izin**.
-6. Sistem akan memunculkan dialog konfirmasi sukses dan data kehadiran Anda otomatis diperbarui pada daftar absensi Guru Piket.
+1. Ketuk tab **Izin** pada bilah navigasi bawah Dashboard Siswa.
+2. **Pilih Jenis Pengajuan:**
+   - **Izin Keperluan:** Jika memiliki keperluan keluarga mendesak, agenda dinas, dsb.
+   - **Sakit:** Jika kondisi kesehatan sedang menurun.
+3. **Pilih Tanggal:** Tentukan tanggal mulai dan tanggal selesai ketidakhadiran Anda.
+4. **Tuliskan Alasan / Keterangan:** Tuliskan alasan izin secara jelas dan sopan pada kolom isian.
+5. **Unggah Lampiran Bukti Surat (Attachment Foto):**
+   - Ketuk kotak bergaris putus-putus bertuliskan **"Ambil Foto / Unggah Surat"**.
+   - Lampirkan foto fisik **Surat Keterangan Dokter**, **Surat Izin Orang Tua/Wali**, atau **Surat Tugas**.
+   - Format yang didukung: **JPG, JPEG, PNG, dan WEBP**.
+   - *Fitur Kompresi Otomatis Cerdas:* Sistem secara otomatis mengompresi foto langsung di browser perangkat menjadi sangat ringan (kurang dari 200 KB) dengan teks surat yang tetap tajam dan jelas terbaca, sehingga sangat hemat kuota internet.
+   - Pratinjau thumbnail surat akan muncul di layar. Anda dapat mengeceknya atau menghapusnya jika salah memilih foto.
+6. Ketuk tombol biru **Kirim Pengajuan Izin**.
+7. **Memantau Status Persetujuan & Pratinjau Dokumen:**
+   - Pada kartu **"Riwayat Pengajuan Izin Anda"** di bagian bawah, status pengajuan terpantau secara transparan:
+     - 🟡 **Menunggu Verifikasi (Pending):** Masih dalam proses peninjauan oleh Guru Piket.
+     - 🟢 **Disetujui (Approved):** Disetujui oleh Guru Piket, status presensi Anda resmi tercatat Hadir/Sakit pada buku rekapitulasi sekolah.
+     - 🔴 **Ditolak (Rejected):** Pengajuan ditolak. Di bawahnya akan tercantum **Catatan Guru** (alasan penolakan, contoh: *"Foto surat dokter buram/tidak terbaca"*).
+   - **Fitur Lightbox Pratinjau:** Ketuk tombol **"Lihat Bukti Surat"** untuk membuka foto surat dalam ukuran layar penuh.
+   - **Fitur Ajukan Ulang (Reapply):** Jika izin Anda ditolak, cukup ketuk tombol **"Ajukan Ulang Izin Ini"**. Isian formulir lama otomatis terisi kembali sehingga Anda cukup memperbarui foto surat dan mengirimkannya ulang tanpa mengetik dari awal.
 
 ---
 
@@ -266,6 +279,23 @@ Pada bagian bawah tabel matriks rekapitulasi, terdapat blok tanda tangan resmi:
    - Ketuk tombol **Cetak Lembar Absen**.
    - Halaman otomatis diformat ke layout **Kertas A4 Horizontal (Landscape)** dengan menyembunyikan tombol navigasi aplikasi.
    - Anda dapat langsung mencetaknya ke printer fisik atau menyimpannya sebagai file **PDF**.
+
+---
+
+### 3.8 Verifikasi Pengajuan Izin & Bukti Surat Siswa
+
+Guru Piket bertugas meninjau dan mengesahkan setiap permohonan izin maupun sakit yang diajukan oleh siswa:
+1. Masuk ke **Dashboard Guru** → buka tab **Verifikasi Izin**.
+2. **Dua Sub-Tab Pengelolaan:**
+   - **Perlu Tindakan:** Menampilkan daftar siswa yang mengajukan izin berstatus *Pending* dan membutuhkan persetujuan.
+   - **Riwayat Verifikasi:** Berisi arsip seluruh pengajuan izin yang telah disetujui atau ditolak sebelumnya.
+3. Anda dapat memfilter pengajuan berdasarkan **Kelas** *(misal: Kelas 10, 11, atau 12)* atau mencari nama siswa secara cepat.
+4. **Memeriksa Lampiran Bukti Surat (Attachment):**
+   - Jika siswa mengunggah bukti surat (surat dokter atau surat izin orang tua), pratinjau thumbnail foto akan tampil di baris pengajuan.
+   - Klik thumbnail foto atau tombol **Lihat Bukti Surat** untuk membuka pratinjau ukuran penuh (**Lightbox Modal**) guna memeriksa keaslian dan keterangan dokter/wali secara detail.
+5. **Mengambil Tindakan Verifikasi:**
+   - **Setujui (Approve):** Klik tombol hijau **Setujui**. Status presensi siswa pada rentang tanggal tersebut otomatis tercatat resmi sebagai **Sakit (S)** atau **Izin (I)** pada buku absensi harian dan matriks bulanan sekolah.
+   - **Tolak (Reject):** Klik tombol merah **Tolak**. Sistem akan meminta Anda memasukkan **Catatan Verifikasi** (alasan penolakan, misal: *"Foto buram, mohon unggah ulang foto yang jelas"*). Catatan ini langsung tampil di HP siswa sehingga siswa dapat segera memperbaiki pengajuannya.
 
 ---
 
