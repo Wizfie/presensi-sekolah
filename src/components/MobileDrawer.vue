@@ -37,13 +37,14 @@
                 </button>
               </div>
 
-              <!-- User Profile Header Block -->
-              <div class="p-4 bg-slate-50 border-b border-slate-200/80 flex items-center gap-3">
-                <button
-                  type="button"
-                  @click="openProfile"
-                  title="Klik untuk melihat profil & ganti password"
-                  class="relative shrink-0 cursor-pointer focus:outline-none transition-transform active:scale-95 group text-left"
+              <!-- User Profile Header Block (Clickable card & avatar) -->
+              <div
+                @click="openProfile"
+                title="Klik untuk melihat profil & ganti password"
+                class="p-4 bg-slate-50 hover:bg-blue-50/50 border-b border-slate-200/80 flex items-center gap-3 cursor-pointer transition-colors group select-none"
+              >
+                <div
+                  class="relative shrink-0 transition-transform group-hover:scale-105 active:scale-95 text-left"
                 >
                   <img
                     v-if="authStore.user?.foto_profil_url"
@@ -60,9 +61,9 @@
                     class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white"
                     title="Online"
                   ></span>
-                </button>
+                </div>
                 <div class="min-w-0 flex-1">
-                  <h3 class="text-xs font-bold text-slate-900 truncate">
+                  <h3 class="text-xs font-bold text-slate-900 group-hover:text-blue-700 transition-colors truncate">
                     {{ authStore.user?.nama_lengkap }}
                   </h3>
                   <p class="text-[11px] text-slate-500 truncate mt-0.5 font-mono">

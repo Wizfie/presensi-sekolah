@@ -141,8 +141,8 @@
           </div>
         </div>
 
-        <!-- Ringkasan Kehadiran Kelas (Mobile 2 Kolom, Desktop 5 Kolom) -->
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
+        <!-- Ringkasan Kehadiran Kelas (Mobile 2 Kolom, Desktop 6 Kolom) -->
+        <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 sm:gap-3">
           <div class="p-2.5 sm:p-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs">
             <p class="text-[10px] sm:text-[11px] font-semibold text-slate-500">Total Siswa</p>
             <p class="text-base sm:text-xl font-bold text-slate-900 mt-0.5">{{ classStudents.length }}</p>
@@ -159,9 +159,13 @@
             <p class="text-[10px] sm:text-[11px] font-semibold text-blue-700">Izin</p>
             <p class="text-base sm:text-xl font-bold text-blue-800 mt-0.5">{{ attendanceStats.izin }}</p>
           </div>
-          <div class="p-2.5 sm:p-3 bg-rose-50/70 rounded-xl border border-rose-200 shadow-2xs col-span-2 sm:col-span-1">
-            <p class="text-[10px] sm:text-[11px] font-semibold text-rose-700">Alpa / Belum</p>
+          <div class="p-2.5 sm:p-3 bg-rose-50/70 rounded-xl border border-rose-200 shadow-2xs">
+            <p class="text-[10px] sm:text-[11px] font-semibold text-rose-700">Alpa</p>
             <p class="text-base sm:text-xl font-bold text-rose-800 mt-0.5">{{ attendanceStats.alpa }}</p>
+          </div>
+          <div class="p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200 shadow-2xs">
+            <p class="text-[10px] sm:text-[11px] font-semibold text-slate-500">Belum Presensi</p>
+            <p class="text-base sm:text-xl font-bold text-slate-700 mt-0.5">{{ attendanceStats.belum }}</p>
           </div>
         </div>
 
@@ -179,7 +183,7 @@
             :key="'mob-' + std.id"
             class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3 transition-all"
           >
-            <!-- Baris Atas: Nomor, Nama Siswa, NISN, Badge L/P -->
+            <!-- Baris Atas: Nomor, Nama Siswa, NISN, Badge L/P & Status Belum -->
             <div class="flex items-start justify-between gap-2">
               <div class="flex items-center gap-2.5 min-w-0">
                 <span class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
@@ -194,13 +198,21 @@
                   </p>
                 </div>
               </div>
-              <span
-                class="px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 flex items-center gap-1"
-                :class="std.jenis_kelamin === 'P' ? 'bg-pink-50 text-pink-700 border border-pink-200' : 'bg-blue-50 text-blue-700 border border-blue-200'"
-                :title="std.jenis_kelamin === 'P' ? 'Perempuan' : 'Laki-laki'"
-              >
-                <span>{{ std.jenis_kelamin === 'P' ? '♀ Perempuan' : '♂ Laki-laki' }}</span>
-              </span>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span
+                  v-if="!getStudentAttendance(std.id)?.status"
+                  class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200"
+                >
+                  Belum Diabsen
+                </span>
+                <span
+                  class="px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1"
+                  :class="std.jenis_kelamin === 'P' ? 'bg-pink-50 text-pink-700 border border-pink-200' : 'bg-blue-50 text-blue-700 border border-blue-200'"
+                  :title="std.jenis_kelamin === 'P' ? 'Perempuan' : 'Laki-laki'"
+                >
+                  <span>{{ std.jenis_kelamin === 'P' ? '♀ Perempuan' : '♂ Laki-laki' }}</span>
+                </span>
+              </div>
             </div>
 
             <!-- Tombol Status Kehadiran (Grid 4 Kolom Penuh: Hadir, Sakit, Izin, Alpa) -->
@@ -247,7 +259,7 @@
                   @click="changeStatus(std, 'alpa')"
                   :class="[
                     'py-2 rounded-lg text-xs font-bold transition flex items-center justify-center active:scale-95 cursor-pointer',
-                    !getStudentAttendance(std.id) || getStudentAttendance(std.id)?.status === 'alpa'
+                    getStudentAttendance(std.id)?.status === 'alpa'
                       ? 'bg-rose-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   ]"
@@ -424,7 +436,7 @@
                         @click="changeStatus(std, 'alpa')"
                         :class="[
                           'px-2 py-1 rounded-md text-[11px] font-bold transition cursor-pointer',
-                          !getStudentAttendance(std.id) || getStudentAttendance(std.id)?.status === 'alpa'
+                          getStudentAttendance(std.id)?.status === 'alpa'
                             ? 'bg-rose-600 text-white shadow-xs'
                             : 'text-slate-600 hover:text-slate-900'
                         ]"
@@ -1298,6 +1310,266 @@
         </div>
       </div>
 
+      <!-- ============================================================== -->
+      <!-- TAB 4: VERIFIKASI PENGAJUAN IZIN & SAKIT SISWA -->
+      <!-- ============================================================== -->
+      <div v-if="activeTab === 'izin'" class="space-y-4">
+        <!-- Control Bar & Sub-Tabs -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+                <span class="material-icons text-blue-600 text-lg">assignment_turned_in</span>
+                <span>Verifikasi Pengajuan Izin &amp; Sakit</span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">
+                Periksa bukti surat, setujui untuk merekam presensi resmi atau tolak dengan catatan verifikasi.
+              </p>
+            </div>
+
+            <!-- Sub Tab Toggle -->
+            <div class="inline-flex p-1 bg-slate-100 rounded-xl">
+              <button
+                type="button"
+                @click="izinSubTab = 'pending'"
+                :class="[
+                  'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
+                  izinSubTab === 'pending'
+                    ? 'bg-white text-blue-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                ]"
+              >
+                <span>Perlu Tindakan</span>
+                <span
+                  v-if="pendingLeaves.length > 0"
+                  class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-white"
+                >
+                  {{ pendingLeaves.length }}
+                </span>
+              </button>
+              <button
+                type="button"
+                @click="izinSubTab = 'history'"
+                :class="[
+                  'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
+                  izinSubTab === 'history'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                ]"
+              >
+                <span>Riwayat Verifikasi</span>
+                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700">
+                  {{ historyLeaves.length }}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Filter & Search -->
+          <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+            <div class="flex items-center gap-1.5">
+              <label class="text-[11px] font-bold text-slate-700">Kelas:</label>
+              <select
+                v-model="izinClassFilter"
+                class="px-2.5 py-1 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="all">Semua Kelas</option>
+                <option v-for="cls in availableClasses" :key="'izin-cls-' + cls" :value="cls">
+                  Kelas {{ cls }}
+                </option>
+              </select>
+            </div>
+
+            <div class="w-full sm:w-56 relative ml-auto">
+              <input
+                v-model="izinSearchQuery"
+                type="text"
+                placeholder="Cari siswa / NISN..."
+                class="w-full pl-8 pr-3 py-1 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+              />
+              <span class="material-icons absolute left-2.5 top-1.5 text-slate-400 text-xs">search</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. TAMPILAN TAB PENDING (PERLU TINDAKAN) -->
+        <div v-if="izinSubTab === 'pending'" class="space-y-3">
+          <div v-if="filteredPendingLeaves.length === 0" class="bg-white p-8 rounded-2xl border border-slate-200/80 text-center space-y-2">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+              <span class="material-icons text-2xl">check_circle</span>
+            </div>
+            <h4 class="font-bold text-slate-800 text-sm">Semua Pengajuan Telah Diverifikasi</h4>
+            <p class="text-xs text-slate-500 max-w-sm mx-auto">
+              Tidak ada pengajuan izin atau sakit yang tertunda untuk kelas yang Anda pilih.
+            </p>
+          </div>
+
+          <div
+            v-for="req in filteredPendingLeaves"
+            :key="req.id"
+            class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4 transition-all"
+          >
+            <!-- Header Permohonan -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div class="flex items-center gap-3 min-w-0">
+                <div
+                  class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs font-bold text-sm"
+                  :class="req.jenis === 'sakit' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'"
+                >
+                  <span class="material-icons text-xl">{{ req.jenis === 'sakit' ? 'medical_services' : 'assignment' }}</span>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <h4 class="font-bold text-slate-900 text-sm truncate">{{ req.nama_lengkap }}</h4>
+                    <span class="px-2 py-0.2 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                      Kelas {{ req.kelas }}
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-slate-500 font-mono mt-0.5">
+                    NISN: {{ req.nomor_induk || '-' }} &bull; Tanggal Izin: <strong>{{ formatIndonesianDate(req.tanggal_mulai) }}</strong>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Badge Status -->
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 self-start sm:self-center">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <span>Menunggu Verifikasi</span>
+              </span>
+            </div>
+
+            <!-- Isi Keterangan & Bukti Surat -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200/70">
+              <div class="md:col-span-2 space-y-1">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Alasan / Keterangan:</span>
+                <p class="text-xs text-slate-800 leading-relaxed italic">
+                  "{{ req.keterangan || '-' }}"
+                </p>
+                <p class="text-[10px] text-slate-400 mt-2">
+                  Diajukan pada: {{ formatDateTimeDisplay(req.created_at) }}
+                </p>
+              </div>
+
+              <!-- Lampiran Bukti Surat -->
+              <div class="border-t md:border-t-0 md:border-l border-slate-200 pt-2 md:pt-0 md:pl-3 flex flex-col justify-center">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Bukti Dokumen:</span>
+                <div v-if="req.bukti_surat_url" class="flex items-center gap-2.5">
+                  <div
+                    @click="lightboxPhoto = req.bukti_surat_url"
+                    class="w-16 h-16 rounded-lg overflow-hidden border border-slate-300 relative cursor-pointer group shrink-0 shadow-2xs"
+                    title="Klik untuk memperbesar dokumen"
+                  >
+                    <img :src="req.bukti_surat_url" alt="Surat Dokter" class="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <div class="absolute inset-0 bg-slate-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span class="material-icons text-white text-base">zoom_in</span>
+                    </div>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-[11px] font-bold text-slate-800">Foto Bukti Surat</p>
+                    <button
+                      type="button"
+                      @click="lightboxPhoto = req.bukti_surat_url"
+                      class="text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer inline-flex items-center gap-0.5 mt-0.5"
+                    >
+                      <span class="material-icons text-xs">visibility</span>
+                      <span>Zoom Penuh</span>
+                    </button>
+                  </div>
+                </div>
+                <div v-else class="text-xs text-slate-400 italic flex items-center gap-1">
+                  <span class="material-icons text-sm text-slate-300">hide_image</span>
+                  <span>Tanpa lampiran berkas</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tombol Aksi Verifikasi -->
+            <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                @click="openRejectModal(req)"
+                class="px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <span class="material-icons text-sm">cancel</span>
+                <span>Tolak</span>
+              </button>
+              <button
+                type="button"
+                @click="handleApproveLeave(req)"
+                class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <span class="material-icons text-sm">check_circle</span>
+                <span>Setujui (Catat Presensi)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. TAMPILAN TAB RIWAYAT VERIFIKASI -->
+        <div v-if="izinSubTab === 'history'" class="space-y-3">
+          <div v-if="filteredHistoryLeaves.length === 0" class="bg-white p-8 rounded-2xl border border-slate-200/80 text-center space-y-2">
+            <span class="material-icons text-3xl text-slate-300">history</span>
+            <p class="text-xs text-slate-500">Belum ada riwayat pengajuan yang diverifikasi.</p>
+          </div>
+
+          <div
+            v-for="req in filteredHistoryLeaves"
+            :key="req.id"
+            class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2.5"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <span
+                  class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0"
+                  :class="req.jenis === 'sakit' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'"
+                >
+                  {{ req.jenis }}
+                </span>
+                <h4 class="font-bold text-slate-900 text-sm truncate">{{ req.nama_lengkap }} (Kelas {{ req.kelas }})</h4>
+              </div>
+
+              <span
+                v-if="req.status === 'approved'"
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0"
+              >
+                <span class="material-icons text-[12px]">check_circle</span>
+                <span>Disetujui</span>
+              </span>
+              <span
+                v-else
+                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200 shrink-0"
+              >
+                <span class="material-icons text-[12px]">cancel</span>
+                <span>Ditolak</span>
+              </span>
+            </div>
+
+            <p class="text-xs text-slate-700 italic">"{{ req.keterangan || '-' }}"</p>
+
+            <div class="p-2.5 bg-slate-50 rounded-xl text-xs space-y-1 text-slate-600">
+              <div class="flex items-center justify-between">
+                <span>Tanggal Izin: <strong>{{ formatIndonesianDate(req.tanggal_mulai) }}</strong></span>
+                <span v-if="req.diverifikasi_oleh">Diverifikasi: <strong>{{ req.diverifikasi_oleh }}</strong></span>
+              </div>
+              <div v-if="req.catatan_verifikasi" class="text-[11px] text-slate-500 pt-1 border-t border-slate-200">
+                Catatan: {{ req.catatan_verifikasi }}
+              </div>
+            </div>
+
+            <div v-if="req.bukti_surat_url" class="pt-1 flex items-center justify-between">
+              <button
+                type="button"
+                @click="lightboxPhoto = req.bukti_surat_url"
+                class="text-[11px] font-bold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 cursor-pointer"
+              >
+                <span class="material-icons text-xs">image</span>
+                <span>Buka Bukti Surat</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
 
     <!-- Quick Edit Modal untuk Matriks Rekap -->
@@ -1524,6 +1796,88 @@
         </button>
       </div>
     </transition>
+
+    <!-- Modal Alasan Penolakan Izin Siswa -->
+    <div
+      v-if="showRejectModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in"
+      @click.self="showRejectModal = false"
+    >
+      <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div class="flex items-center gap-2.5 text-rose-600 font-bold text-base">
+          <div class="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center">
+            <span class="material-icons text-xl text-rose-600">cancel</span>
+          </div>
+          <span>Tolak Pengajuan Izin</span>
+        </div>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Siswa: <strong class="text-slate-900">{{ selectedLeaveToReject?.nama_lengkap }}</strong> &bull; Kelas {{ selectedLeaveToReject?.kelas }}
+        </p>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">
+            Catatan Penolakan <span class="text-slate-400 font-normal">(Terlihat oleh siswa)</span>
+          </label>
+          <textarea
+            v-model="rejectReason"
+            rows="3"
+            placeholder="Tuliskan alasan penolakan, contoh: Foto surat buram/tidak terbaca..."
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+          ></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            @click="showRejectModal = false"
+            class="py-2.5 px-3 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            @click="confirmRejectLeave"
+            class="py-2.5 px-3 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-xs cursor-pointer active:scale-95"
+          >
+            Kirim Penolakan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lightbox Modal untuk Pratinjau Bukti Surat Penuh Resolusi Tinggi -->
+    <div
+      v-if="lightboxPhoto"
+      class="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-xs animate-fade-in"
+      @click.self="lightboxPhoto = null"
+    >
+      <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200">
+        <div class="px-4 py-3 bg-slate-900 text-white flex items-center justify-between shrink-0">
+          <span class="text-xs font-bold flex items-center gap-1.5">
+            <span class="material-icons text-sm text-blue-400">description</span>
+            <span>Bukti Dokumen Surat Izin / Surat Dokter (Resolusi Penuh)</span>
+          </span>
+          <button
+            type="button"
+            @click="lightboxPhoto = null"
+            class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
+          >
+            <span class="material-icons text-base">close</span>
+          </button>
+        </div>
+        <div class="p-3 bg-slate-100 flex-1 overflow-auto flex items-center justify-center min-h-[300px]">
+          <img :src="lightboxPhoto" alt="Foto Bukti Surat" class="max-w-full max-h-[75vh] object-contain rounded-lg shadow-sm" />
+        </div>
+        <div class="px-4 py-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
+          <span class="text-[11px] text-slate-500">Stempel klinik, tanda tangan &amp; tanggal dapat diperiksa jelas</span>
+          <button
+            type="button"
+            @click="lightboxPhoto = null"
+            class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-bold text-xs cursor-pointer"
+          >
+            Tutup Pratinjau
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1550,7 +1904,7 @@ const attendanceStore = useAttendanceStore()
 const isDrawerOpen = ref(false)
 
 // State Tab Persisten (URL query + localStorage)
-const validTabs = ['manual', 'scan', 'rekap']
+const validTabs = ['manual', 'scan', 'rekap', 'izin']
 const initialTab = (route.query.tab && validTabs.includes(route.query.tab))
   ? route.query.tab
   : (localStorage.getItem('presensi_tab_guru') && validTabs.includes(localStorage.getItem('presensi_tab_guru')))
@@ -1572,11 +1926,21 @@ watch(() => route.query.tab, (newTab) => {
   }
 })
 
+const pendingIzinCount = computed(() => {
+  return (attendanceStore.leaveRequests || []).filter(r => r.status === 'pending').length
+})
+
 // Navigation Items (Clean & Simple)
 const navItems = computed(() => [
   { key: 'manual', icon: 'fact_check', label: 'Presensi Harian' },
   { key: 'scan', icon: 'qr_code_scanner', label: 'Scanner QR Piket' },
-  { key: 'rekap', icon: 'table_chart', label: 'Buku Rekap' }
+  { key: 'rekap', icon: 'table_chart', label: 'Buku Rekap' },
+  {
+    key: 'izin',
+    icon: 'assignment_turned_in',
+    label: 'Verifikasi Izin',
+    badge: pendingIzinCount.value > 0 ? String(pendingIzinCount.value) : null
+  }
 ])
 
 const currentTeacher = computed(() => {
@@ -1645,16 +2009,17 @@ function getStudentAttendance(studentId) {
 }
 
 const attendanceStats = computed(() => {
-  let hadir = 0, sakit = 0, izin = 0, alpa = 0
+  let hadir = 0, sakit = 0, izin = 0, alpa = 0, belum = 0
   classStudents.value.forEach(std => {
     const rec = getStudentAttendance(std.id)
     const st = rec?.status
     if (st === 'hadir' || st === 'terlambat') hadir++
     else if (st === 'sakit') sakit++
     else if (st === 'izin') izin++
-    else alpa++
+    else if (st === 'alpa') alpa++
+    else belum++
   })
-  return { hadir, sakit, izin, alpa }
+  return { hadir, sakit, izin, alpa, belum }
 })
 
 async function changeStatus(student, newStatus) {
@@ -2081,47 +2446,38 @@ const mengetahuiNip = ref(attendanceStore.schoolSettings?.mengetahui_nip || '')
 const defaultGuruName = computed(() => currentTeacher.value?.nama_lengkap || authStore.user?.nama_lengkap || '')
 const defaultGuruNip = computed(() => currentTeacher.value?.nomor_induk || authStore.user?.nomor_induk || '')
 
-const savedGuruNama = localStorage.getItem('presensi_rekap_guru_nama')
-const savedGuruNip = localStorage.getItem('presensi_rekap_guru_nip')
-
-const guruPiketNama = ref(savedGuruNama !== null ? savedGuruNama : defaultGuruName.value)
-const guruPiketNip = ref(savedGuruNip !== null ? savedGuruNip : defaultGuruNip.value)
+const guruPiketNama = ref('')
+const guruPiketNip = ref('')
 
 watch(defaultGuruName, (newVal) => {
-  if (localStorage.getItem('presensi_rekap_guru_nama') === null && newVal) {
-    guruPiketNama.value = newVal
-  }
+  const userKey = 'presensi_rekap_guru_nama_' + (authStore.user?.id || 'guest')
+  const saved = localStorage.getItem(userKey)
+  guruPiketNama.value = (saved !== null && saved !== '') ? saved : (newVal || '')
 }, { immediate: true })
 
 watch(defaultGuruNip, (newVal) => {
-  if (localStorage.getItem('presensi_rekap_guru_nip') === null && newVal) {
-    guruPiketNip.value = newVal
-  }
+  const userKey = 'presensi_rekap_guru_nip_' + (authStore.user?.id || 'guest')
+  const saved = localStorage.getItem(userKey)
+  guruPiketNip.value = (saved !== null && saved !== '') ? saved : (newVal || '')
 }, { immediate: true })
 
-watch(guruPiketNama, (val) => {
-  if (val !== undefined && val !== null) {
-    localStorage.setItem('presensi_rekap_guru_nama', val)
-  }
-})
-
-watch(guruPiketNip, (val) => {
-  if (val !== undefined && val !== null) {
-    localStorage.setItem('presensi_rekap_guru_nip', val)
-  }
-})
-
 function handleGuruNamaBlur() {
+  const userKey = 'presensi_rekap_guru_nama_' + (authStore.user?.id || 'guest')
   if (!guruPiketNama.value || !guruPiketNama.value.trim()) {
     guruPiketNama.value = defaultGuruName.value
-    localStorage.removeItem('presensi_rekap_guru_nama')
+    localStorage.removeItem(userKey)
+  } else {
+    localStorage.setItem(userKey, guruPiketNama.value)
   }
 }
 
 function handleGuruNipBlur() {
+  const userKey = 'presensi_rekap_guru_nip_' + (authStore.user?.id || 'guest')
   if (!guruPiketNip.value || !guruPiketNip.value.trim()) {
     guruPiketNip.value = defaultGuruNip.value
-    localStorage.removeItem('presensi_rekap_guru_nip')
+    localStorage.removeItem(userKey)
+  } else {
+    localStorage.setItem(userKey, guruPiketNip.value)
   }
 }
 
@@ -2694,6 +3050,99 @@ async function applyQuickEdit(status) {
   editingCell.value = null
   if (res?.success === false) {
     showToast(res.message || 'Gagal memperbarui catatan presensi.', 'error')
+  }
+}
+
+// ==============================================================
+// TAB 4: STATE & HANDLER VERIFIKASI IZIN / SAKIT SISWA
+// ==============================================================
+const izinSubTab = ref('pending')
+const izinClassFilter = ref('all')
+const izinSearchQuery = ref('')
+
+const showRejectModal = ref(false)
+const selectedLeaveToReject = ref(null)
+const rejectReason = ref('')
+const lightboxPhoto = ref(null)
+
+const pendingLeaves = computed(() => {
+  return (attendanceStore.leaveRequests || [])
+    .filter(r => r.status === 'pending')
+    .sort((a, b) => new Date(b.created_at || b.tanggal_mulai) - new Date(a.created_at || a.tanggal_mulai))
+})
+
+const historyLeaves = computed(() => {
+  return (attendanceStore.leaveRequests || [])
+    .filter(r => r.status === 'approved' || r.status === 'rejected')
+    .sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))
+})
+
+const filteredPendingLeaves = computed(() => {
+  return pendingLeaves.value.filter(req => {
+    if (izinClassFilter.value !== 'all' && String(req.kelas) !== String(izinClassFilter.value)) return false
+    if (izinSearchQuery.value) {
+      const q = izinSearchQuery.value.toLowerCase()
+      const matchName = req.nama_lengkap?.toLowerCase().includes(q)
+      const matchNis = req.nomor_induk?.toLowerCase().includes(q)
+      if (!matchName && !matchNis) return false
+    }
+    return true
+  })
+})
+
+const filteredHistoryLeaves = computed(() => {
+  return historyLeaves.value.filter(req => {
+    if (izinClassFilter.value !== 'all' && String(req.kelas) !== String(izinClassFilter.value)) return false
+    if (izinSearchQuery.value) {
+      const q = izinSearchQuery.value.toLowerCase()
+      const matchName = req.nama_lengkap?.toLowerCase().includes(q)
+      const matchNis = req.nomor_induk?.toLowerCase().includes(q)
+      if (!matchName && !matchNis) return false
+    }
+    return true
+  })
+})
+
+async function handleApproveLeave(req) {
+  const res = await attendanceStore.approveLeaveRequest(req.id, currentTeacher.value)
+  if (res?.success) {
+    showToast(`Pengajuan izin ${req.nama_lengkap} berhasil disetujui & dicatat ke presensi!`, 'success')
+  } else {
+    showToast(res?.message || 'Gagal menyetujui pengajuan izin.', 'error')
+  }
+}
+
+function openRejectModal(req) {
+  selectedLeaveToReject.value = req
+  rejectReason.value = 'Foto surat tidak jelas/stempel tidak ada. Mohon foto ulang dan ajukan kembali.'
+  showRejectModal.value = true
+}
+
+async function confirmRejectLeave() {
+  if (!selectedLeaveToReject.value) return
+  const req = selectedLeaveToReject.value
+  const res = await attendanceStore.rejectLeaveRequest(req.id, currentTeacher.value, rejectReason.value)
+  showRejectModal.value = false
+  if (res?.success) {
+    showToast(`Pengajuan izin ${req.nama_lengkap} telah ditolak. Siswa dapat mengajukan ulang.`, 'info')
+  } else {
+    showToast(res?.message || 'Gagal menolak pengajuan izin.', 'error')
+  }
+}
+
+function formatDateTimeDisplay(dtStr) {
+  if (!dtStr) return '-'
+  try {
+    const d = new Date(dtStr)
+    return d.toLocaleString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch (e) {
+    return dtStr
   }
 }
 </script>

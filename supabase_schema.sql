@@ -445,8 +445,8 @@ SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_user_id UUID := auth.uid();
+    v_existing RECORD;
     v_leave RECORD;
-    v_presensi RECORD;
 BEGIN
     IF v_user_id IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', 'Unauthorized.');
@@ -460,22 +460,96 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', 'Keterangan wajib diisi.');
     END IF;
 
+    -- Cek apakah sudah pernah mengajukan untuk tanggal yang sama
+    SELECT * INTO v_existing
+    FROM public.pengajuan_izin
+    WHERE user_id = v_user_id AND tanggal_mulai = p_tanggal
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    -- Jika ada pengajuan sebelumnya dan berstatus pending / approved
+    IF v_existing.id IS NOT NULL AND v_existing.status = 'approved' THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Pengajuan izin pada tanggal ini sudah disetujui sebelumnya.');
+    END IF;
+
+    IF v_existing.id IS NOT NULL AND v_existing.status = 'pending' THEN
+        -- Perbarui pengajuan yang masih pending
+        UPDATE public.pengajuan_izin
+        SET jenis = p_jenis,
+            keterangan = trim(p_keterangan),
+            bukti_surat_url = COALESCE(p_bukti_url, bukti_surat_url),
+            updated_at = now()
+        WHERE id = v_existing.id
+        RETURNING * INTO v_leave;
+
+        RETURN jsonb_build_object(
+            'success', true,
+            'leave', to_jsonb(v_leave),
+            'message', 'Pengajuan izin berhasil diperbarui dan menunggu verifikasi.'
+        );
+    END IF;
+
+    -- Jika belum ada ATAU jika pengajuan sebelumnya berstatus 'rejected' (BISA AJUKAN ULANG)
     INSERT INTO public.pengajuan_izin (
         user_id, tanggal_mulai, tanggal_selesai, jenis, keterangan, bukti_surat_url, status
     ) VALUES (
-        v_user_id, p_tanggal, p_tanggal, p_jenis, trim(p_keterangan), p_bukti_url, 'approved'
+        v_user_id, p_tanggal, p_tanggal, p_jenis, trim(p_keterangan), p_bukti_url, 'pending'
     )
     RETURNING * INTO v_leave;
 
+    RETURN jsonb_build_object(
+        'success', true,
+        'leave', to_jsonb(v_leave),
+        'message', 'Pengajuan izin berhasil dikirim dan menunggu verifikasi Guru Piket / Admin.'
+    );
+END;
+$$;
+
+-- Verifikasi / Approval Pengajuan Izin oleh Guru Piket / Admin
+CREATE OR REPLACE FUNCTION public.approve_pengajuan_izin(
+    p_leave_id UUID,
+    p_catatan TEXT DEFAULT ''
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_guru_id UUID := auth.uid();
+    v_role TEXT := public.get_my_role();
+    v_leave RECORD;
+    v_presensi RECORD;
+BEGIN
+    IF v_guru_id IS NULL OR v_role NOT IN ('guru', 'admin') THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Akses ditolak: Hanya Guru Piket atau Administrator.');
+    END IF;
+
+    SELECT * INTO v_leave FROM public.pengajuan_izin WHERE id = p_leave_id LIMIT 1;
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Data pengajuan izin tidak ditemukan.');
+    END IF;
+
+    UPDATE public.pengajuan_izin
+    SET status = 'approved',
+        diverifikasi_oleh = v_guru_id,
+        catatan_verifikasi = trim(COALESCE(p_catatan, '')),
+        updated_at = now()
+    WHERE id = p_leave_id
+    RETURNING * INTO v_leave;
+
+    -- Catat langsung ke tabel presensi sebagai izin/sakit resmi
     INSERT INTO public.presensi (
-        user_id, tanggal, jam_masuk, jam_pulang, status, metode_presensi, keterangan, catatan
+        user_id, tanggal, jam_masuk, jam_pulang, status, metode_presensi, dicatat_oleh, keterangan, catatan
     ) VALUES (
-        v_user_id, p_tanggal, NULL, NULL, p_jenis, 'manual_guru', trim(p_keterangan), trim(p_keterangan)
+        v_leave.user_id, v_leave.tanggal_mulai, NULL, NULL, v_leave.jenis, 'manual_guru', v_guru_id, v_leave.keterangan, trim(COALESCE(p_catatan, 'Disetujui Guru Piket'))
     )
     ON CONFLICT (user_id, tanggal) DO UPDATE SET
         status = EXCLUDED.status,
         jam_masuk = NULL,
         jam_pulang = NULL,
+        metode_presensi = 'manual_guru',
+        dicatat_oleh = v_guru_id,
         keterangan = EXCLUDED.keterangan,
         catatan = EXCLUDED.catatan
     RETURNING * INTO v_presensi;
@@ -484,7 +558,54 @@ BEGIN
         'success', true,
         'leave', to_jsonb(v_leave),
         'presensi', to_jsonb(v_presensi),
-        'message', 'Pengajuan berhasil dicatat.'
+        'message', 'Pengajuan izin berhasil disetujui.'
+    );
+END;
+$$;
+
+-- Tolak Pengajuan Izin oleh Guru Piket / Admin
+CREATE OR REPLACE FUNCTION public.reject_pengajuan_izin(
+    p_leave_id UUID,
+    p_catatan TEXT DEFAULT 'Pengajuan izin ditolak.'
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_guru_id UUID := auth.uid();
+    v_role TEXT := public.get_my_role();
+    v_leave RECORD;
+BEGIN
+    IF v_guru_id IS NULL OR v_role NOT IN ('guru', 'admin') THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Akses ditolak: Hanya Guru Piket atau Administrator.');
+    END IF;
+
+    SELECT * INTO v_leave FROM public.pengajuan_izin WHERE id = p_leave_id LIMIT 1;
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Data pengajuan izin tidak ditemukan.');
+    END IF;
+
+    UPDATE public.pengajuan_izin
+    SET status = 'rejected',
+        diverifikasi_oleh = v_guru_id,
+        catatan_verifikasi = trim(COALESCE(p_catatan, 'Pengajuan izin ditolak.')),
+        updated_at = now()
+    WHERE id = p_leave_id
+    RETURNING * INTO v_leave;
+
+    -- Jika sebelumnya ada presensi manual yang dibuat oleh pengajuan ini, bersihkan
+    DELETE FROM public.presensi
+    WHERE user_id = v_leave.user_id
+      AND tanggal = v_leave.tanggal_mulai
+      AND status IN ('izin', 'sakit')
+      AND (dicatat_oleh = v_guru_id OR dicatat_oleh IS NULL);
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'leave', to_jsonb(v_leave),
+        'message', 'Pengajuan izin telah ditolak. Siswa dapat mengajukan ulang.'
     );
 END;
 $$;
@@ -927,6 +1048,8 @@ WITH CHECK (public.get_my_role() IN ('admin', 'guru'));
 GRANT EXECUTE ON FUNCTION public.submit_presensi_gps(DOUBLE PRECISION, DOUBLE PRECISION, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.scan_qr_presensi_siswa(TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.submit_pengajuan_izin(DATE, TEXT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.approve_pengajuan_izin(UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.reject_pengajuan_izin(UUID, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.reset_siswa_qr_token(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_rekap_signatory(TEXT, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_create_user(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT, TEXT) TO authenticated;
@@ -945,9 +1068,9 @@ SET foto_profil_url = '',
 WHERE COALESCE(foto_profil_url, '') <> '' OR foto_update_count <> 0;
 
 -- Bersihkan foto presensi (foto_masuk_url, foto_pulang_url) dan bukti izin lama:
--- - Jika p_retention_days NULL (default): hapus seluruh media sebelum awal bulan berjalan (ganti bulan)
--- - Jika p_retention_days diisi angka >= 0: hapus media lebih lama dari N hari terakhir
-CREATE OR REPLACE FUNCTION public.cleanup_old_attendance_media(p_retention_days INT DEFAULT NULL)
+-- - Default p_retention_days = 365: hapus media bukti yang berumur lebih dari 1 tahun (365 hari)
+-- - Nilai hari dapat disesuaikan sesuai kebutuhan retensi sekolah
+CREATE OR REPLACE FUNCTION public.cleanup_old_attendance_media(p_retention_days INT DEFAULT 365)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -965,7 +1088,7 @@ BEGIN
     END IF;
 
     IF p_retention_days IS NULL THEN
-        v_cutoff_date := date_trunc('month', (now() AT TIME ZONE 'Asia/Jakarta'))::date;
+        v_cutoff_date := v_today - 365; -- Default 1 Tahun (365 hari)
     ELSE
         v_cutoff_date := v_today - GREATEST(p_retention_days, 0);
     END IF;
@@ -1038,12 +1161,12 @@ BEGIN
             PERFORM cron.unschedule(v_job_id);
         END IF;
 
-        -- Jalan tiap hari pukul 02:00 WIB (19:00 UTC) untuk menghapus foto bulan-bulan sebelumnya + pangkas log cron > 7 hari
+        -- Jalan tiap hari pukul 02:00 WIB (19:00 UTC) untuk membersihkan berkas lampiran > 1 tahun (365 hari)
         PERFORM cron.schedule(
-            'cleanup-attendance-media-monthly',
+            'cleanup-attendance-media-yearly',
             '0 19 * * *',
             $cron$
-            SELECT public.cleanup_old_attendance_media(NULL);
+            SELECT public.cleanup_old_attendance_media(365);
             DELETE FROM cron.job_run_details WHERE end_time < now() - interval '7 days';
             $cron$
         );

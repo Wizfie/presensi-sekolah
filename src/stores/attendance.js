@@ -1089,10 +1089,21 @@ export const useAttendanceStore = defineStore('attendance', () => {
             days[day] = { symbol: 'A', status: st, jam_masuk: null, jam_pulang: null }
             totalA++
           } else {
-            days[day] = { symbol: '', status: '', jam_masuk: null, jam_pulang: null }
+            days[day] = { symbol: '-', status: 'non_kbm', jam_masuk: null, jam_pulang: null }
           }
         } else {
-          days[day] = { symbol: '', status: '', jam_masuk: null, jam_pulang: null }
+          // Cek apakah di kelas ini pada tanggal tersebut ada kegiatan KBM yang tercatat
+          const classHasActivity = todayAttendances.value.some(
+            a => a.kelas === className && a.tanggal === dateStr && a.status && a.status !== 'non_kbm'
+          )
+          if (classHasActivity) {
+            // Hari aktif KBM namun siswa ini tidak hadir
+            days[day] = { symbol: 'A', status: 'alpa', jam_masuk: null, jam_pulang: null }
+            totalA++
+          } else {
+            // Hari non-KBM / tanpa sesi belajar tatap muka (Senin-Jumat libur di-handle dengan '-')
+            days[day] = { symbol: '-', status: 'non_kbm', jam_masuk: null, jam_pulang: null }
+          }
         }
       }
 
@@ -1335,7 +1346,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return { success: false, message: 'Data siswa tidak ditemukan.' }
   }
 
-  // Submit Pengajuan Izin Siswa (Supabase RPC + Mock fallback)
+  // Submit Pengajuan Izin Siswa (Bisa Ajukan Ulang jika Ditolak)
   async function submitLeaveRequest(data) {
     if (isSupabaseConfigured && supabase) {
       const { data: res, error } = await supabase.rpc('submit_pengajuan_izin', {
@@ -1354,16 +1365,28 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
       if (res.leave) {
         const mappedLeave = mapLeaveRow(res.leave)
-        leaveRequests.value.unshift(mappedLeave)
+        const existingIdx = leaveRequests.value.findIndex(l => l.id === mappedLeave.id)
+        if (existingIdx !== -1) {
+          leaveRequests.value[existingIdx] = mappedLeave
+        } else {
+          leaveRequests.value.unshift(mappedLeave)
+        }
       }
-      if (res.presensi) {
-        upsertLocalAttendance(mapPresensiRow(res.presensi))
-      }
-      return { success: true, data: res.leave }
+      return { success: true, data: res.leave, message: res.message }
+    }
+
+    // Local Storage Mode
+    // Cek apakah ada pengajuan sebelumnya untuk tanggal yang sama
+    const existingIdx = leaveRequests.value.findIndex(
+      l => l.user_id === data.user_id && l.tanggal_mulai === data.tanggal_mulai
+    )
+
+    if (existingIdx !== -1 && leaveRequests.value[existingIdx].status === 'approved') {
+      return { success: false, message: 'Pengajuan izin pada tanggal ini sudah disetujui sebelumnya.' }
     }
 
     const newRequest = {
-      id: 'leave-' + Date.now(),
+      id: existingIdx !== -1 ? leaveRequests.value[existingIdx].id : ('leave-' + Date.now()),
       user_id: data.user_id,
       nama_lengkap: data.nama_lengkap,
       kelas: data.kelas,
@@ -1372,27 +1395,113 @@ export const useAttendanceStore = defineStore('attendance', () => {
       jenis: data.jenis,
       keterangan: data.keterangan,
       bukti_surat_url: data.bukti_surat_url || null,
-      status: 'approved',
-      created_at: new Date().toISOString()
+      status: 'pending', // Menunggu persetujuan Guru Piket / Admin
+      diverifikasi_oleh: null,
+      catatan_verifikasi: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }
-    leaveRequests.value.unshift(newRequest)
 
+    if (existingIdx !== -1) {
+      leaveRequests.value[existingIdx] = newRequest
+    } else {
+      leaveRequests.value.unshift(newRequest)
+    }
+
+    return {
+      success: true,
+      data: newRequest,
+      message: 'Pengajuan izin berhasil dikirim dan menunggu verifikasi Guru Piket / Admin.'
+    }
+  }
+
+  // Approval Pengajuan Izin oleh Guru Piket / Admin
+  async function approveLeaveRequest(requestId, teacherUser, catatan = '') {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('approve_pengajuan_izin', {
+        p_leave_id: requestId,
+        p_catatan: catatan || 'Disetujui Guru Piket'
+      })
+      if (error || !res?.success) {
+        return { success: false, message: error?.message || res?.message || 'Gagal menyetujui pengajuan izin.' }
+      }
+      if (res.leave) {
+        const mappedLeave = mapLeaveRow(res.leave)
+        const idx = leaveRequests.value.findIndex(l => l.id === requestId)
+        if (idx !== -1) leaveRequests.value[idx] = mappedLeave
+      }
+      if (res.presensi) {
+        upsertLocalAttendance(mapPresensiRow(res.presensi))
+      }
+      return { success: true, message: 'Pengajuan izin berhasil disetujui!' }
+    }
+
+    // Local Mode
+    const req = leaveRequests.value.find(l => l.id === requestId)
+    if (!req) return { success: false, message: 'Data pengajuan izin tidak ditemukan.' }
+
+    req.status = 'approved'
+    req.diverifikasi_oleh = teacherUser?.nama_lengkap || 'Guru Piket'
+    req.diverifikasi_oleh_id = teacherUser?.id
+    req.catatan_verifikasi = catatan || 'Disetujui Guru Piket'
+    req.updated_at = new Date().toISOString()
+
+    // Rekam langsung ke tabel presensi harian
     await setManualAttendance(
       {
-        id: data.user_id,
-        nama_lengkap: data.nama_lengkap,
-        kelas: data.kelas,
-        nomor_induk: data.nomor_induk || ''
+        id: req.user_id,
+        nama_lengkap: req.nama_lengkap,
+        kelas: req.kelas,
+        nomor_induk: req.nomor_induk || ''
       },
-      data.jenis,
+      req.jenis,
+      teacherUser,
       null,
       null,
-      null,
-      data.tanggal_mulai,
-      data.keterangan
+      req.tanggal_mulai,
+      req.keterangan
     )
 
-    return { success: true, data: newRequest }
+    return { success: true, message: `Pengajuan izin ${req.nama_lengkap} berhasil disetujui!` }
+  }
+
+  // Tolak Pengajuan Izin oleh Guru Piket / Admin (Siswa bisa ajukan ulang)
+  async function rejectLeaveRequest(requestId, teacherUser, catatan = 'Pengajuan izin ditolak.') {
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('reject_pengajuan_izin', {
+        p_leave_id: requestId,
+        p_catatan: catatan
+      })
+      if (error || !res?.success) {
+        return { success: false, message: error?.message || res?.message || 'Gagal menolak pengajuan izin.' }
+      }
+      if (res.leave) {
+        const mappedLeave = mapLeaveRow(res.leave)
+        const idx = leaveRequests.value.findIndex(l => l.id === requestId)
+        if (idx !== -1) leaveRequests.value[idx] = mappedLeave
+      }
+      return { success: true, message: 'Pengajuan izin telah ditolak.' }
+    }
+
+    // Local Mode
+    const req = leaveRequests.value.find(l => l.id === requestId)
+    if (!req) return { success: false, message: 'Data pengajuan izin tidak ditemukan.' }
+
+    req.status = 'rejected'
+    req.diverifikasi_oleh = teacherUser?.nama_lengkap || 'Guru Piket'
+    req.diverifikasi_oleh_id = teacherUser?.id
+    req.catatan_verifikasi = catatan || 'Pengajuan izin ditolak.'
+    req.updated_at = new Date().toISOString()
+
+    // Hapus presensi izin jika sebelumnya pernah ada
+    const pIdx = todayAttendances.value.findIndex(
+      a => a.user_id === req.user_id && a.tanggal === req.tanggal_mulai && ['izin', 'sakit'].includes(a.status)
+    )
+    if (pIdx !== -1) {
+      todayAttendances.value.splice(pIdx, 1)
+    }
+
+    return { success: true, message: `Pengajuan izin ${req.nama_lengkap} telah ditolak.` }
   }
 
   // ===================== CRUD GURU PIKET / TUTOR =====================
@@ -1891,6 +2000,8 @@ export const useAttendanceStore = defineStore('attendance', () => {
     batchSetAllCheckOut,
     getMonthlyAttendanceMatrix,
     submitLeaveRequest,
+    approveLeaveRequest,
+    rejectLeaveRequest,
     updateSchoolSettings,
     updateRekapSignatory,
     resetStudentQrToken,

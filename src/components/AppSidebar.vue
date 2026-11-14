@@ -16,15 +16,16 @@
       </div>
     </div>
 
-    <!-- User Profile Block -->
+    <!-- User Profile Block (Clickable card & avatar to open profile modal) -->
     <div class="px-4 py-4 border-b border-slate-100">
-      <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+      <div
+        @click="showProfileModal = true"
+        title="Klik untuk melihat profil & ganti kata sandi"
+        class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-blue-50/70 border border-slate-100 hover:border-blue-200 transition-all cursor-pointer group select-none"
+      >
         <!-- Avatar Button (Clickable: open profile & change password) -->
-        <button
-          type="button"
-          @click="showProfileModal = true"
-          title="Klik foto untuk melihat profil & ganti kata sandi"
-          class="relative shrink-0 cursor-pointer focus:outline-none transition-transform active:scale-95 group text-left"
+        <div
+          class="relative shrink-0 transition-transform group-hover:scale-105 active:scale-95 text-left"
         >
           <img
             v-if="authStore.user?.foto_profil_url"
@@ -42,10 +43,10 @@
             class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white"
             title="Online"
           ></span>
-        </button>
+        </div>
 
-        <div class="min-w-0">
-          <p class="text-xs font-semibold text-slate-800 truncate leading-tight">{{ authStore.user?.nama_lengkap }}</p>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs font-semibold text-slate-800 truncate leading-tight group-hover:text-blue-700 transition-colors">{{ authStore.user?.nama_lengkap }}</p>
           <p class="text-[11px] text-slate-400 mt-0.5 truncate">{{ authStore.user?.nomor_induk }}</p>
         </div>
         <span class="ml-auto shrink-0 text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">

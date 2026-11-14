@@ -459,8 +459,9 @@
       <!-- ============================================================== -->
       <!-- TAB 4: PENGAJUAN IZIN / SAKIT -->
       <!-- ============================================================== -->
-      <div v-if="activeTab === 'izin'" class="max-w-lg mx-auto space-y-4">
-        <Card title="Pengajuan Izin / Sakit" description="Ajukan izin tidak hadir belajar jika berhalangan">
+      <div v-if="activeTab === 'izin'" class="max-w-xl mx-auto space-y-5">
+        <!-- Form Pengajuan Izin / Sakit -->
+        <Card title="Pengajuan Izin / Sakit" description="Ajukan izin tidak hadir belajar jika berhalangan. Guru Piket akan memverifikasi permohonan Anda.">
           <form @submit.prevent="handleIzinSubmit" class="space-y-4">
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">Jenis Ketidakhadiran</label>
@@ -469,21 +470,23 @@
                   type="button"
                   @click="izinForm.jenis = 'izin'"
                   :class="[
-                    'py-2 px-3 rounded-xl border text-xs font-bold transition cursor-pointer',
-                    izinForm.jenis === 'izin' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 border-slate-200 text-slate-700'
+                    'py-2 px-3 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5',
+                    izinForm.jenis === 'izin' ? 'bg-blue-600 text-white border-blue-600 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-700'
                   ]"
                 >
-                  Izin Keperluan
+                  <span class="material-icons text-sm">assignment</span>
+                  <span>Izin Keperluan</span>
                 </button>
                 <button
                   type="button"
                   @click="izinForm.jenis = 'sakit'"
                   :class="[
-                    'py-2 px-3 rounded-xl border text-xs font-bold transition cursor-pointer',
-                    izinForm.jenis === 'sakit' ? 'bg-amber-500 text-white border-amber-500' : 'bg-slate-50 border-slate-200 text-slate-700'
+                    'py-2 px-3 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5',
+                    izinForm.jenis === 'sakit' ? 'bg-amber-500 text-white border-amber-500 shadow-xs' : 'bg-slate-50 border-slate-200 text-slate-700'
                   ]"
                 >
-                  Sakit
+                  <span class="material-icons text-sm">medical_services</span>
+                  <span>Sakit</span>
                 </button>
               </div>
             </div>
@@ -504,20 +507,231 @@
                 v-model="izinForm.keterangan"
                 rows="3"
                 required
-                placeholder="Contoh: Sakit demam tinggi, beristirahat di rumah..."
+                placeholder="Contoh: Sakit demam tinggi, beristirahat di rumah sesuai anjuran dokter..."
                 class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               ></textarea>
             </div>
 
+            <!-- Upload Bukti Surat Dokter / Surat Izin (High-Clarity Client Compression) -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                Foto Surat Dokter / Surat Izin
+                <span class="text-slate-400 font-normal">(Dianjurkan / Opsional)</span>
+              </label>
+
+              <!-- State: Foto sudah dipilih / terkompresi -->
+              <div v-if="suratBuktiBase64" class="p-3 bg-blue-50/60 rounded-xl border border-blue-200 flex items-center gap-3">
+                <div
+                  @click="lightboxPhoto = suratBuktiBase64"
+                  class="w-14 h-14 rounded-lg overflow-hidden border border-blue-300 shrink-0 cursor-pointer group relative shadow-2xs"
+                  title="Klik untuk melihat pratinjau penuh"
+                >
+                  <img :src="suratBuktiBase64" alt="Bukti Surat" class="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  <div class="absolute inset-0 bg-slate-900/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="material-icons text-white text-base">zoom_in</span>
+                  </div>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-bold text-slate-800 truncate">{{ suratFileName || 'Foto Surat Terlampir' }}</p>
+                  <p class="text-[10px] text-emerald-600 font-semibold mt-0.5 flex items-center gap-1">
+                    <span class="material-icons text-xs">check_circle</span>
+                    <span>Terkonfirmasi &amp; Tajam Terbaca</span>
+                  </p>
+                  <div class="flex items-center gap-2 mt-1.5">
+                    <button
+                      type="button"
+                      @click="lightboxPhoto = suratBuktiBase64"
+                      class="text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer inline-flex items-center gap-0.5"
+                    >
+                      <span class="material-icons text-xs">visibility</span>
+                      <span>Periksa Foto</span>
+                    </button>
+                    <span class="text-slate-300">&bull;</span>
+                    <button
+                      type="button"
+                      @click="removeSuratPhoto"
+                      class="text-[11px] font-bold text-rose-600 hover:text-rose-800 cursor-pointer inline-flex items-center gap-0.5"
+                    >
+                      <span class="material-icons text-xs">delete_outline</span>
+                      <span>Hapus</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- State: Input unggah baru -->
+              <div v-else>
+                <label
+                  class="border-2 border-dashed border-slate-300 hover:border-blue-400 bg-slate-50 hover:bg-blue-50/30 transition-all rounded-xl p-3.5 flex flex-col items-center justify-center text-center cursor-pointer group"
+                >
+                  <input
+                    ref="suratInputRef"
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                    class="hidden"
+                    @change="handleSuratFileChange"
+                    :disabled="isCompressingSurat"
+                  />
+                  <span class="material-icons text-2xl text-slate-400 group-hover:text-blue-600 transition-colors mb-1">
+                    {{ isCompressingSurat ? 'hourglass_top' : 'add_photo_alternate' }}
+                  </span>
+                  <p class="text-xs font-bold text-slate-700 group-hover:text-blue-700">
+                    {{ isCompressingSurat ? 'Memproses & Mengompresi Surat...' : 'Ambil Foto / Unggah Surat' }}
+                  </p>
+                  <p class="text-[10px] text-slate-400 mt-0.5">
+                    Format JPG/PNG (Otomatis dioptimalkan tajam dan ringan &le; 200KB)
+                  </p>
+                </label>
+              </div>
+            </div>
+
             <button
               type="submit"
-              :disabled="isSubmittingIzin"
-              class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              :disabled="isSubmittingIzin || isCompressingSurat"
+              class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
             >
-              {{ isSubmittingIzin ? 'Mengirim Pengajuan...' : 'Kirim Pengajuan Izin' }}
+              <span class="material-icons text-sm">{{ isSubmittingIzin ? 'sync' : 'send' }}</span>
+              <span>{{ isSubmittingIzin ? 'Mengirim Pengajuan...' : 'Kirim Pengajuan Izin' }}</span>
             </button>
           </form>
         </Card>
+
+        <!-- Daftar Riwayat Pengajuan Izin Siswa (Approval & Reapply Flow) -->
+        <Card title="Riwayat Pengajuan Izin Anda" description="Status persetujuan oleh Guru Piket / Admin">
+          <div v-if="myLeaveRequests.length === 0" class="text-center py-6 text-slate-400 text-xs">
+            <span class="material-icons text-3xl text-slate-300 mb-1">inbox</span>
+            <p>Belum ada riwayat pengajuan izin.</p>
+          </div>
+
+          <div v-else class="space-y-3">
+            <div
+              v-for="req in myLeaveRequests"
+              :key="req.id"
+              class="p-3.5 bg-white rounded-xl border border-slate-200/80 shadow-2xs space-y-2.5"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span
+                      class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                      :class="req.jenis === 'sakit' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'"
+                    >
+                      {{ req.jenis === 'sakit' ? 'Sakit' : 'Izin' }}
+                    </span>
+                    <span class="text-xs font-bold text-slate-800 font-mono">
+                      {{ formatIndonesianDate(req.tanggal_mulai) }}
+                    </span>
+                  </div>
+                  <p class="text-xs text-slate-600 mt-1 italic leading-snug">
+                    "{{ req.keterangan || '-' }}"
+                  </p>
+                </div>
+
+                <!-- Status Badge -->
+                <div class="shrink-0 text-right">
+                  <span
+                    v-if="req.status === 'approved'"
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"
+                  >
+                    <span class="material-icons text-[12px]">check_circle</span>
+                    <span>Disetujui</span>
+                  </span>
+                  <span
+                    v-else-if="req.status === 'rejected'"
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200"
+                  >
+                    <span class="material-icons text-[12px]">cancel</span>
+                    <span>Ditolak</span>
+                  </span>
+                  <span
+                    v-else
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 animate-pulse"
+                  >
+                    <span class="material-icons text-[12px]">pending</span>
+                    <span>Menunggu Verifikasi</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Foto Bukti Surat & Catatan Penolakan / Pengesahan -->
+              <div class="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                <!-- Lampiran Dokumen -->
+                <div v-if="req.bukti_surat_url" class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    @click="lightboxPhoto = req.bukti_surat_url"
+                    class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200 cursor-pointer"
+                  >
+                    <span class="material-icons text-xs">image</span>
+                    <span>Lihat Bukti Surat</span>
+                  </button>
+                </div>
+                <div v-else class="text-[11px] text-slate-400 italic">
+                  Tanpa lampiran surat
+                </div>
+
+                <!-- Verifikator Info -->
+                <div v-if="req.diverifikasi_oleh" class="text-[10px] text-slate-500">
+                  Diverifikasi oleh: <strong class="text-slate-700">{{ req.diverifikasi_oleh }}</strong>
+                </div>
+              </div>
+
+              <!-- Catatan Penolakan & Tombol Ajukan Ulang (Reapply) -->
+              <div v-if="req.status === 'rejected'" class="p-2.5 bg-rose-50 rounded-xl border border-rose-200 space-y-2">
+                <div class="flex items-start gap-1.5 text-xs text-rose-800">
+                  <span class="material-icons text-sm text-rose-600 shrink-0 mt-0.5">info</span>
+                  <p class="text-[11px] leading-snug">
+                    <strong>Catatan Guru:</strong> {{ req.catatan_verifikasi || 'Pengajuan izin ditolak. Silakan ajukan ulang.' }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  @click="reapplyLeave(req)"
+                  class="w-full py-1.5 px-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95 shadow-2xs"
+                >
+                  <span class="material-icons text-sm">refresh</span>
+                  <span>Ajukan Ulang Izin Ini</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <!-- Lightbox Modal untuk Pratinjau Bukti Surat Penuh -->
+      <div
+        v-if="lightboxPhoto"
+        class="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-xs animate-fade-in"
+        @click.self="lightboxPhoto = null"
+      >
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200">
+          <div class="px-4 py-3 bg-slate-900 text-white flex items-center justify-between shrink-0">
+            <span class="text-xs font-bold flex items-center gap-1.5">
+              <span class="material-icons text-sm text-blue-400">description</span>
+              <span>Dokumen Surat Izin / Bukti Dokter (Resolusi Tinggi)</span>
+            </span>
+            <button
+              type="button"
+              @click="lightboxPhoto = null"
+              class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer"
+            >
+              <span class="material-icons text-base">close</span>
+            </button>
+          </div>
+          <div class="p-3 bg-slate-100 flex-1 overflow-auto flex items-center justify-center min-h-[300px]">
+            <img :src="lightboxPhoto" alt="Foto Bukti Surat" class="max-w-full max-h-[75vh] object-contain rounded-lg shadow-sm" />
+          </div>
+          <div class="px-4 py-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
+            <span class="text-[11px] text-slate-500">Teks tulisan tangan &amp; stempel klinik dapat di-zoom</span>
+            <button
+              type="button"
+              @click="lightboxPhoto = null"
+              class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-bold text-xs cursor-pointer"
+            >
+              Tutup Pratinjau
+            </button>
+          </div>
+        </div>
       </div>
 
     </main>
@@ -633,6 +847,7 @@ import confetti from 'canvas-confetti'
 import { useAuthStore } from '../stores/auth'
 import { useAttendanceStore } from '../stores/attendance'
 import { getWibDateStr } from '../utils/dateTime'
+import { compressDocumentFile } from '../utils/imageCompressor'
 import Navbar from '../components/Navbar.vue'
 import AppSidebar from '../components/AppSidebar.vue'
 import MobileDrawer from '../components/MobileDrawer.vue'
@@ -871,13 +1086,20 @@ watch(activeTab, (tab) => {
   }
 })
 
-// Pengajuan Izin Form & Modal Sukses
+// Pengajuan Izin Form, Bukti Surat & Modal Sukses
 const isSubmittingIzin = ref(false)
 const showIzinSuccessModal = ref(false)
+const suratBuktiBase64 = ref('')
+const suratFileName = ref('')
+const isCompressingSurat = ref(false)
+const suratInputRef = ref(null)
+const lightboxPhoto = ref(null)
+
 const izinSuccessData = ref({
   jenis: 'izin',
   tanggal: '',
-  keterangan: ''
+  keterangan: '',
+  bukti_surat_url: null
 })
 
 const izinForm = ref({
@@ -885,6 +1107,48 @@ const izinForm = ref({
   tanggal: todayStr,
   keterangan: ''
 })
+
+const myLeaveRequests = computed(() => {
+  return (attendanceStore.leaveRequests || [])
+    .filter(l => l.user_id === currentUser.value?.id)
+    .sort((a, b) => new Date(b.created_at || b.tanggal_mulai) - new Date(a.created_at || a.tanggal_mulai))
+})
+
+async function handleSuratFileChange(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  try {
+    isCompressingSurat.value = true
+    const compressed = await compressDocumentFile(file, 1440, 1440, 0.82)
+    suratBuktiBase64.value = compressed
+    suratFileName.value = file.name
+    showToast('Foto surat berhasil diproses dengan resolusi tajam & siap dikirim!', 'success')
+  } catch (err) {
+    showToast(err.message || 'Gagal memproses file foto surat.', 'error')
+  } finally {
+    isCompressingSurat.value = false
+  }
+}
+
+function removeSuratPhoto() {
+  suratBuktiBase64.value = ''
+  suratFileName.value = ''
+  if (suratInputRef.value) suratInputRef.value.value = ''
+}
+
+function reapplyLeave(req) {
+  izinForm.value = {
+    jenis: req.jenis || 'izin',
+    tanggal: req.tanggal_mulai || todayStr,
+    keterangan: req.keterangan || ''
+  }
+  if (req.bukti_surat_url) {
+    suratBuktiBase64.value = req.bukti_surat_url
+    suratFileName.value = 'Dokumen Sebelumnya'
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+  showToast(`Form diisi untuk tanggal ${formatIndonesianDate(req.tanggal_mulai)}. Silakan periksa atau ganti foto surat, lalu kirim kembali.`, 'info')
+}
 
 async function handleIzinSubmit() {
   if (isSubmittingIzin.value) return
@@ -896,6 +1160,7 @@ async function handleIzinSubmit() {
   const submittedJenis = izinForm.value.jenis
   const submittedTanggal = izinForm.value.tanggal
   const submittedKeterangan = izinForm.value.keterangan.trim()
+  const submittedBukti = suratBuktiBase64.value || null
 
   isSubmittingIzin.value = true
   try {
@@ -907,7 +1172,8 @@ async function handleIzinSubmit() {
       tanggal_mulai: submittedTanggal,
       tanggal_selesai: submittedTanggal,
       jenis: submittedJenis,
-      keterangan: submittedKeterangan
+      keterangan: submittedKeterangan,
+      bukti_surat_url: submittedBukti
     })
 
     if (!res?.success) {
@@ -918,7 +1184,8 @@ async function handleIzinSubmit() {
     izinSuccessData.value = {
       jenis: submittedJenis,
       tanggal: submittedTanggal,
-      keterangan: submittedKeterangan
+      keterangan: submittedKeterangan,
+      bukti_surat_url: submittedBukti
     }
 
     try {
@@ -926,8 +1193,11 @@ async function handleIzinSubmit() {
     } catch (e) {}
 
     showIzinSuccessModal.value = true
-    showToast(`Pengajuan ${submittedJenis.toUpperCase()} berhasil dikirim!`, 'success')
+    showToast(`Pengajuan ${submittedJenis.toUpperCase()} berhasil dikirim! Menunggu verifikasi Guru Piket.`, 'success')
     izinForm.value.keterangan = ''
+    suratBuktiBase64.value = ''
+    suratFileName.value = ''
+    if (suratInputRef.value) suratInputRef.value.value = ''
   } catch (e) {
     showToast('Terjadi kesalahan saat mengirim pengajuan izin.', 'error')
   } finally {
