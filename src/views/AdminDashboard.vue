@@ -1705,68 +1705,77 @@
       </div>
 
       <!-- MODAL UBAH / RENAME NAMA KELAS (AMAN TANPA MERUSAK DATA) -->
-      <div v-if="isRenameModalOpen" class="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4">
-          <div class="flex items-center gap-2.5 text-blue-700 font-bold text-sm">
-            <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-              <span class="material-icons text-base text-blue-600">drive_file_rename_outline</span>
+      <Teleport to="body">
+        <div
+          v-if="isRenameModalOpen"
+          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150"
+          style="z-index: 100;"
+          @click.self="isRenameModalOpen = false"
+        >
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4">
+            <div class="flex items-center gap-2.5 text-blue-700 font-bold text-sm">
+              <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                <span class="material-icons text-base text-blue-600">drive_file_rename_outline</span>
+              </div>
+              <span>Ubah Nama Kelas</span>
             </div>
-            <span>Ubah Nama Kelas</span>
-          </div>
 
-          <div class="space-y-1">
-            <p class="text-xs text-slate-600">
-              Kelas Saat Ini: <strong class="text-slate-900">Kelas {{ classToRename }}</strong>
-            </p>
-            <p class="text-[11px] text-slate-500">
-              Terdaftar: <strong class="text-slate-700">{{ getStudentCountInClass(classToRename) }}</strong> siswa &bull; <strong class="text-slate-700">{{ getTeacherCountInClass(classToRename) }}</strong> guru binaan.
-            </p>
-          </div>
+            <div class="space-y-1">
+              <p class="text-xs text-slate-600">
+                Kelas Saat Ini: <strong class="text-slate-900">Kelas {{ classToRename }}</strong>
+              </p>
+              <p class="text-[11px] text-slate-500">
+                Terdaftar: <strong class="text-slate-700">{{ getStudentCountInClass(classToRename) }}</strong> siswa &bull; <strong class="text-slate-700">{{ getTeacherCountInClass(classToRename) }}</strong> guru binaan.
+              </p>
+            </div>
 
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">
-              Nama Baru Kelas:
-            </label>
-            <input
-              v-model="targetNewClassName"
-              type="text"
-              required
-              class="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm font-semibold uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              placeholder="Contoh: 12-A atau Paket C"
-              @input="renameError = ''"
-            />
-            <p v-if="renameError" class="text-xs text-rose-600 font-medium mt-1">
-              {{ renameError }}
-            </p>
-          </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">
+                Nama Baru Kelas:
+              </label>
+              <input
+                ref="renameInputRef"
+                v-model="targetNewClassName"
+                type="text"
+                required
+                class="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm font-semibold uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Contoh: 12-A atau Paket C"
+                @input="renameError = ''"
+                @keydown.enter.prevent="submitRenameClass"
+              />
+              <p v-if="renameError" class="text-xs text-rose-600 font-medium mt-1">
+                {{ renameError }}
+              </p>
+            </div>
 
-          <div class="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 text-[11px] text-blue-900 leading-relaxed flex items-start gap-1.5">
-            <span class="material-icons text-sm text-blue-600 shrink-0 mt-0.5">info</span>
-            <span>
-              <strong>Metode Kaskade Aman:</strong> Seluruh data siswa dan guru akan otomatis dialihkan ke nama baru. Riwayat presensi harian tetap utuh 100%.
-            </span>
-          </div>
+            <div class="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 text-[11px] text-blue-900 leading-relaxed flex items-start gap-1.5">
+              <span class="material-icons text-sm text-blue-600 shrink-0 mt-0.5">info</span>
+              <span>
+                <strong>Metode Kaskade Aman:</strong> Seluruh data siswa dan guru akan otomatis dialihkan ke nama baru. Riwayat presensi harian tetap utuh 100%.
+              </span>
+            </div>
 
-          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
-            <button
-              type="button"
-              @click="isRenameModalOpen = false"
-              class="py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-            >
-              Batal
-            </button>
-            <button
-              type="button"
-              :disabled="isSubmittingRename"
-              @click="submitRenameClass"
-              class="py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-60 rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-1"
-            >
-              <span class="material-icons text-sm">{{ isSubmittingRename ? 'sync' : 'save' }}</span>
-              <span>{{ isSubmittingRename ? 'Menyimpan...' : 'Simpan Nama' }}</span>
-            </button>
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                @click="isRenameModalOpen = false"
+                class="py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                :disabled="isSubmittingRename"
+                @click="submitRenameClass"
+                class="py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-60 rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-1"
+              >
+                <span class="material-icons text-sm">{{ isSubmittingRename ? 'sync' : 'save' }}</span>
+                <span>{{ isSubmittingRename ? 'Menyimpan...' : 'Simpan Nama' }}</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </Teleport>
     </main>
   </div>
 </template>
@@ -2071,12 +2080,19 @@ const classToRename = ref('')
 const targetNewClassName = ref('')
 const renameError = ref('')
 const isSubmittingRename = ref(false)
+const renameInputRef = ref(null)
 
 function openRenameClass(className) {
   classToRename.value = className
   targetNewClassName.value = className
   renameError.value = ''
   isRenameModalOpen.value = true
+  nextTick(() => {
+    if (renameInputRef.value) {
+      renameInputRef.value.focus()
+      renameInputRef.value.select?.()
+    }
+  })
 }
 
 async function submitRenameClass() {
