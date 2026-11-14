@@ -756,19 +756,19 @@
             </div>
 
             <!-- Card QR Code Section -->
-            <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
-              <div>
-                <p class="text-[10px] font-bold text-slate-800">QR Presensi Siswa</p>
-                <p class="text-[9px] text-slate-400 mt-0.5">Pindai untuk presensi harian</p>
+            <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <p class="text-[11px] font-bold text-slate-800">QR Presensi Siswa</p>
+                <p class="text-[9.5px] text-slate-400 mt-0.5 leading-snug">Pindai untuk presensi harian</p>
                 <button
                   @click="resetToken(std.id)"
-                  class="no-print text-[10px] text-rose-600 hover:underline mt-1 block font-medium cursor-pointer"
+                  class="no-print text-[10px] text-rose-600 hover:underline mt-1.5 inline-block font-medium cursor-pointer"
                 >
                   Reset Token Baru
                 </button>
               </div>
-              <div class="p-1 bg-white rounded-xl border border-slate-200 shrink-0 shadow-2xs">
-                <canvas :ref="el => renderStudentQr(el, std.qr_token)" class="w-14 h-14 block"></canvas>
+              <div class="p-1.5 bg-white rounded-2xl border border-slate-200 shrink-0 shadow-2xs">
+                <canvas :ref="el => renderStudentQr(el, std.qr_token)" class="w-24 h-24 block"></canvas>
               </div>
             </div>
           </div>
@@ -2635,7 +2635,7 @@ function renderStudentQr(canvas, token) {
   if (!canvas || !token) return
   nextTick(() => {
     QRCode.toCanvas(canvas, token, {
-      width: 60,
+      width: 140,
       margin: 1,
       color: { dark: '#0f172a', light: '#ffffff' }
     })
