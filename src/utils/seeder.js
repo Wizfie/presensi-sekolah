@@ -159,12 +159,12 @@ export const defaultTeachers = [
 export const defaultAdmins = [
   {
     id: '11111111-1111-1111-1111-111111111111',
-    email: 'admin@pkbm.sch.id',
+    email: 'admin@mail.com',
     nama_lengkap: 'Administrator PKBM',
     nomor_induk: 'ADM-001',
     role: 'admin',
     jabatan: 'Pengelola PKBM Cahaya Mulia',
-    password: 'password123',
+    password: 'pkbmadmin',
     is_root: true,
     foto_profil_url: ''
   }

@@ -8,12 +8,13 @@ export const useAuthStore = defineStore('auth', () => {
   const mockUsers = [
     {
       id: '11111111-1111-1111-1111-111111111111',
-      email: 'admin@pkbm.sch.id',
-      alias_emails: ['admin@pkbm.sch.id', 'admin@sekolah.sch.id'],
+      email: 'admin@mail.com',
+      alias_emails: ['admin@mail.com', 'admin@pkbm.sch.id', 'admin@sekolah.sch.id'],
       nama_lengkap: 'Administrator PKBM',
       nomor_induk: 'ADM-001',
       role: 'admin',
       kelas: null,
+      password: 'pkbmadmin',
       qr_token: 'tok_admin_root',
       foto_profil_url: ''
     },
@@ -46,7 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
   ]
 
   const DEMO_CREDENTIALS = {
-    admin: 'admin@pkbm.sch.id',
+    admin: 'admin@mail.com',
     guru: 'tutor@pkbm.sch.id',
     siswa: 'ade@pkbm.sch.id'
   }
@@ -231,7 +232,7 @@ export const useAuthStore = defineStore('auth', () => {
       (u.alias_emails && u.alias_emails.some(a => a.toLowerCase() === clean))
     )
     if (mu) {
-      let pwd = mu.password || 'password123'
+      let pwd = mu.password || (mu.role === 'admin' ? 'pkbmadmin' : 'password123')
       if (mu.role === 'admin') {
         pwd = localStorage.getItem('presensi_admin_password') || pwd
       }
@@ -333,7 +334,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (!targetEmail) {
       return { success: false, message: 'Role demo tidak dikenali.' }
     }
-    return await login(targetEmail, 'password123')
+    const pwd = role === 'admin' ? 'pkbmadmin' : 'password123'
+    return await login(targetEmail, pwd)
   }
 
   async function logout() {

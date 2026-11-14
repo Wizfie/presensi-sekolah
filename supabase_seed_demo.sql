@@ -2,11 +2,11 @@
 -- DATA SEEDING DEMO AWAL: SISTEM PRESENSI PKBM CAHAYA MULIA (SUPABASE)
 -- Jalankan file ini di Supabase SQL Editor SETELAH menjalankan supabase_schema.sql
 --
--- Password default semua akun demo: password123
+-- Password default semua akun demo: password123 (khusus Admin Root: pkbmadmin)
 -- Akun Demo Utama (untuk Akses Demo Cepat / Login Manual):
---   Admin      : admin@pkbm.sch.id      (ID: ADM-001)
---   Guru Piket : tutor@pkbm.sch.id      (NIP: 198507122010011005)
---   Siswa      : ade@pkbm.sch.id        (NISN: 20241201)
+--   Admin      : admin@mail.com        (ID: ADM-001, Password: pkbmadmin)
+--   Guru Piket : tutor@pkbm.sch.id      (NIP: 198507122010011005, Password: password123)
+--   Siswa      : ade@pkbm.sch.id        (NISN: 20241201, Password: password123)
 -- ==============================================================================
 
 DO $$
@@ -15,6 +15,7 @@ DECLARE
     v_guru1_id   UUID := '22222222-2222-2222-2222-222222222222';
     v_guru2_id   UUID := '22222222-2222-2222-2222-222222222223';
     v_encrypted_pw TEXT := extensions.crypt('password123', extensions.gen_salt('bf'));
+    v_encrypted_admin_pw TEXT := extensions.crypt('pkbmadmin', extensions.gen_salt('bf'));
     v_jakarta_now TIMESTAMP := (now() AT TIME ZONE 'Asia/Jakarta');
     v_today DATE := v_jakarta_now::date;
     v_year INT := EXTRACT(YEAR FROM v_jakarta_now)::int;
@@ -85,7 +86,7 @@ BEGIN
     -- 3. SEED ADMIN & GURU PIKET DEMO
     FOR v_user_rec IN
         SELECT * FROM (VALUES
-            (v_admin_id, 'admin@pkbm.sch.id', 'Administrator PKBM', 'ADM-001', 'L', 'admin', NULL::text, ARRAY[]::text[], '', 'Pengelola PKBM Cahaya Mulia', true, 'tok_admin_root'),
+            (v_admin_id, 'admin@mail.com', 'Administrator PKBM', 'ADM-001', 'L', 'admin', NULL::text, ARRAY[]::text[], '', 'Pengelola PKBM Cahaya Mulia', true, 'tok_admin_root'),
             (v_guru1_id, 'tutor@pkbm.sch.id', 'Budi Santoso, S.Pd', '198507122010011005', 'L', 'guru', '12', ARRAY['12','11','10'], 'Guru Piket Harian, Tutor Paket C', 'Guru Piket', false, 'tok_guru_budi_secure'),
             (v_guru2_id, 'siti.tutor@pkbm.sch.id', 'Siti Nurhaliza, M.Pd', '199003152015022003', 'P', 'guru', '11', ARRAY['12','11'], 'Tutor Bahasa Indonesia, Wali Paket C', 'Tutor', false, 'tok_guru_siti_secure')
         ) AS t(uid, email, nama, nip, jk, role_name, kls, kls_diajar, mapel, jbt, root_flag, qr)
@@ -97,7 +98,8 @@ BEGIN
             raw_app_meta_data, raw_user_meta_data, banned_until, created_at, updated_at
         ) VALUES (
             '00000000-0000-0000-0000-000000000000',
-            v_user_rec.uid, 'authenticated', 'authenticated', v_user_rec.email, v_encrypted_pw,
+            v_user_rec.uid, 'authenticated', 'authenticated', v_user_rec.email,
+            CASE WHEN v_user_rec.uid = v_admin_id THEN v_encrypted_admin_pw ELSE v_encrypted_pw END,
             now(), '', '', '', '',
             '{"provider":"email","providers":["email"]}'::jsonb,
             jsonb_build_object('nama_lengkap', v_user_rec.nama, 'role', v_user_rec.role_name),

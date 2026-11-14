@@ -60,12 +60,11 @@ npm install
 1. Buat project baru di [supabase.com](https://supabase.com) (pilih region *Southeast Asia / Singapore*).
 2. Buka **SQL Editor -> New Query**, salin dan jalankan **`supabase_schema.sql`** untuk membuat tabel, RLS policies, RPC functions, trigger keamanan, dan Realtime publication.
 3. *(Opsional untuk demo awal)* Jalankan **`supabase_seed_demo.sql`** di **SQL Editor** untuk mengisi:
-   - Root Admin (`admin@pkbm.sch.id` / `ADM-001`)
-   - 2 Guru Piket/Tutor (`tutor@pkbm.sch.id` / `198507122010011005`)
-   - 33 Siswa demo Kelas 10, 11, dan 12 (mis. `ade@pkbm.sch.id` / `20241201`)
+   - Root Admin (`admin@mail.com` / `ADM-001`, password default: `pkbmadmin`)
+   - 2 Guru Piket/Tutor (`tutor@pkbm.sch.id` / `198507122010011005`, password: `password123`)
+   - 33 Siswa demo Kelas 10, 11, dan 12 (mis. `ade@pkbm.sch.id` / `20241201`, password: `password123`)
    - Pengaturan lokasi GPS PKBM & riwayat presensi bulan berjalan
-   - Password default seluruh akun demo: `password123`
-4. Setelah sesi demo selesai dan ingin masuk data sekolah asli, jalankan **`supabase_clean_demo.sql`** di **SQL Editor** (menghapus data transaksi & akun demo, menyisakan Root Admin `ADM-001`, master kelas, dan konfigurasi GPS).
+4. Setelah sesi demo selesai dan ingin masuk data sekolah asli, jalankan **`supabase_clean_demo.sql`** di **SQL Editor** (menghapus seluruh riwayat presensi, izin, dan akun demo siswa/guru, menyisakan **HANYA 1 akun Super Administrator Root**: `admin@mail.com` dengan password default `pkbmadmin`, master kelas, dan konfigurasi GPS).
 
 ### Langkah 3 — Konfigurasi Environment Lokal
 
