@@ -37,7 +37,6 @@ Selamat datang di Buku Panduan Pengguna **Sistem Presensi Sekolah Digital PKBM C
    - [5.1 Monitoring Kehadiran Real-time](#51-monitoring-kehadiran-real-time)
    - [5.2 Verifikasi Laporan & Pengesahan Rekap Bulanan](#52-verifikasi-laporan--pengesahan-rekap-bulanan)
 6. [Tanya Jawab & Pemecahan Masalah (FAQ)](#6-tanya-jawab--pemecahan-masalah-faq)
-7. [Lampiran Kredensial Akun Demo & Pembersihan Database](#7-lampiran-kredensial-akun-demo--pembersihan-database)
 
 ---
 
@@ -450,43 +449,6 @@ Sistem telah dirancang secara *hybrid*. Siswa yang tidak membawa HP cukup membaw
 ### Q5: Apakah data riwayat absensi lama akan hilang saat ganti bulan?
 **Solusi:**
 **Tidak.** Seluruh riwayat data kehadiran (Hadir, Sakit, Izin, Alpa, Jam Masuk, Jam Pulang, Catatan) tersimpan permanen di database server. Yang dibersihkan secara berkala hanyalah cache file foto demi efisiensi kuota. Anda tetap dapat membuka, mencetak, atau mengekspor rekapitulasi absensi bulan-bulan yang telah lewat kapan saja.
-
----
-
-## 7. Lampiran Kredensial Akun Demo & Pembersihan Database
-
-Bagi tim evaluator, penguji, atau pengelola yang ingin menguji sistem menggunakan data seeder awal demo (`supabase_seed_demo.sql`), berikut adalah rincian kredensial akun login resmi:
-
-### A. Tabel Kredensial Akun Demo
-
-| No | Peran / Jabatan | Username / Login ID | Email Sistem | Password Default | Keterangan Akun |
-|:---:|---|---|---|---|---|
-| 1 | **Super Admin Root** | `admin@mail.com` atau `ADM-001` | `admin@mail.com` | **`pkbmadmin`** | Administrator Utama PKBM Cahaya Mulia (Akses Penuh) |
-| 2 | **Guru Piket 1** | `guru1@mail.com` atau NIP `198507122010011005` | `guru1@mail.com` | **`pkbmguru1`** | Budi Santoso, S.Pd (Pengampu & Piket Kelas 10, 11, 12) |
-| 3 | **Guru Piket 2** | `guru2@mail.com` atau NIP `199003152015022003` | `guru2@mail.com` | **`pkbmguru2`** | Siti Nurhaliza, M.Pd (Pengampu & Piket Kelas 10, 11, 12) |
-| 4 | **Siswa Kelas 12** | NISN `1201` s/d `1210` | `[nisn]@mail.com` | **`pkbm[nisn]`** *(contoh: `pkbm1201`)* | 10 Siswa (Demo Utama: `1201` / `pkbm1201` - ADE IZA MUKTI) |
-| 5 | **Siswa Kelas 11** | NISN `1101` s/d `1110` | `[nisn]@mail.com` | **`pkbm[nisn]`** *(contoh: `pkbm1101`)* | 10 Siswa (Demo Utama: `1101` / `pkbm1101` - ADITYA RAMADHAN) |
-| 6 | **Siswa Kelas 10** | NISN `1001` s/d `1010` | `[nisn]@mail.com` | **`pkbm[nisn]`** *(contoh: `pkbm1001`)* | 10 Siswa (Demo Utama: `1001` / `pkbm1001` - ARIF RAHMAN) |
-
-> ℹ️ **Catatan Login Siswa:**
-> Siswa cukup memasukkan **NISN** saja (misal `1201`) dan password `pkbm1201`, tanpa perlu mengetikkan domain email.
-
----
-
-### B. Prosedur Pembersihan Data Pasca-Demo (`supabase_clean_demo.sql`)
-
-Setelah sesi evaluasi atau demonstrasi selesai dan sistem akan diserahkan untuk penggunaan operasional nyata:
-1. Buka **Supabase Dashboard** → masuk ke menu **SQL Editor**.
-2. Buka dan jalankan seluruh isi file **`supabase_clean_demo.sql`**.
-3. Skrip ini akan secara otomatis:
-   - Menghapus seluruh riwayat transaksi presensi dan permohonan izin demo.
-   - Menghapus akun 30 siswa demo dan akun 2 guru demo dari `auth.users` dan tabel profil.
-   - **Mengosongkan master kelas** (`classes`) agar sekolah dapat menambahkan rombel kelas riil sesuai kebutuhan.
-   - **Menyisakan HANYA 1 Akun Super Administrator Root**:
-     - **Email:** `admin@mail.com`
-     - **Password:** `pkbmadmin`
-     - **Nomor Induk:** `ADM-001`
-4. Sistem kini berada dalam kondisi bersih (*fresh operational ready*) dan siap digunakan secara langsung oleh sekolah.
 
 ---
 
