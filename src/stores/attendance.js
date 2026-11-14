@@ -95,6 +95,12 @@ export const useAttendanceStore = defineStore('attendance', () => {
     return fallback
   }
 
+  function saveStorage(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value))
+    } catch (e) {}
+  }
+
   // Migrasi data lokal lama jika tidak memakai Supabase
   if (!isSupabaseConfigured) {
     try {
