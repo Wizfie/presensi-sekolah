@@ -53,6 +53,7 @@ export const useUiStore = defineStore('ui', () => {
     confirmText: 'Ya, Lanjutkan',
     cancelText: 'Batal',
     type: 'warning', // 'danger' | 'warning' | 'info' | 'success'
+    singleButton: false,
     resolve: null
   })
 
@@ -65,8 +66,18 @@ export const useUiStore = defineStore('ui', () => {
         confirmText: options.confirmText || 'Ya, Lanjutkan',
         cancelText: options.cancelText || 'Batal',
         type: options.type || 'warning',
+        singleButton: Boolean(options.singleButton),
         resolve
       }
+    })
+  }
+
+  function showAlert(options = {}) {
+    return showConfirm({
+      ...options,
+      singleButton: true,
+      confirmText: options.confirmText || 'Tutup',
+      cancelText: ''
     })
   }
 
@@ -87,6 +98,7 @@ export const useUiStore = defineStore('ui', () => {
     checkFlashToast,
     confirmModal,
     showConfirm,
+    showAlert,
     resolveConfirm
   }
 })

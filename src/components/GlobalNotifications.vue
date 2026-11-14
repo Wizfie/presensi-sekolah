@@ -45,8 +45,9 @@
           </div>
 
           <!-- Tombol Aksi -->
-          <div class="grid grid-cols-2 gap-2.5 pt-1">
+          <div :class="uiStore.confirmModal.singleButton ? 'pt-1' : 'grid grid-cols-2 gap-2.5 pt-1'">
             <button
+              v-if="!uiStore.confirmModal.singleButton"
               type="button"
               @click="uiStore.resolveConfirm(false)"
               class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
@@ -58,6 +59,7 @@
               @click="uiStore.resolveConfirm(true)"
               class="w-full py-2.5 px-4 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
               :class="[
+                uiStore.confirmModal.singleButton ? 'bg-slate-800 hover:bg-slate-900 text-white' :
                 uiStore.confirmModal.type === 'danger' ? 'bg-rose-600 hover:bg-rose-700' :
                 uiStore.confirmModal.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700' :
                 uiStore.confirmModal.type === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' :

@@ -2147,20 +2147,12 @@ async function handleRemoveClass(className) {
 
   // 1. JIKA KELAS MASIH BERISI SISWA (SYARAT KOSONGKAN DATA BELUM TERPENUHI)
   if (studentCount > 0) {
-    const wantToViewStudents = await uiStore.showConfirm({
+    await uiStore.showAlert({
       title: 'Kelas Tidak Dapat Dihapus',
-      message: `Kelas "${className}" masih memiliki ${studentCount} siswa terdaftar.\n\nSyarat Hapus Kelas:\nData siswa di kelas ini harus dikosongkan terlebih dahulu.\n\nApakah Anda ingin membuka daftar siswa Kelas ${className} sekarang untuk memindahkan atau menghapus datanya?`,
-      confirmText: 'Buka Daftar Siswa',
-      cancelText: 'Tutup',
+      message: `Kelas "${className}" masih memiliki ${studentCount} siswa terdaftar.\n\nSyarat Hapus Kelas:\nData siswa di kelas ini harus dikosongkan terlebih dahulu.`,
+      confirmText: 'Tutup',
       type: 'warning'
     })
-
-    if (wantToViewStudents) {
-      isClassModalOpen.value = false
-      activeTab.value = 'students'
-      selectedClassFilter.value = className
-      searchQuery.value = ''
-    }
     return
   }
 
