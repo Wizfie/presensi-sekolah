@@ -730,6 +730,55 @@ BEGIN
 END;
 $$;
 
+-- Hapus Kelas Terdaftar (Syarat Mutlak: Data Siswa Harus Kosong Terlebih Dahulu)
+CREATE OR REPLACE FUNCTION public.delete_class(
+    p_name TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_role TEXT := public.get_my_role();
+    v_clean TEXT := upper(trim(COALESCE(p_name, '')));
+    v_student_count INT := 0;
+BEGIN
+    IF v_role <> 'admin' THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Akses ditolak: Hanya Administrator.');
+    END IF;
+
+    IF v_clean = '' THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Nama kelas tidak valid.');
+    END IF;
+
+    -- Validasi Syarat: Pastikan tidak ada siswa yang masih terdaftar di kelas ini
+    SELECT count(*) INTO v_student_count
+    FROM public.profiles
+    WHERE role = 'siswa' AND is_deleted = false AND kelas = v_clean;
+
+    IF v_student_count > 0 THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'message', 'Gagal: Kelas ' || v_clean || ' masih memiliki ' || v_student_count || ' siswa terdaftar. Kosongkan data siswa terlebih dahulu sebelum menghapus kelas.'
+        );
+    END IF;
+
+    -- Lepaskan kelas dari daftar kelas diajar guru (jika ada guru yang membina kelas ini)
+    UPDATE public.profiles
+    SET kelas_diajar = array_remove(kelas_diajar, v_clean)
+    WHERE role = 'guru' AND v_clean = ANY(kelas_diajar);
+
+    -- Hapus dari master classes
+    DELETE FROM public.classes WHERE name = v_clean;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'message', 'Kelas ' || v_clean || ' berhasil dihapus.'
+    );
+END;
+$$;
+
 -- ------------------------------------------------------------------------------
 -- 8. RPC FUNCTIONS: ADMIN MANAJEMEN AKUN (AUTH + PROFILES TANPA EXPOSE SERVICE KEY)
 -- ------------------------------------------------------------------------------
@@ -1116,6 +1165,7 @@ GRANT EXECUTE ON FUNCTION public.reject_pengajuan_izin(UUID, TEXT) TO authentica
 GRANT EXECUTE ON FUNCTION public.reset_siswa_qr_token(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_rekap_signatory(TEXT, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.rename_class(TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_class(TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_create_user(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_update_user(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT, TEXT, INT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_reset_user_password(UUID, TEXT) TO authenticated;

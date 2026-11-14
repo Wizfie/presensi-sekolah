@@ -1670,26 +1670,32 @@
                       <span class="text-[11px] font-bold">Ubah</span>
                     </button>
 
-                    <!-- Tombol Hapus Kelas (hanya jika 0 siswa) -->
+                    <!-- Tombol Hapus Kelas (Dengan Validasi Syarat Data Kosong) -->
                     <button
-                      v-if="!hasStudentsInClass(c)"
                       type="button"
                       @click="handleRemoveClass(c)"
-                      class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
-                      title="Hapus kelas (belum ada siswa)"
+                      class="h-7 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                      :class="hasStudentsInClass(c)
+                        ? 'bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200/80'
+                        : 'bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/60'"
+                      :title="hasStudentsInClass(c)
+                        ? `Hapus Kelas ${c} (Perlu kosongkan ${getStudentCountInClass(c)} siswa terlebih dahulu)`
+                        : `Hapus Kelas ${c} (Kelas kosong)`"
                     >
-                      <span class="material-icons text-[14px]">delete</span>
+                      <span class="material-icons text-[14px]">delete_outline</span>
+                      <span class="text-[11px] font-bold">Hapus</span>
                     </button>
-                    <span
-                      v-else
-                      class="w-7 h-7 flex items-center justify-center text-slate-300"
-                      title="Kelas terisi siswa aktif (Gunakan tombol Ubah jika ingin mengubah nama)"
-                    >
-                      <span class="material-icons text-[14px]">lock</span>
-                    </span>
                   </div>
                 </div>
               </div>
+
+              <!-- Petunjuk Aturan Hapus Kelas -->
+              <p class="text-[11px] text-slate-500 pt-1 leading-relaxed flex items-center gap-1.5">
+                <span class="material-icons text-xs text-amber-500 shrink-0">info</span>
+                <span>
+                  <strong>Syarat Hapus:</strong> Kelas harus dikosongkan datanya terlebih dahulu (0 siswa). Jika hanya ingin ganti nama rombel, gunakan tombol <strong>Ubah</strong>.
+                </span>
+              </p>
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
@@ -2136,24 +2142,57 @@ async function submitRenameClass() {
 }
 
 async function handleRemoveClass(className) {
-  if (hasStudentsInClass(className)) {
-    uiStore.showToast(`Kelas ${className} tidak dapat dihapus karena masih memiliki siswa terdaftar.`, 'warning')
+  const studentCount = getStudentCountInClass(className)
+  const teacherCount = getTeacherCountInClass(className)
+
+  // 1. JIKA KELAS MASIH BERISI SISWA (SYARAT KOSONGKAN DATA BELUM TERPENUHI)
+  if (studentCount > 0) {
+    const wantToViewStudents = await uiStore.showConfirm({
+      title: 'Kelas Tidak Dapat Dihapus',
+      message: `Kelas "${className}" masih memiliki ${studentCount} siswa terdaftar.\n\nSyarat Hapus Kelas:\nData siswa di kelas ini harus dikosongkan terlebih dahulu.\n\nApakah Anda ingin membuka daftar siswa Kelas ${className} sekarang untuk memindahkan atau menghapus datanya?`,
+      confirmText: 'Buka Daftar Siswa',
+      cancelText: 'Tutup',
+      type: 'warning'
+    })
+
+    if (wantToViewStudents) {
+      isClassModalOpen.value = false
+      activeTab.value = 'students'
+      selectedClassFilter.value = className
+      searchQuery.value = ''
+    }
     return
   }
+
+  // 2. JIKA KELAS SUDAH KOSONG (0 SISWA -> SYARAT TERPENUHI)
+  let confirmMessage = `Apakah Anda yakin ingin menghapus Kelas "${className}" dari daftar kelas?`
+  if (teacherCount > 0) {
+    confirmMessage += `\n\nCatatan: Kelas ini juga akan otomatis dilepas dari ${teacherCount} guru binaan terkait.`
+  }
+
   const confirmed = await uiStore.showConfirm({
     title: 'Hapus Kelas?',
-    message: `Hapus Kelas ${className} dari daftar kelas?`,
-    confirmText: 'Ya, Hapus',
+    message: confirmMessage,
+    confirmText: 'Ya, Hapus Kelas',
     cancelText: 'Batal',
     type: 'danger'
   })
+
   if (confirmed) {
     const res = await attendanceStore.deleteClass(className)
     if (res?.success === false) {
       uiStore.showToast(res.message || 'Gagal menghapus kelas.', 'error')
       return
     }
-    uiStore.showToast(`Kelas ${className} berhasil dihapus.`, 'success')
+
+    if (selectedClassFilter.value === className) {
+      selectedClassFilter.value = 'all'
+    }
+    if (studentForm.value.kelas === className) {
+      studentForm.value.kelas = attendanceStore.allClasses[0] || '10'
+    }
+
+    uiStore.showToast(`Kelas ${className} berhasil dihapus dari sistem.`, 'success')
   }
 }
 

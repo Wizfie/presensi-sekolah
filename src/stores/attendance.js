@@ -578,15 +578,59 @@ export const useAttendanceStore = defineStore('attendance', () => {
   }
 
   async function deleteClass(className) {
-    if (isSupabaseConfigured && supabase) {
-      const { error } = await supabase.from('classes').delete().eq('name', className)
-      if (error) {
-        return { success: false, message: error.message || 'Gagal menghapus kelas.' }
+    if (!className) return { success: false, message: 'Nama kelas tidak valid.' }
+    const clean = className.trim().toUpperCase()
+
+    // 1. Validasi Syarat: Pastikan tidak ada siswa yang masih terdaftar di kelas ini
+    const activeStudentsInClass = students.value.filter(s => s.kelas === clean && !s.is_deleted)
+    if (activeStudentsInClass.length > 0) {
+      return {
+        success: false,
+        message: `Kelas ${clean} tidak dapat dihapus karena masih memiliki ${activeStudentsInClass.length} siswa terdaftar. Kosongkan data siswa terlebih dahulu.`
       }
     }
-    classes.value = classes.value.filter(c => c !== className)
+
+    // 2. Hapus di database Supabase via RPC delete_class atau fallback direct delete
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('delete_class', { p_name: clean })
+      if (error || !res?.success) {
+        // Fallback: pastikan di database juga tidak ada siswa
+        const { data: checkData } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('role', 'siswa')
+          .eq('is_deleted', false)
+          .eq('kelas', clean)
+          .limit(1)
+
+        if (checkData && checkData.length > 0) {
+          return {
+            success: false,
+            message: `Kelas ${clean} tidak dapat dihapus karena masih memiliki siswa terdaftar di database. Kosongkan data siswa terlebih dahulu.`
+          }
+        }
+
+        const { error: delErr } = await supabase.from('classes').delete().eq('name', clean)
+        if (delErr) {
+          return { success: false, message: delErr.message || 'Gagal menghapus kelas.' }
+        }
+      }
+    }
+
+    // 3. Bersihkan dari state reaktif dan local storage
+    classes.value = classes.value.filter(c => c !== clean)
+
+    // Lepaskan kelas dari guru binaan jika ada
+    teachers.value.forEach(t => {
+      if (Array.isArray(t.kelas_diajar) && t.kelas_diajar.includes(clean)) {
+        t.kelas_diajar = t.kelas_diajar.filter(c => c !== clean)
+      }
+    })
+
     saveStorage('presensi_master_classes', classes.value)
-    return { success: true }
+    saveStorage('presensi_master_teachers', teachers.value)
+
+    return { success: true, message: `Kelas ${clean} berhasil dihapus.` }
   }
 
   // Ubah / Rename Nama Kelas Terdaftar Secara Kaskade Tanpa Merusak Data
