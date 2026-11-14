@@ -69,3 +69,14 @@ export function buildWibTimestampIso(dateStr, timeStr) {
   return `${baseDate}T${clock}+07:00`
 }
 
+export function formatIndonesianDate(dStr, options = { day: 'numeric', month: 'short', year: 'numeric' }) {
+  if (!dStr) return '-'
+  try {
+    const d = typeof dStr === 'string' && dStr.includes('T') ? new Date(dStr) : new Date(dStr + 'T00:00:00')
+    if (isNaN(d.getTime())) return dStr
+    return d.toLocaleDateString('id-ID', options)
+  } catch (e) {
+    return dStr
+  }
+}
+
