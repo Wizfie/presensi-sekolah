@@ -17,8 +17,9 @@ Panduan singkat deploy **Presensi PKBM Cahaya Mulia** dari setup awal, sesi demo
 2. **Aktifkan `pg_cron` *(direkomendasikan)*:** Buka **Database -> Extensions**, cari `pg_cron`, lalu geser toggle hingga aktif *(untuk auto-hapus media presensi bulanan)*.
 3. **Jalankan Schema:** Buka **SQL Editor -> New Query**, jalankan seluruh isi `supabase_schema.sql` (pastikan *Success*).
 3. **Isi Data Demo *(untuk demo awal)*:** Jalankan `supabase_seed_demo.sql` di **SQL Editor**.
-   - Password semua akun demo: `password123`
-   - **Admin Root:** `admin@pkbm.sch.id` (`ADM-001`) | **Guru Piket:** `tutor@pkbm.sch.id` (`198507122010011005`) | **Siswa siap demo:** `ade@pkbm.sch.id` (`20241201`)
+   - **Admin Root:** `admin@mail.com` (password: `pkbmadmin`)
+   - **Guru Piket:** `guru1@mail.com` (password: `pkbmguru1`) & `guru2@mail.com` (password: `pkbmguru2`)
+   - **Siswa Demo:** Login cukup pakai NISN (password format `pkbm[nisn]`, contoh NISN `1201` password: `pkbm1201`)
 4. **Ambil Key Supabase:**
    - **Cara cepat:** Klik **Connect** di bar atas -> **App Frameworks -> Vue**.
    - **Via menu:** Klik ikon gerigi **Project Settings**:

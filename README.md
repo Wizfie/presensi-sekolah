@@ -61,8 +61,8 @@ npm install
 2. Buka **SQL Editor -> New Query**, salin dan jalankan **`supabase_schema.sql`** untuk membuat tabel, RLS policies, RPC functions, trigger keamanan, dan Realtime publication.
 3. *(Opsional untuk demo awal)* Jalankan **`supabase_seed_demo.sql`** di **SQL Editor** untuk mengisi:
    - Root Admin (`admin@mail.com` / `ADM-001`, password default: `pkbmadmin`)
-   - 2 Guru Piket (`guru1@mail.com` & `guru2@mail.com`, password: `password123`)
-   - 30 Siswa demo (10 siswa per kelas untuk Kelas 10, 11, dan 12; login cukup pakai NISN tanpa email, contoh: `1201`, `1101`, `1001`, password: `password123`)
+   - 2 Guru Piket (`guru1@mail.com` password `pkbmguru1`, & `guru2@mail.com` password `pkbmguru2`)
+   - 30 Siswa demo (10 siswa per kelas untuk Kelas 10, 11, dan 12; login cukup pakai NISN tanpa email, password format `pkbm[nisn]`, contoh: NISN `1201` password `pkbm1201`, NISN `1101` password `pkbm1101`, NISN `1001` password `pkbm1001`)
    - Pengaturan lokasi GPS PKBM & riwayat presensi bulan berjalan
 4. Setelah sesi demo selesai dan ingin masuk data sekolah asli, jalankan **`supabase_clean_demo.sql`** di **SQL Editor** (menghapus seluruh riwayat presensi, izin, akun demo siswa/guru, serta mengosongkan master kelas agar bersih total, menyisakan **HANYA 1 akun Super Administrator Root**: `admin@mail.com` dengan password default `pkbmadmin`).
 

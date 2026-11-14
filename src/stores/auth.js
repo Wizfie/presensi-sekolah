@@ -29,7 +29,7 @@ export const useAuthStore = defineStore('auth', () => {
       kelas_diajar: ['10', '11', '12'],
       jam_masuk_default: '07:30',
       jam_pulang_default: '14:00',
-      password: 'password123',
+      password: 'pkbmguru1',
       qr_token: 'tok_guru_budi_secure',
       foto_profil_url: ''
     },
@@ -44,7 +44,7 @@ export const useAuthStore = defineStore('auth', () => {
       kelas_diajar: ['10', '11', '12'],
       jam_masuk_default: '07:30',
       jam_pulang_default: '14:00',
-      password: 'password123',
+      password: 'pkbmguru2',
       qr_token: 'tok_guru_siti_secure',
       foto_profil_url: ''
     },
@@ -57,7 +57,7 @@ export const useAuthStore = defineStore('auth', () => {
       nomor_induk: '1201',
       role: 'siswa',
       kelas: '12',
-      password: 'password123',
+      password: 'pkbm1201',
       qr_token: 'tok_std_1201',
       foto_profil_url: ''
     }
@@ -213,7 +213,7 @@ export const useAuthStore = defineStore('auth', () => {
         )
       )
       if (a) {
-        return { ...a, role: 'admin', password: a.password || 'password123' }
+        return { ...a, role: 'admin', password: a.password || 'pkbmadmin' }
       }
     } catch (e) {}
 
@@ -226,7 +226,7 @@ export const useAuthStore = defineStore('auth', () => {
         )
       )
       if (s) {
-        return { ...s, role: 'siswa', password: s.password || 'password123' }
+        return { ...s, role: 'siswa', password: s.password || (s.nomor_induk ? `pkbm${s.nomor_induk}` : 'pkbm1201') }
       }
     } catch (e) {}
 
@@ -239,7 +239,7 @@ export const useAuthStore = defineStore('auth', () => {
         )
       )
       if (t) {
-        return { ...t, role: 'guru', password: t.password || 'password123' }
+        return { ...t, role: 'guru', password: t.password || (t.email === 'guru2@mail.com' ? 'pkbmguru2' : 'pkbmguru1') }
       }
     } catch (e) {}
 
@@ -249,7 +249,7 @@ export const useAuthStore = defineStore('auth', () => {
       (u.alias_emails && u.alias_emails.some(a => a.toLowerCase() === clean))
     )
     if (mu) {
-      let pwd = mu.password || (mu.role === 'admin' ? 'pkbmadmin' : 'password123')
+      let pwd = mu.password || (mu.role === 'admin' ? 'pkbmadmin' : mu.role === 'guru' ? (mu.email === 'guru2@mail.com' ? 'pkbmguru2' : 'pkbmguru1') : `pkbm${mu.nomor_induk || '1201'}`)
       if (mu.role === 'admin') {
         pwd = localStorage.getItem('presensi_admin_password') || pwd
       }
@@ -276,7 +276,7 @@ export const useAuthStore = defineStore('auth', () => {
           message: 'Akun tidak ditemukan. Gunakan email terdaftar atau NISN/NIP yang valid.'
         }
       }
-      const expected = matched.password || 'password123'
+      const expected = matched.password || (matched.role === 'admin' ? 'pkbmadmin' : matched.role === 'guru' ? (matched.email === 'guru2@mail.com' ? 'pkbmguru2' : 'pkbmguru1') : `pkbm${matched.nomor_induk || '1201'}`)
       if (password !== expected) {
         return {
           success: false,
@@ -351,7 +351,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!targetEmail) {
       return { success: false, message: 'Role demo tidak dikenali.' }
     }
-    const pwd = role === 'admin' ? 'pkbmadmin' : 'password123'
+    const pwd = role === 'admin' ? 'pkbmadmin' : role === 'guru' ? 'pkbmguru1' : 'pkbm1201'
     return await login(targetEmail, pwd)
   }
 
@@ -393,7 +393,7 @@ export const useAuthStore = defineStore('auth', () => {
       return { success: true, message: 'Password akun berhasil diperbarui!' }
     }
 
-    if (oldPassword && user.value?.password && oldPassword !== user.value.password && user.value.password !== 'password123') {
+    if (oldPassword && user.value?.password && oldPassword !== user.value.password) {
       return { success: false, message: 'Password lama tidak cocok.' }
     }
 
