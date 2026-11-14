@@ -1612,48 +1612,17 @@
           </div>
 
           <form @submit.prevent="submitCreateClass" class="space-y-4 mt-4">
-            <!-- Pilihan Cepat Preset Tingkat / Jenjang PKBM -->
+            <!-- Input Nama / Nomor Kelas Manual (Langsung Tanpa Pilihan Cepat) -->
             <div>
-              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                Pilihan Cepat (Tingkat / Paket Kesetaraan)
-              </label>
-              <div class="space-y-2">
-                <div v-for="group in presetClassOptions" :key="group.label" class="flex items-center gap-1.5 flex-wrap">
-                  <span class="text-[11px] font-semibold text-slate-500 w-24 shrink-0">{{ group.label }}:</span>
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <button
-                      v-for="item in group.items"
-                      :key="item"
-                      type="button"
-                      @click="selectPresetClass(item)"
-                      class="px-2.5 py-1 rounded-lg text-xs font-bold border transition cursor-pointer"
-                      :class="newClassNameInput === item
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                        : attendanceStore.allClasses.includes(item)
-                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
-                          : 'bg-white hover:bg-blue-50 text-slate-700 border-slate-200 hover:border-blue-300'"
-                      :disabled="attendanceStore.allClasses.includes(item)"
-                      :title="attendanceStore.allClasses.includes(item) ? `Kelas ${item} sudah terdaftar` : `Pilih Kelas ${item}`"
-                    >
-                      {{ item }}
-                      <span v-if="attendanceStore.allClasses.includes(item)" class="text-[9px] font-normal ml-0.5">✓</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Input Nama / Nomor Kelas Manual -->
-            <div class="pt-2 border-t border-slate-100">
               <label class="block text-xs font-semibold text-slate-700 mb-1">
-                Nama / Nomor Tingkat Kelas
+                Nama / Nomor Tingkat Kelas Baru
               </label>
               <input
                 ref="newClassNameInputRef"
                 v-model="newClassNameInput"
                 type="text"
                 required
-                placeholder="Contoh: 12, 11, atau 10 (atau 12-A)"
+                placeholder="Contoh: 12, 11, 10, atau Paket C"
                 class="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm font-semibold uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder:normal-case placeholder:font-normal placeholder:text-slate-400"
                 @input="classError = ''"
               />
@@ -1662,45 +1631,135 @@
                 <span>{{ classError }}</span>
               </p>
               <p v-else class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
-                Format standar PKBM: Cukup masukkan nomor kelas (contoh: <strong>12</strong>, <strong>11</strong>, <strong>10</strong>) atau nama rombel (contoh: <strong>12-A</strong>).
+                Ketik nama atau nomor kelas langsung (contoh: <strong>12</strong>, <strong>11</strong>, <strong>10</strong>, atau <strong>12-A</strong>).
               </p>
             </div>
 
-            <!-- Daftar Kelas yang Saat Ini Terdaftar -->
-            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
-              <div class="flex items-center justify-between text-[11px] mb-1.5">
-                <span class="font-bold text-slate-600">Kelas Terdaftar Saat Ini:</span>
-                <span class="font-mono text-slate-400 font-bold">{{ attendanceStore.allClasses.length }} kelas</span>
+            <!-- Daftar Kelas yang Saat Ini Terdaftar (Bisa Edit / Rename & Hapus) -->
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="font-bold text-slate-700">Daftar Kelas Terdaftar:</span>
+                <span class="font-mono text-slate-500 font-bold">{{ attendanceStore.allClasses.length }} kelas</span>
               </div>
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
+                <div
                   v-for="c in attendanceStore.allClasses"
                   :key="c"
-                  class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-white text-slate-700 border border-slate-200 shadow-2xs"
+                  class="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 shadow-2xs hover:border-blue-200 transition-colors"
                 >
-                  <span>Kelas {{ c }}</span>
-                  <button
-                    v-if="!hasStudentsInClass(c)"
-                    type="button"
-                    @click="handleRemoveClass(c)"
-                    class="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer text-xs"
-                    title="Hapus kelas ini dari daftar (belum ada siswa)"
-                  >
-                    &times;
-                  </button>
-                </span>
+                  <div class="min-w-0 flex items-center gap-1.5">
+                    <span class="material-icons text-blue-600 text-sm shrink-0">school</span>
+                    <span class="text-xs font-bold text-slate-800 truncate">Kelas {{ c }}</span>
+                    <span class="text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 shrink-0">
+                      {{ getStudentCountInClass(c) }} siswa
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-1 shrink-0">
+                    <!-- Tombol Edit / Ubah Nama Kelas -->
+                    <button
+                      type="button"
+                      @click="openRenameClass(c)"
+                      class="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Ubah nama kelas (Siswa & guru akan disinkronkan otomatis)"
+                    >
+                      <span class="material-icons text-[14px]">edit</span>
+                    </button>
+
+                    <!-- Tombol Hapus Kelas (hanya jika 0 siswa) -->
+                    <button
+                      v-if="!hasStudentsInClass(c)"
+                      type="button"
+                      @click="handleRemoveClass(c)"
+                      class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Hapus kelas (belum ada siswa)"
+                    >
+                      <span class="material-icons text-[14px]">delete</span>
+                    </button>
+                    <span
+                      v-else
+                      class="w-7 h-7 flex items-center justify-center text-slate-300"
+                      title="Kelas terisi siswa aktif (Gunakan tombol Edit jika ingin mengubah nama)"
+                    >
+                      <span class="material-icons text-[14px]">lock</span>
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
               <Button type="button" variant="outline" size="sm" @click="isClassModalOpen = false">
-                Batal
+                Tutup
               </Button>
               <Button type="submit" variant="default" size="sm" class="font-bold shadow-2xs">
-                Simpan Kelas
+                Tambah Kelas
               </Button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- MODAL UBAH / RENAME NAMA KELAS (AMAN TANPA MERUSAK DATA) -->
+      <div v-if="isRenameModalOpen" class="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4">
+          <div class="flex items-center gap-2.5 text-blue-700 font-bold text-sm">
+            <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+              <span class="material-icons text-base text-blue-600">drive_file_rename_outline</span>
+            </div>
+            <span>Ubah Nama Kelas</span>
+          </div>
+
+          <div class="space-y-1">
+            <p class="text-xs text-slate-600">
+              Kelas Saat Ini: <strong class="text-slate-900">Kelas {{ classToRename }}</strong>
+            </p>
+            <p class="text-[11px] text-slate-500">
+              Terdaftar: <strong class="text-slate-700">{{ getStudentCountInClass(classToRename) }}</strong> siswa &bull; <strong class="text-slate-700">{{ getTeacherCountInClass(classToRename) }}</strong> guru binaan.
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">
+              Nama Baru Kelas:
+            </label>
+            <input
+              v-model="targetNewClassName"
+              type="text"
+              required
+              class="w-full h-10 px-3 rounded-xl border border-slate-200 text-sm font-semibold uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="Contoh: 12-A atau Paket C"
+              @input="renameError = ''"
+            />
+            <p v-if="renameError" class="text-xs text-rose-600 font-medium mt-1">
+              {{ renameError }}
+            </p>
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 text-[11px] text-blue-900 leading-relaxed flex items-start gap-1.5">
+            <span class="material-icons text-sm text-blue-600 shrink-0 mt-0.5">info</span>
+            <span>
+              <strong>Metode Kaskade Aman:</strong> Seluruh data siswa dan guru akan otomatis dialihkan ke nama baru. Riwayat presensi harian tetap utuh 100%.
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              @click="isRenameModalOpen = false"
+              class="py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              :disabled="isSubmittingRename"
+              @click="submitRenameClass"
+              class="py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 disabled:opacity-60 rounded-xl transition shadow-xs cursor-pointer flex items-center justify-center gap-1"
+            >
+              <span class="material-icons text-sm">{{ isSubmittingRename ? 'sync' : 'save' }}</span>
+              <span>{{ isSubmittingRename ? 'Menyimpan...' : 'Simpan Nama' }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </main>
@@ -1989,23 +2048,70 @@ const classError = ref('')
 const classModalContext = ref('filter') // 'filter', 'student', 'teacher'
 const newClassNameInputRef = ref(null)
 
-const presetClassOptions = [
-  { label: 'Paket C (SMA)', items: ['10', '11', '12'] },
-  { label: 'Paket B (SMP)', items: ['7', '8', '9'] },
-  { label: 'Rombel A/B', items: ['10-A', '11-A', '12-A', '12-B'] }
-]
+function getStudentCountInClass(className) {
+  return attendanceStore.students.filter(s => s.kelas === className).length
+}
 
-function selectPresetClass(name) {
-  if (attendanceStore.allClasses.includes(name)) {
-    classError.value = `Kelas ${name} sudah terdaftar.`
-    return
-  }
-  newClassNameInput.value = name
-  classError.value = ''
+function getTeacherCountInClass(className) {
+  return attendanceStore.teachers.filter(t => Array.isArray(t.kelas_diajar) && t.kelas_diajar.includes(className)).length
 }
 
 function hasStudentsInClass(className) {
-  return attendanceStore.students.some(s => s.kelas === className)
+  return getStudentCountInClass(className) > 0
+}
+
+// Modal Ubah / Rename Nama Kelas
+const isRenameModalOpen = ref(false)
+const classToRename = ref('')
+const targetNewClassName = ref('')
+const renameError = ref('')
+const isSubmittingRename = ref(false)
+
+function openRenameClass(className) {
+  classToRename.value = className
+  targetNewClassName.value = className
+  renameError.value = ''
+  isRenameModalOpen.value = true
+}
+
+async function submitRenameClass() {
+  const cleanNew = targetNewClassName.value.trim().toUpperCase()
+  if (!cleanNew) {
+    renameError.value = 'Nama kelas baru tidak boleh kosong.'
+    return
+  }
+  if (cleanNew === classToRename.value) {
+    renameError.value = 'Nama baru tidak boleh sama dengan nama sebelumnya.'
+    return
+  }
+  if (attendanceStore.allClasses.includes(cleanNew)) {
+    renameError.value = `Kelas ${cleanNew} sudah terdaftar dalam sistem.`
+    return
+  }
+
+  isSubmittingRename.value = true
+  renameError.value = ''
+  try {
+    const res = await attendanceStore.renameClass(classToRename.value, cleanNew)
+    if (res && res.success === false) {
+      renameError.value = res.message || 'Gagal mengubah nama kelas.'
+      return
+    }
+
+    if (selectedClassFilter.value === classToRename.value) {
+      selectedClassFilter.value = cleanNew
+    }
+    if (studentForm.value.kelas === classToRename.value) {
+      studentForm.value.kelas = cleanNew
+    }
+
+    uiStore.showToast(`Kelas ${classToRename.value} berhasil diubah menjadi Kelas ${cleanNew}.`, 'success')
+    isRenameModalOpen.value = false
+  } catch (err) {
+    renameError.value = err.message || 'Terjadi kesalahan saat mengubah nama kelas.'
+  } finally {
+    isSubmittingRename.value = false
+  }
 }
 
 async function handleRemoveClass(className) {

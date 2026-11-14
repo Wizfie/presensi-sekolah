@@ -585,7 +585,99 @@ export const useAttendanceStore = defineStore('attendance', () => {
       }
     }
     classes.value = classes.value.filter(c => c !== className)
+    saveStorage('presensi_master_classes', classes.value)
     return { success: true }
+  }
+
+  // Ubah / Rename Nama Kelas Terdaftar Secara Kaskade Tanpa Merusak Data
+  async function renameClass(oldName, newName) {
+    if (!oldName || !newName) {
+      return { success: false, message: 'Nama kelas asal dan nama kelas baru tidak boleh kosong.' }
+    }
+    const cleanOld = oldName.trim().toUpperCase()
+    const cleanNew = newName.trim().toUpperCase()
+
+    if (cleanOld === cleanNew) {
+      return { success: false, message: 'Nama kelas baru tidak boleh sama dengan nama sebelumnya.' }
+    }
+
+    if (classes.value.includes(cleanNew)) {
+      return { success: false, message: `Kelas ${cleanNew} sudah terdaftar dalam sistem.` }
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      const { data: res, error } = await supabase.rpc('rename_class', {
+        p_old_name: cleanOld,
+        p_new_name: cleanNew
+      })
+      if (error || !res?.success) {
+        // Fallback jika function RPC belum terpasang: lakukan direct update di Supabase
+        const { error: insertErr } = await supabase.from('classes').upsert({ name: cleanNew }, { onConflict: 'name' })
+        if (!insertErr) {
+          await supabase.from('profiles').update({ kelas: cleanNew }).eq('role', 'siswa').eq('kelas', cleanOld)
+          await supabase.from('classes').delete().eq('name', cleanOld)
+        } else {
+          return { success: false, message: error?.message || res?.message || 'Gagal mengubah nama kelas di database.' }
+        }
+      }
+    }
+
+    // Update state reaktif & local storage
+    // 1. Classes list
+    const clsIdx = classes.value.indexOf(cleanOld)
+    if (clsIdx !== -1) {
+      classes.value[clsIdx] = cleanNew
+    } else if (!classes.value.includes(cleanNew)) {
+      classes.value.push(cleanNew)
+    }
+
+    // 2. Siswa yang ada di kelas lama
+    let studentCount = 0
+    students.value.forEach(s => {
+      if (s.kelas === cleanOld) {
+        s.kelas = cleanNew
+        studentCount++
+      }
+    })
+
+    // 3. Guru yang mengajar kelas lama
+    let teacherCount = 0
+    teachers.value.forEach(t => {
+      if (Array.isArray(t.kelas_diajar) && t.kelas_diajar.includes(cleanOld)) {
+        t.kelas_diajar = t.kelas_diajar.map(c => c === cleanOld ? cleanNew : c)
+        teacherCount++
+      }
+    })
+
+    // 4. Presensi hari ini (cache filter)
+    todayAttendances.value.forEach(a => {
+      if (a.kelas === cleanOld) {
+        a.kelas = cleanNew
+      }
+    })
+
+    // 5. Izin siswa
+    leaveRequests.value.forEach(l => {
+      if (l.kelas === cleanOld) {
+        l.kelas = cleanNew
+      }
+    })
+
+    // Simpan ke storage
+    saveStorage('presensi_master_classes', classes.value)
+    saveStorage('presensi_master_students', students.value)
+    saveStorage('presensi_master_teachers', teachers.value)
+    saveStorage('presensi_today_attendances', todayAttendances.value)
+    saveStorage('presensi_leave_requests', leaveRequests.value)
+
+    return {
+      success: true,
+      oldName: cleanOld,
+      newName: cleanNew,
+      studentCount,
+      teacherCount,
+      message: `Kelas ${cleanOld} berhasil diubah menjadi ${cleanNew}. (${studentCount} siswa & ${teacherCount} guru disinkronkan)`
+    }
   }
 
   // Perhitungan jarak Haversine (meter)
@@ -1991,6 +2083,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
     classes,
     allClasses,
     addClass,
+    renameClass,
     deleteClass,
     calculateDistance,
     submitAttendanceGps,

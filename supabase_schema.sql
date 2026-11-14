@@ -667,6 +667,69 @@ BEGIN
 END;
 $$;
 
+-- Rename Kelas Terdaftar Secara Kaskade (Aman untuk Siswa, Guru & Matriks Presensi)
+CREATE OR REPLACE FUNCTION public.rename_class(
+    p_old_name TEXT,
+    p_new_name TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_role TEXT := public.get_my_role();
+    v_old TEXT := upper(trim(COALESCE(p_old_name, '')));
+    v_new TEXT := upper(trim(COALESCE(p_new_name, '')));
+    v_count_students INT := 0;
+    v_count_teachers INT := 0;
+BEGIN
+    IF v_role <> 'admin' THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Akses ditolak: Hanya Administrator.');
+    END IF;
+
+    IF v_old = '' OR v_new = '' THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Nama kelas asal dan baru tidak boleh kosong.');
+    END IF;
+
+    IF v_old = v_new THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Nama kelas baru tidak boleh sama dengan nama sebelumnya.');
+    END IF;
+
+    -- Pastikan nama baru belum terdaftar
+    IF EXISTS (SELECT 1 FROM public.classes WHERE name = v_new) THEN
+        RETURN jsonb_build_object('success', false, 'message', 'Kelas ' || v_new || ' sudah terdaftar dalam sistem.');
+    END IF;
+
+    -- 1. Tambah nama kelas baru ke tabel classes
+    INSERT INTO public.classes(name) VALUES (v_new) ON CONFLICT DO NOTHING;
+
+    -- 2. Kaskade update pada siswa: profiles.kelas
+    UPDATE public.profiles
+    SET kelas = v_new
+    WHERE role = 'siswa' AND kelas = v_old;
+    GET DIAGNOSTICS v_count_students = ROW_COUNT;
+
+    -- 3. Kaskade update pada guru: profiles.kelas_diajar
+    UPDATE public.profiles
+    SET kelas_diajar = array_replace(kelas_diajar, v_old, v_new)
+    WHERE role = 'guru' AND v_old = ANY(kelas_diajar);
+    GET DIAGNOSTICS v_count_teachers = ROW_COUNT;
+
+    -- 4. Hapus nama kelas lama dari tabel classes
+    DELETE FROM public.classes WHERE name = v_old;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'old_name', v_old,
+        'new_name', v_new,
+        'students_updated', v_count_students,
+        'teachers_updated', v_count_teachers,
+        'message', 'Kelas ' || v_old || ' berhasil diubah menjadi ' || v_new || '.'
+    );
+END;
+$$;
+
 -- ------------------------------------------------------------------------------
 -- 8. RPC FUNCTIONS: ADMIN MANAJEMEN AKUN (AUTH + PROFILES TANPA EXPOSE SERVICE KEY)
 -- ------------------------------------------------------------------------------
@@ -1052,6 +1115,7 @@ GRANT EXECUTE ON FUNCTION public.approve_pengajuan_izin(UUID, TEXT) TO authentic
 GRANT EXECUTE ON FUNCTION public.reject_pengajuan_izin(UUID, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.reset_siswa_qr_token(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_rekap_signatory(TEXT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.rename_class(TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_create_user(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_update_user(UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT[], TEXT, TEXT, TEXT, INT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_reset_user_password(UUID, TEXT) TO authenticated;
