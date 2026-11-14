@@ -1,43 +1,47 @@
 -- ==============================================================================
--- DATA SEEDING DEMO AWAL: SISTEM PRESENSI PKBM CAHAYA MULIA (SUPABASE)
+-- DATA SEEDING DEMO: SISTEM PRESENSI PKBM CAHAYA MULIA (SUPABASE)
 -- Jalankan file ini di Supabase SQL Editor SETELAH menjalankan supabase_schema.sql
 --
--- Password default semua akun demo: password123 (khusus Admin Root: pkbmadmin)
--- Akun Demo Utama (untuk Akses Demo Cepat / Login Manual):
---   Admin      : admin@mail.com        (ID: ADM-001, Password: pkbmadmin)
---   Guru Piket : tutor@pkbm.sch.id      (NIP: 198507122010011005, Password: password123)
---   Siswa      : ade@pkbm.sch.id        (NISN: 20241201, Password: password123)
+-- KREDENSIAL LOGIN AKUN DEMO:
+--   1. Admin       : admin@mail.com  | Password: pkbmadmin
+--   2. Guru Piket 1: guru1@mail.com  | Password: password123 (NIP: 198507122010011005)
+--   3. Guru Piket 2: guru2@mail.com  | Password: password123 (NIP: 199003152015022003)
+--   4. Siswa (Login via NISN, Password: password123):
+--        • Kelas 12 : NISN 1201 s/d 1210 (Demo Utama: 1201 - ADE IZA MUKTI)
+--        • Kelas 11 : NISN 1101 s/d 1110 (Demo Utama: 1101 - ADITYA RAMADHAN)
+--        • Kelas 10 : NISN 1001 s/d 1010 (Demo Utama: 1001 - ARIF RAHMAN)
+--
+-- MASTER KELAS TERDAFTAR: 10, 11, 12 (10 Siswa per Kelas = Total 30 Siswa)
 -- ==============================================================================
 
 DO $$
 DECLARE
-    v_admin_id   UUID := '11111111-1111-1111-1111-111111111111';
-    v_guru1_id   UUID := '22222222-2222-2222-2222-222222222222';
-    v_guru2_id   UUID := '22222222-2222-2222-2222-222222222223';
-    v_encrypted_pw TEXT := extensions.crypt('password123', extensions.gen_salt('bf'));
+    v_admin_id           UUID := '11111111-1111-1111-1111-111111111111';
+    v_guru1_id           UUID := '22222222-2222-2222-2222-222222222222';
+    v_guru2_id           UUID := '22222222-2222-2222-2222-222222222223';
+    v_encrypted_pw       TEXT := extensions.crypt('password123', extensions.gen_salt('bf'));
     v_encrypted_admin_pw TEXT := extensions.crypt('pkbmadmin', extensions.gen_salt('bf'));
-    v_jakarta_now TIMESTAMP := (now() AT TIME ZONE 'Asia/Jakarta');
-    v_today DATE := v_jakarta_now::date;
-    v_year INT := EXTRACT(YEAR FROM v_jakarta_now)::int;
-    v_month INT := EXTRACT(MONTH FROM v_jakarta_now)::int;
-    v_tp TEXT;
-    v_user_rec RECORD;
-    v_uid UUID;
-    v_day INT;
-    v_d DATE;
-    v_dow INT;
-    v_seed INT;
-    v_status TEXT;
-    v_jam_in TIMESTAMPTZ;
-    v_jam_out TIMESTAMPTZ;
-    v_metode TEXT;
-    v_ket TEXT;
-    v_idx INT := 0;
+    v_jakarta_now        TIMESTAMP := (now() AT TIME ZONE 'Asia/Jakarta');
+    v_today              DATE := v_jakarta_now::date;
+    v_year               INT := EXTRACT(YEAR FROM v_jakarta_now)::int;
+    v_month              INT := EXTRACT(MONTH FROM v_jakarta_now)::int;
+    v_tp                 TEXT;
+    v_user_rec           RECORD;
+    v_day                INT;
+    v_d                  DATE;
+    v_dow                INT;
+    v_seed               INT;
+    v_status             TEXT;
+    v_jam_in             TIMESTAMPTZ;
+    v_jam_out            TIMESTAMPTZ;
+    v_metode             TEXT;
+    v_ket                TEXT;
+    v_idx                INT := 0;
 BEGIN
     -- Hitung Tahun Pelajaran berjalan secara dinamis (Juli = awal tahun ajar baru)
     v_tp := CASE WHEN v_month >= 7 THEN v_year || '/' || (v_year + 1) ELSE (v_year - 1) || '/' || v_year END;
 
-    -- 1. SEED MASTER KELAS
+    -- 1. SEED MASTER KELAS (10, 11, 12)
     INSERT INTO public.classes (name) VALUES ('10'), ('11'), ('12')
     ON CONFLICT (name) DO NOTHING;
 
@@ -50,7 +54,7 @@ BEGIN
     ) VALUES (
         1,
         'PKBM Cahaya Mulia',
-        'Jl. Surya Kencana No. 1, Pamulang, Tangerang Selatan',
+        'Jl. Surya Kencana No. 1, Kota Tangerang',
         v_tp,
         -6.345853,
         106.738159,
@@ -58,7 +62,7 @@ BEGIN
         '07:30:00',
         '08:00:00',
         '14:00:00',
-        'Ketua PKBM Cahaya Mulia',
+        'Kepala PKBM Cahaya Mulia',
         'Drs. H. Ahmad Fauzi, M.Pd',
         '197004121998031004'
     )
@@ -74,21 +78,23 @@ BEGIN
         mengetahui_nip = EXCLUDED.mengetahui_nip,
         updated_at = now();
 
-    -- Bersihkan data siswa/guru demo lama dengan domain @pkbm.sch.id agar tidak bentrok ID bila re-seed
+    -- Bersihkan data transaksi lama demo
     DELETE FROM public.pengajuan_izin;
     DELETE FROM public.presensi;
+
+    -- Bersihkan user siswa demo lama agar ID tidak bentrok
     DELETE FROM auth.users
-    WHERE email LIKE '%@pkbm.sch.id'
+    WHERE (email LIKE '%@mail.com' OR email LIKE '%@pkbm.sch.id')
       AND id <> v_admin_id
       AND id <> v_guru1_id
       AND id <> v_guru2_id;
 
-    -- 3. SEED ADMIN & GURU PIKET DEMO
+    -- 3. SEED ADMIN & GURU PIKET DEMO (admin@mail.com, guru1@mail.com, guru2@mail.com)
     FOR v_user_rec IN
         SELECT * FROM (VALUES
             (v_admin_id, 'admin@mail.com', 'Administrator PKBM', 'ADM-001', 'L', 'admin', NULL::text, ARRAY[]::text[], '', 'Pengelola PKBM Cahaya Mulia', true, 'tok_admin_root'),
-            (v_guru1_id, 'tutor@pkbm.sch.id', 'Budi Santoso, S.Pd', '198507122010011005', 'L', 'guru', '12', ARRAY['12','11','10'], 'Guru Piket Harian, Tutor Paket C', 'Guru Piket', false, 'tok_guru_budi_secure'),
-            (v_guru2_id, 'siti.tutor@pkbm.sch.id', 'Siti Nurhaliza, M.Pd', '199003152015022003', 'P', 'guru', '11', ARRAY['12','11'], 'Tutor Bahasa Indonesia, Wali Paket C', 'Tutor', false, 'tok_guru_siti_secure')
+            (v_guru1_id, 'guru1@mail.com', 'Budi Santoso, S.Pd', '198507122010011005', 'L', 'guru', '12', ARRAY['10','11','12'], 'Guru Piket Harian, Tutor Paket C', 'Guru Piket', false, 'tok_guru_budi_secure'),
+            (v_guru2_id, 'guru2@mail.com', 'Siti Nurhaliza, M.Pd', '199003152015022003', 'P', 'guru', '11', ARRAY['10','11','12'], 'Tutor Bahasa Indonesia, Guru Piket', 'Tutor', false, 'tok_guru_siti_secure')
         ) AS t(uid, email, nama, nip, jk, role_name, kls, kls_diajar, mapel, jbt, root_flag, qr)
     LOOP
         INSERT INTO auth.users (
@@ -112,6 +118,7 @@ BEGIN
             banned_until = NULL,
             updated_at = now();
 
+        DELETE FROM auth.identities WHERE user_id = v_user_rec.uid;
         INSERT INTO auth.identities (
             id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
         ) VALUES (
@@ -121,10 +128,7 @@ BEGIN
             'email',
             jsonb_build_object('sub', v_user_rec.uid::text, 'email', v_user_rec.email, 'email_verified', true, 'phone_verified', false),
             now(), now(), now()
-        )
-        ON CONFLICT (provider_id, provider) DO UPDATE SET
-            identity_data = EXCLUDED.identity_data,
-            updated_at = now();
+        );
 
         INSERT INTO public.profiles (
             id, email, nama_lengkap, nomor_induk, jenis_kelamin, role,
@@ -150,45 +154,45 @@ BEGIN
             updated_at = now();
     END LOOP;
 
-    -- 4. SEED 33 SISWA DEMO (KELAS 12: 13 siswa sesuai buku fisik, KELAS 11: 10 siswa, KELAS 10: 10 siswa)
+    -- 4. SEED 30 SISWA DEMO (TEPAT 10 SISWA PER KELAS: KELAS 12, KELAS 11, KELAS 10)
+    -- Format NISN mudah: 1201-1210 (Kls 12), 1101-1110 (Kls 11), 1001-1010 (Kls 10)
     FOR v_user_rec IN
         SELECT * FROM (VALUES
-            -- Kelas 12
-            ('33333333-0012-0000-0000-000000000001'::uuid, 'ade@pkbm.sch.id', 'ADE IZA MUKTI', '20241201', 'L', '12', 'tok_std_12_20241201'),
-            ('33333333-0012-0000-0000-000000000002'::uuid, 'ahmad.slamet@pkbm.sch.id', 'AHMAD SLAMET RIYADI', '20241202', 'L', '12', 'tok_std_12_20241202'),
-            ('33333333-0012-0000-0000-000000000003'::uuid, 'cinta@pkbm.sch.id', 'CINTA RAYA KHAIRUNNISA', '20241203', 'P', '12', 'tok_std_12_20241203'),
-            ('33333333-0012-0000-0000-000000000004'::uuid, 'gadis@pkbm.sch.id', 'GADIS ZAMJIROH', '20241204', 'P', '12', 'tok_std_12_20241204'),
-            ('33333333-0012-0000-0000-000000000005'::uuid, 'lina@pkbm.sch.id', 'LINA DWIYANTI', '20241205', 'P', '12', 'tok_std_12_20241205'),
-            ('33333333-0012-0000-0000-000000000006'::uuid, 'mahfud@pkbm.sch.id', 'MAHFUD', '20241206', 'L', '12', 'tok_std_12_20241206'),
-            ('33333333-0012-0000-0000-000000000007'::uuid, 'reyhan@pkbm.sch.id', 'MUHAMAD REYHAN .S', '20241207', 'L', '12', 'tok_std_12_20241207'),
-            ('33333333-0012-0000-0000-000000000008'::uuid, 'najil@pkbm.sch.id', 'NAJIL HAWARI', '20241208', 'L', '12', 'tok_std_12_20241208'),
-            ('33333333-0012-0000-0000-000000000009'::uuid, 'novita@pkbm.sch.id', 'NOVITA SARI', '20241209', 'P', '12', 'tok_std_12_20241209'),
-            ('33333333-0012-0000-0000-000000000010'::uuid, 'ridwan@pkbm.sch.id', 'RIDWAN SAYIDNA AL .B', '20241210', 'L', '12', 'tok_std_12_20241210'),
-            ('33333333-0012-0000-0000-000000000011'::uuid, 'tohirun@pkbm.sch.id', 'TOHIRUN', '20241211', 'L', '12', 'tok_std_12_20241211'),
-            ('33333333-0012-0000-0000-000000000012'::uuid, 'widiyawila@pkbm.sch.id', 'WIDIYAWILA SAVITA', '20241212', 'P', '12', 'tok_std_12_20241212'),
-            ('33333333-0012-0000-0000-000000000013'::uuid, 'yuliyana@pkbm.sch.id', 'YULIYANA', '20241213', 'P', '12', 'tok_std_12_20241213'),
-            -- Kelas 11
-            ('33333333-0011-0000-0000-000000000001'::uuid, 'aditya.1101@pkbm.sch.id', 'ADITYA RAMADHAN', '20251101', 'L', '11', 'tok_std_11_20251101'),
-            ('33333333-0011-0000-0000-000000000002'::uuid, 'bima.1102@pkbm.sch.id', 'BIMA SAKTI', '20251102', 'L', '11', 'tok_std_11_20251102'),
-            ('33333333-0011-0000-0000-000000000003'::uuid, 'cantika.1103@pkbm.sch.id', 'CANTIKA DEWI', '20251103', 'P', '11', 'tok_std_11_20251103'),
-            ('33333333-0011-0000-0000-000000000004'::uuid, 'doni.1104@pkbm.sch.id', 'DONI KURNIAWAN', '20251104', 'L', '11', 'tok_std_11_20251104'),
-            ('33333333-0011-0000-0000-000000000005'::uuid, 'elsa.1105@pkbm.sch.id', 'ELSA MAYORI', '20251105', 'P', '11', 'tok_std_11_20251105'),
-            ('33333333-0011-0000-0000-000000000006'::uuid, 'fadillah.1106@pkbm.sch.id', 'FADILLAH AKBAR', '20251106', 'L', '11', 'tok_std_11_20251106'),
-            ('33333333-0011-0000-0000-000000000007'::uuid, 'gita.1107@pkbm.sch.id', 'GITA GUTAWA', '20251107', 'P', '11', 'tok_std_11_20251107'),
-            ('33333333-0011-0000-0000-000000000008'::uuid, 'hafizh.1108@pkbm.sch.id', 'HAFIZH SYAHRIN', '20251108', 'L', '11', 'tok_std_11_20251108'),
-            ('33333333-0011-0000-0000-000000000009'::uuid, 'intan.1109@pkbm.sch.id', 'INTAN PERMATA', '20251109', 'P', '11', 'tok_std_11_20251109'),
-            ('33333333-0011-0000-0000-000000000010'::uuid, 'joko.1110@pkbm.sch.id', 'JOKO SUSILO', '20251110', 'L', '11', 'tok_std_11_20251110'),
-            -- Kelas 10
-            ('33333333-0010-0000-0000-000000000001'::uuid, 'arif.1001@pkbm.sch.id', 'ARIF RAHMAN', '20261001', 'L', '10', 'tok_std_10_20261001'),
-            ('33333333-0010-0000-0000-000000000002'::uuid, 'bayu.1002@pkbm.sch.id', 'BAYU SKAK', '20261002', 'L', '10', 'tok_std_10_20261002'),
-            ('33333333-0010-0000-0000-000000000003'::uuid, 'cindy.1003@pkbm.sch.id', 'CINDY GULLA', '20261003', 'P', '10', 'tok_std_10_20261003'),
-            ('33333333-0010-0000-0000-000000000004'::uuid, 'danang.1004@pkbm.sch.id', 'DANANG PRADANA', '20261004', 'L', '10', 'tok_std_10_20261004'),
-            ('33333333-0010-0000-0000-000000000005'::uuid, 'eva.1005@pkbm.sch.id', 'EVA CELIA', '20261005', 'P', '10', 'tok_std_10_20261005'),
-            ('33333333-0010-0000-0000-000000000006'::uuid, 'farhan.1006@pkbm.sch.id', 'FARHAN RASYID', '20261006', 'L', '10', 'tok_std_10_20261006'),
-            ('33333333-0010-0000-0000-000000000007'::uuid, 'grace.1007@pkbm.sch.id', 'GRACE NATALIE', '20261007', 'P', '10', 'tok_std_10_20261007'),
-            ('33333333-0010-0000-0000-000000000008'::uuid, 'haikal.1008@pkbm.sch.id', 'HAIKAL KAMIL', '20261008', 'L', '10', 'tok_std_10_20261008'),
-            ('33333333-0010-0000-0000-000000000009'::uuid, 'isyana.1009@pkbm.sch.id', 'ISYANA SARASVATI', '20261009', 'P', '10', 'tok_std_10_20261009'),
-            ('33333333-0010-0000-0000-000000000010'::uuid, 'jefri.1010@pkbm.sch.id', 'JEFRI NICHOL', '20261010', 'L', '10', 'tok_std_10_20261010')
+            -- Kelas 12 (NISN 1201 s/d 1210)
+            ('33333333-0012-0000-0000-000000000001'::uuid, '1201@mail.com', 'ADE IZA MUKTI', '1201', 'L', '12', 'tok_std_1201'),
+            ('33333333-0012-0000-0000-000000000002'::uuid, '1202@mail.com', 'AHMAD SLAMET RIYADI', '1202', 'L', '12', 'tok_std_1202'),
+            ('33333333-0012-0000-0000-000000000003'::uuid, '1203@mail.com', 'CINTA RAYA KHAIRUNNISA', '1203', 'P', '12', 'tok_std_1203'),
+            ('33333333-0012-0000-0000-000000000004'::uuid, '1204@mail.com', 'GADIS ZAMJIROH', '1204', 'P', '12', 'tok_std_1204'),
+            ('33333333-0012-0000-0000-000000000005'::uuid, '1205@mail.com', 'LINA DWIYANTI', '1205', 'P', '12', 'tok_std_1205'),
+            ('33333333-0012-0000-0000-000000000006'::uuid, '1206@mail.com', 'MAHFUD', '1206', 'L', '12', 'tok_std_1206'),
+            ('33333333-0012-0000-0000-000000000007'::uuid, '1207@mail.com', 'MUHAMAD REYHAN .S', '1207', 'L', '12', 'tok_std_1207'),
+            ('33333333-0012-0000-0000-000000000008'::uuid, '1208@mail.com', 'NAJIL HAWARI', '1208', 'L', '12', 'tok_std_1208'),
+            ('33333333-0012-0000-0000-000000000009'::uuid, '1209@mail.com', 'NOVITA SARI', '1209', 'P', '12', 'tok_std_1209'),
+            ('33333333-0012-0000-0000-000000000010'::uuid, '1210@mail.com', 'RIDWAN SAYIDNA AL .B', '1210', 'L', '12', 'tok_std_1210'),
+
+            -- Kelas 11 (NISN 1101 s/d 1110)
+            ('33333333-0011-0000-0000-000000000001'::uuid, '1101@mail.com', 'ADITYA RAMADHAN', '1101', 'L', '11', 'tok_std_1101'),
+            ('33333333-0011-0000-0000-000000000002'::uuid, '1102@mail.com', 'BIMA SAKTI', '1102', 'L', '11', 'tok_std_1102'),
+            ('33333333-0011-0000-0000-000000000003'::uuid, '1103@mail.com', 'CANTIKA DEWI', '1103', 'P', '11', 'tok_std_1103'),
+            ('33333333-0011-0000-0000-000000000004'::uuid, '1104@mail.com', 'DONI KURNIAWAN', '1104', 'L', '11', 'tok_std_1104'),
+            ('33333333-0011-0000-0000-000000000005'::uuid, '1105@mail.com', 'ELSA MAYORI', '1105', 'P', '11', 'tok_std_1105'),
+            ('33333333-0011-0000-0000-000000000006'::uuid, '1106@mail.com', 'FADILLAH AKBAR', '1106', 'L', '11', 'tok_std_1106'),
+            ('33333333-0011-0000-0000-000000000007'::uuid, '1107@mail.com', 'GITA GUTAWA', '1107', 'P', '11', 'tok_std_1107'),
+            ('33333333-0011-0000-0000-000000000008'::uuid, '1108@mail.com', 'HAFIZH SYAHRIN', '1108', 'L', '11', 'tok_std_1108'),
+            ('33333333-0011-0000-0000-000000000009'::uuid, '1109@mail.com', 'INTAN PERMATA', '1109', 'P', '11', 'tok_std_1109'),
+            ('33333333-0011-0000-0000-000000000010'::uuid, '1110@mail.com', 'JOKO SUSILO', '1110', 'L', '11', 'tok_std_1110'),
+
+            -- Kelas 10 (NISN 1001 s/d 1010)
+            ('33333333-0010-0000-0000-000000000001'::uuid, '1001@mail.com', 'ARIF RAHMAN', '1001', 'L', '10', 'tok_std_1001'),
+            ('33333333-0010-0000-0000-000000000002'::uuid, '1002@mail.com', 'BAYU SKAK', '1002', 'L', '10', 'tok_std_1002'),
+            ('33333333-0010-0000-0000-000000000003'::uuid, '1003@mail.com', 'CINDY GULLA', '1003', 'P', '10', 'tok_std_1003'),
+            ('33333333-0010-0000-0000-000000000004'::uuid, '1004@mail.com', 'DANANG PRADANA', '1004', 'L', '10', 'tok_std_1004'),
+            ('33333333-0010-0000-0000-000000000005'::uuid, '1005@mail.com', 'EVA CELIA', '1005', 'P', '10', 'tok_std_1005'),
+            ('33333333-0010-0000-0000-000000000006'::uuid, '1006@mail.com', 'FARHAN RASYID', '1006', 'L', '10', 'tok_std_1006'),
+            ('33333333-0010-0000-0000-000000000007'::uuid, '1007@mail.com', 'GRACE NATALIE', '1007', 'P', '10', 'tok_std_1007'),
+            ('33333333-0010-0000-0000-000000000008'::uuid, '1008@mail.com', 'HAIKAL KAMIL', '1008', 'L', '10', 'tok_std_1008'),
+            ('33333333-0010-0000-0000-000000000009'::uuid, '1009@mail.com', 'ISYANA SARASVATI', '1009', 'P', '10', 'tok_std_1009'),
+            ('33333333-0010-0000-0000-000000000010'::uuid, '1010@mail.com', 'JEFRI NICHOL', '1010', 'L', '10', 'tok_std_1010')
         ) AS s(uid, email, nama, nisn, jk, kls, qr)
     LOOP
         v_idx := v_idx + 1;
@@ -213,6 +217,7 @@ BEGIN
             banned_until = NULL,
             updated_at = now();
 
+        DELETE FROM auth.identities WHERE user_id = v_user_rec.uid;
         INSERT INTO auth.identities (
             id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at
         ) VALUES (
@@ -222,10 +227,7 @@ BEGIN
             'email',
             jsonb_build_object('sub', v_user_rec.uid::text, 'email', v_user_rec.email, 'email_verified', true, 'phone_verified', false),
             now(), now(), now()
-        )
-        ON CONFLICT (provider_id, provider) DO UPDATE SET
-            identity_data = EXCLUDED.identity_data,
-            updated_at = now();
+        );
 
         INSERT INTO public.profiles (
             id, email, nama_lengkap, nomor_induk, jenis_kelamin, role, kelas, qr_token, is_deleted, deleted_at
@@ -244,20 +246,20 @@ BEGIN
             deleted_at = NULL,
             updated_at = now();
 
-        -- 5. SEED RIWAYAT PRESENSI BULAN BERJALAN (Senin-Jumat s.d. hari ini)
+        -- 5. SEED RIWAYAT PRESENSI BULAN BERJALAN
         FOR v_day IN 1..EXTRACT(DAY FROM v_today)::int LOOP
             v_d := make_date(v_year, v_month, v_day);
             v_dow := EXTRACT(DOW FROM v_d)::int;
             CONTINUE WHEN v_dow IN (0, 6); -- Lewati Sabtu & Minggu
 
-            -- Untuk HARI INI:
-            -- - Siswa pertama (ADE IZA MUKTI / akun demo siswa) dibiarkan BELUM presensi agar bisa didemokan langsung!
-            -- - GADIS ZAMJIROH dibuat Sakit (dengan pengajuan izin)
-            -- - Sebagian siswa lain sudah presensi masuk (tanpa jam pulang) agar bisa demo Set Pulang
+            -- Khusus Hari Ini:
+            -- - Siswa NISN 1201 (ADE IZA MUKTI) dibiarkan BELUM presensi agar bisa didemokan live!
+            -- - Siswa NISN 1204 (GADIS ZAMJIROH) dibuat Sakit (dengan pengajuan izin)
+            -- - Siswa genap sudah presensi masuk (tanpa jam pulang) agar bisa mendemokan Set Pulang
             IF v_d = v_today THEN
-                IF v_user_rec.nisn = '20241201' THEN
+                IF v_user_rec.nisn = '1201' THEN
                     CONTINUE;
-                ELSIF v_user_rec.nisn = '20241204' THEN
+                ELSIF v_user_rec.nisn = '1204' THEN
                     INSERT INTO public.presensi (user_id, tanggal, status, metode_presensi, dicatat_oleh, keterangan, catatan)
                     VALUES (v_user_rec.uid, v_d, 'sakit', 'manual_guru', v_guru1_id, 'Sakit demam, istirahat di rumah.', 'Sakit demam, istirahat di rumah.');
                     CONTINUE;
@@ -277,7 +279,7 @@ BEGIN
                 CONTINUE;
             END IF;
 
-            -- Hari kerja sebelumnya dalam bulan berjalan
+            -- Hari-hari kerja sebelumnya di bulan berjalan
             v_seed := (v_idx * 17 + v_day * 13) % 100;
             IF v_seed < 85 THEN
                 v_status := 'hadir';
@@ -318,7 +320,7 @@ BEGIN
         END LOOP;
     END LOOP;
 
-    -- 6. SEED CONTOH PENGAJUAN IZIN
+    -- 6. SEED CONTOH PENGAJUAN IZIN (GADIS ZAMJIROH / NISN 1204)
     INSERT INTO public.pengajuan_izin (
         user_id, tanggal_mulai, tanggal_selesai, jenis, keterangan, status
     ) VALUES (
@@ -331,15 +333,22 @@ BEGIN
     );
 END $$;
 
--- Verifikasi Ringkas Hasil Seeding Demo
+-- ==============================================================================
+-- VERIFIKASI RINGKAS HASIL SEEDING DEMO
+-- ==============================================================================
 SELECT role, count(*) AS jumlah_akun
 FROM public.profiles
 WHERE is_deleted = false
 GROUP BY role
 ORDER BY role;
 
+SELECT kelas, count(*) AS siswa_per_kelas
+FROM public.profiles
+WHERE role = 'siswa' AND is_deleted = false
+GROUP BY kelas
+ORDER BY kelas DESC;
+
 SELECT status, count(*) AS jumlah_presensi_demo
 FROM public.presensi
 GROUP BY status
 ORDER BY status;
-

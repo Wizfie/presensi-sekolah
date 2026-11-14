@@ -5,7 +5,7 @@
 import { getCurrentAcademicYear } from './academicYear'
 import { getWibDateStr } from './dateTime'
 
-export const defaultClasses = ['12', '11', '10']
+export const defaultClasses = ['10', '11', '12']
 
 export const defaultSchoolSettings = {
   nama_sekolah: 'PKBM Cahaya Mulia',
@@ -19,7 +19,7 @@ export const defaultSchoolSettings = {
   tahun_pelajaran: getCurrentAcademicYear()
 }
 
-// 1. Data Siswa Kelas 12 (Persis sesuai foto lembar absensi manual PKBM Cahaya Mulia)
+// 1. Data Siswa Kelas 12 (10 Siswa Demo)
 const rawStudentsKelas12 = [
   { nama: 'ADE IZA MUKTI', jk: 'L' },
   { nama: 'AHMAD SLAMET RIYADI', jk: 'L' },
@@ -30,13 +30,10 @@ const rawStudentsKelas12 = [
   { nama: 'MUHAMAD REYHAN .S', jk: 'L' },
   { nama: 'NAJIL HAWARI', jk: 'L' },
   { nama: 'NOVITA SARI', jk: 'P' },
-  { nama: 'RIDWAN SAYIDNA AL .B', jk: 'L' },
-  { nama: 'TOHIRUN', jk: 'L' },
-  { nama: 'WIDIYAWILA SAVITA', jk: 'P' },
-  { nama: 'YULIYANA', jk: 'P' }
+  { nama: 'RIDWAN SAYIDNA AL .B', jk: 'L' }
 ]
 
-// 2. Data Siswa Kelas 11 (Pelengkap)
+// 2. Data Siswa Kelas 11 (10 Siswa Demo)
 const rawStudentsKelas11 = [
   { nama: 'ADITYA RAMADHAN', jk: 'L' },
   { nama: 'BIMA SAKTI', jk: 'L' },
@@ -50,7 +47,7 @@ const rawStudentsKelas11 = [
   { nama: 'JOKO SUSILO', jk: 'L' }
 ]
 
-// 3. Data Siswa Kelas 10 (Pelengkap)
+// 3. Data Siswa Kelas 10 (10 Siswa Demo)
 const rawStudentsKelas10 = [
   { nama: 'ARIF RAHMAN', jk: 'L' },
   { nama: 'BAYU SKAK', jk: 'L' },
@@ -67,59 +64,56 @@ const rawStudentsKelas10 = [
 export function generateStudents() {
   const students = []
 
-  // Kelas 12
+  // Kelas 12 (NISN: 1201 s/d 1210)
   rawStudentsKelas12.forEach((s, idx) => {
     const num = String(idx + 1).padStart(2, '0')
-    const nisn = `202412${num}`
-    const username = s.nama.toLowerCase().replace(/[^a-z]/g, '').slice(0, 8)
+    const nisn = `12${num}`
     students.push({
       id: `std-12-${num}`,
-      email: `${username}.${nisn.slice(-4)}@pkbm.sch.id`,
+      email: `${nisn}@mail.com`,
       nama_lengkap: s.nama,
       jenis_kelamin: s.jk,
       nomor_induk: nisn,
       kelas: '12',
       password: 'password123',
       foto_update_count: 0,
-      qr_token: `tok_std_12_${nisn}`,
+      qr_token: `tok_std_${nisn}`,
       foto_profil_url: ''
     })
   })
 
-  // Kelas 11
+  // Kelas 11 (NISN: 1101 s/d 1110)
   rawStudentsKelas11.forEach((s, idx) => {
     const num = String(idx + 1).padStart(2, '0')
-    const nisn = `202511${num}`
-    const username = s.nama.toLowerCase().replace(/[^a-z]/g, '').slice(0, 8)
+    const nisn = `11${num}`
     students.push({
       id: `std-11-${num}`,
-      email: `${username}.${nisn.slice(-4)}@pkbm.sch.id`,
+      email: `${nisn}@mail.com`,
       nama_lengkap: s.nama,
       jenis_kelamin: s.jk,
       nomor_induk: nisn,
       kelas: '11',
       password: 'password123',
       foto_update_count: 0,
-      qr_token: `tok_std_11_${nisn}`,
+      qr_token: `tok_std_${nisn}`,
       foto_profil_url: ''
     })
   })
 
-  // Kelas 10
+  // Kelas 10 (NISN: 1001 s/d 1010)
   rawStudentsKelas10.forEach((s, idx) => {
     const num = String(idx + 1).padStart(2, '0')
-    const nisn = `202610${num}`
-    const username = s.nama.toLowerCase().replace(/[^a-z]/g, '').slice(0, 8)
+    const nisn = `10${num}`
     students.push({
       id: `std-10-${num}`,
-      email: `${username}.${nisn.slice(-4)}@pkbm.sch.id`,
+      email: `${nisn}@mail.com`,
       nama_lengkap: s.nama,
       jenis_kelamin: s.jk,
       nomor_induk: nisn,
       kelas: '10',
       password: 'password123',
       foto_update_count: 0,
-      qr_token: `tok_std_10_${nisn}`,
+      qr_token: `tok_std_${nisn}`,
       foto_profil_url: ''
     })
   })
@@ -131,24 +125,24 @@ export function generateStudents() {
 export const defaultTeachers = [
   {
     id: '22222222-2222-2222-2222-222222222222',
-    email: 'tutor@pkbm.sch.id',
+    email: 'guru1@mail.com',
     nama_lengkap: 'Budi Santoso, S.Pd',
     nomor_induk: '198507122010011005',
     password: 'password123',
     role: 'guru',
-    kelas_diajar: ['12', '11', '10'],
+    kelas_diajar: ['10', '11', '12'],
     jam_masuk_default: '07:30',
     jam_pulang_default: '14:00',
     foto_profil_url: ''
   },
   {
-    id: 'usr-tutor-2',
-    email: 'siti.tutor@pkbm.sch.id',
+    id: '22222222-2222-2222-2222-222222222223',
+    email: 'guru2@mail.com',
     nama_lengkap: 'Siti Nurhaliza, M.Pd',
     nomor_induk: '199003152015022003',
     password: 'password123',
     role: 'guru',
-    kelas_diajar: ['12', '11'],
+    kelas_diajar: ['10', '11', '12'],
     jam_masuk_default: '07:30',
     jam_pulang_default: '14:00',
     foto_profil_url: ''

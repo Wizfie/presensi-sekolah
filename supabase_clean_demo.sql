@@ -9,8 +9,8 @@
 --   3. Menyisakan HANYA 1 akun Super Administrator Root:
 --        Email Login : admin@mail.com (atau ID: ADM-001)
 --        Password    : pkbmadmin
---   4. Mereset kolom penandatangan "Mengetahui" ke format Kepala PKBM Cahaya Mulia
---      serta memastikan master kelas ('10', '11', '12') tersedia.
+--   4. Mengosongkan seluruh master kelas (classes) agar bersih total siap pakai.
+--   5. Mereset kolom penandatangan "Mengetahui" ke format Kepala PKBM Cahaya Mulia.
 -- ==============================================================================
 
 DO $$
@@ -99,11 +99,8 @@ BEGIN
         deleted_at = NULL,
         updated_at = now();
 
-    -- 4. Pastikan master kelas standar tersedia bila tabel classes masih kosong
-    IF NOT EXISTS (SELECT 1 FROM public.classes) THEN
-        INSERT INTO public.classes (name) VALUES ('10'), ('11'), ('12')
-        ON CONFLICT (name) DO NOTHING;
-    END IF;
+    -- 4. Kosongkan seluruh master kelas saat clean demo agar bersih total
+    DELETE FROM public.classes;
 
     -- 5. Bersihkan nama/NIP penandatangan "Mengetahui" bekas demo & pastikan row id=1 ada
     v_tp := CASE WHEN v_month >= 7 THEN v_year || '/' || (v_year + 1) ELSE (v_year - 1) || '/' || v_year END;

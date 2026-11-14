@@ -109,7 +109,7 @@
                 </div>
                 <div>
                   <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Siswa</p>
-                  <p class="text-[11px] text-slate-500">ADE IZA MUKTI (Kelas 12)</p>
+                  <p class="text-[11px] text-slate-500">ADE IZA MUKTI (NISN: 1201 &bull; Kelas 12)</p>
                 </div>
               </div>
               <span class="text-xs text-blue-600 font-medium">Buka &rarr;</span>
@@ -127,7 +127,7 @@
                 </div>
                 <div>
                   <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Guru Piket / Tutor</p>
-                  <p class="text-[11px] text-slate-500">Budi Santoso, S.Pd (Presensi Datang, Pulang &amp; Scan QR)</p>
+                  <p class="text-[11px] text-slate-500">Budi Santoso, S.Pd (guru1@mail.com)</p>
                 </div>
               </div>
               <span class="text-xs text-blue-600 font-medium">Buka &rarr;</span>
@@ -145,7 +145,7 @@
                 </div>
                 <div>
                   <p class="text-xs font-semibold text-slate-800 group-hover:text-blue-600">Masuk sebagai Pengelola / Admin</p>
-                  <p class="text-[11px] text-slate-500">Master Siswa, Titik GPS, Rekap</p>
+                  <p class="text-[11px] text-slate-500">admin@mail.com &bull; Master Data &amp; Rekap</p>
                 </div>
               </div>
               <span class="text-xs text-blue-600 font-medium">Buka &rarr;</span>

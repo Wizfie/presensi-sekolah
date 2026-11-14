@@ -20,36 +20,53 @@ export const useAuthStore = defineStore('auth', () => {
     },
     {
       id: '22222222-2222-2222-2222-222222222222',
-      email: 'tutor@pkbm.sch.id',
-      alias_emails: ['tutor@pkbm.sch.id', 'guru@sekolah.sch.id', 'budi.guru@sekolah.sch.id'],
+      email: 'guru1@mail.com',
+      alias_emails: ['guru1@mail.com', 'tutor@pkbm.sch.id', 'guru@sekolah.sch.id'],
       nama_lengkap: 'Budi Santoso, S.Pd',
       nomor_induk: '198507122010011005',
       role: 'guru',
       kelas: '12',
-      kelas_diajar: ['12', '11', '10'],
+      kelas_diajar: ['10', '11', '12'],
       jam_masuk_default: '07:30',
       jam_pulang_default: '14:00',
+      password: 'password123',
       qr_token: 'tok_guru_budi_secure',
       foto_profil_url: ''
     },
     {
+      id: '22222222-2222-2222-2222-222222222223',
+      email: 'guru2@mail.com',
+      alias_emails: ['guru2@mail.com', 'siti.tutor@pkbm.sch.id'],
+      nama_lengkap: 'Siti Nurhaliza, M.Pd',
+      nomor_induk: '199003152015022003',
+      role: 'guru',
+      kelas: '11',
+      kelas_diajar: ['10', '11', '12'],
+      jam_masuk_default: '07:30',
+      jam_pulang_default: '14:00',
+      password: 'password123',
+      qr_token: 'tok_guru_siti_secure',
+      foto_profil_url: ''
+    },
+    {
       id: 'std-12-01',
-      email: 'ade@pkbm.sch.id',
-      alias_emails: ['ade@pkbm.sch.id', 'ahmad@sekolah.sch.id'],
+      email: '1201@mail.com',
+      alias_emails: ['1201@mail.com', 'ade@pkbm.sch.id'],
       nama_lengkap: 'ADE IZA MUKTI',
       jenis_kelamin: 'L',
-      nomor_induk: '20241201',
+      nomor_induk: '1201',
       role: 'siswa',
       kelas: '12',
-      qr_token: 'tok_std_12_20241201',
+      password: 'password123',
+      qr_token: 'tok_std_1201',
       foto_profil_url: ''
     }
   ]
 
   const DEMO_CREDENTIALS = {
     admin: 'admin@mail.com',
-    guru: 'tutor@pkbm.sch.id',
-    siswa: 'ade@pkbm.sch.id'
+    guru: 'guru1@mail.com',
+    siswa: '1201'
   }
 
   const user = ref(null)
